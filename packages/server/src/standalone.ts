@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { MailArchiverApp, Scheduler, isValidCron, logger } from '@mail-archiver/core';
+import { applyAddonOptions } from './addon.js';
 import { AuthGuard } from './auth.js';
 import { startServer } from './index.js';
 
@@ -12,6 +13,10 @@ import { startServer } from './index.js';
  * configuration without anyone at the keyboard.
  */
 async function main(): Promise<void> {
+  // As a Home Assistant add-on the settings arrive as a file, not as an
+  // environment; this turns them into one before anything else reads it.
+  const addon = applyAddonOptions();
+
   // In a container the log belongs on stdout, that is what `docker logs` reads.
   logger.setLevel((process.env.MAIL_ARCHIVER_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') ?? 'info');
   logger.on('entry', (entry) => {
@@ -44,8 +49,15 @@ async function main(): Promise<void> {
   });
 
   logger.info(`Mail Archiver listening on ${running.url} (auth: ${auth.mode})`);
+  if (addon) {
+    logger.info(
+      process.env.MAIL_ARCHIVER_INGRESS_ONLY === 'true'
+        ? 'Running as a Home Assistant add-on: reachable through the sidebar, and only from the supervisor'
+        : 'Running as a Home Assistant add-on with an interface password of its own',
+    );
+  }
 
-  if (auth.mode === 'none') {
+  if (auth.mode === 'none' && process.env.MAIL_ARCHIVER_INGRESS_ONLY !== 'true') {
     logger.warn(
       'No MAIL_ARCHIVER_UI_PASSWORD is set: anyone who can reach this port can use the interface.',
     );

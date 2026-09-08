@@ -7,6 +7,12 @@
 # runs the application without privileges.
 set -e
 
+# As a Home Assistant add-on the supervisor owns the directories and everything
+# runs as root, so dropping privileges would only lose access to /data.
+if [ -f /data/options.json ]; then
+  exec "$@"
+fi
+
 PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 

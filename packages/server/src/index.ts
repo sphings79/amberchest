@@ -4,6 +4,7 @@ import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
 import type { MailArchiverApp } from '@mail-archiver/core';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { isIngressAddress } from './addon.js';
 import { AuthGuard } from './auth.js';
 import { registerRoutes } from './routes.js';
 
@@ -32,6 +33,23 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
     trustProxy: true,
     bodyLimit: 5 * 1024 * 1024,
   });
+
+  /*
+   * Home Assistant ingress: nothing but the supervisor may knock.
+   *
+   * With ingress there is no login in front of the interface, so the add-on
+   * has to make sure it only answers the gateway. Turned on by the add-on when
+   * no interface password was configured.
+   */
+  if (process.env.MAIL_ARCHIVER_INGRESS_ONLY === 'true') {
+    server.addHook('onRequest', async (request, reply) => {
+      // request.ip honours trustProxy, which is not what is wanted here: the
+      // socket address is the only thing an outsider cannot forge.
+      if (!isIngressAddress(request.socket.remoteAddress ?? undefined)) {
+        await reply.status(403).send({ error: 'Only reachable through Home Assistant' });
+      }
+    });
+  }
 
   /*
    * Cross origin access for the remote mode.
