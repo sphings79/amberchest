@@ -13,7 +13,7 @@ with a folder tree that mirrors your mailbox.
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [FAQ](#faq)
+[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 </div>
 
@@ -243,6 +243,59 @@ Passwords are never readable through MCP — they can only be set.
 **Over HTTP** (for the container or a remote client): switch it on in the
 settings, copy the generated token and point the client at `POST /mcp` with
 `Authorization: Bearer <token>`.
+
+## Home Assistant
+
+Mail Archiver publishes the state of every account to an MQTT broker, so Home
+Assistant can show when a mailbox was last backed up — and start a backup from
+a button or an automation. Switch it on under **Home Assistant** in the
+sidebar, enter the broker address, done: the entities are created through MQTT
+discovery, nothing has to be written into `configuration.yaml`.
+
+The account is part of the topic, so several mailboxes stay apart:
+
+```
+mailarchiver/status                       online / offline
+mailarchiver/state                        totals and the next scheduled run
+mailarchiver/account/<account>/state      one JSON document per mailbox
+mailarchiver/account/<account>/set        backup | cancel
+```
+
+Per mailbox you get a device with four entities plus a button:
+
+| Entity | Type |
+| --- | --- |
+| Messages | sensor |
+| Archive size | sensor, `data_size` |
+| Last backup | sensor, `timestamp` |
+| Backup running | binary sensor, `running` |
+| Back up now | button |
+
+Commands are a separate switch. With **Accept commands** turned off the bridge
+never subscribes and publishes no button, which makes the connection read only.
+
+An example automation — a notification when a backup fails:
+
+```yaml
+automation:
+  - alias: Mail backup failed
+    triggers:
+      - trigger: mqtt
+        topic: mailarchiver/account/privat/state
+        value_template: "{{ value_json.last_backup_status }}"
+        payload: failed
+    actions:
+      - action: notify.mobile_app
+        data:
+          message: "The mail backup failed: {{ trigger.payload_json.last_error }}"
+```
+
+## On your phone
+
+The web interface is installable. Open it in the browser of your phone and
+choose **Add to home screen** — it then runs full screen with its own icon,
+just like an app. Behind a reverse proxy with HTTPS this works from anywhere;
+`http://` only counts as installable on localhost.
 
 ## Where things are stored
 

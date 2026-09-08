@@ -28,6 +28,7 @@ import {
 import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
+import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
 import { RestoreManager } from './restore/manager.js';
 import { EncryptionMigrationManager, type MigrationProgress } from './storage/migrate.js';
 import { ArchiveLayout } from './storage/archive.js';
@@ -83,6 +84,7 @@ export class MailArchiverApp {
   readonly bundles: BundleManager;
   readonly restore = new RestoreManager();
   readonly migration = new EncryptionMigrationManager();
+  readonly mqtt: MqttBridge;
   private readonly pdfRenderer: PdfRenderer | undefined;
 
   constructor(
@@ -122,6 +124,17 @@ export class MailArchiverApp {
       // container renders PDFs.
       pdfRenderer: options.pdfRenderer ?? chromiumPdfRenderer,
     });
+    this.mqtt = new MqttBridge({
+      settings: () => this.config.getSettings().mqtt,
+      overview: () => this.overview(),
+      startSync: (accountId) => this.startSyncAndIndex(accountId),
+      cancelSync: (accountId) => this.cancelSync(accountId),
+    });
+    // A backup changes what the sensors show, so every progress event is
+    // pushed straight through instead of waiting for the next interval.
+    this.sync.on('progress', (progress: SyncProgress) => {
+      void this.mqtt.publishAccount(progress.accountId).catch(() => undefined);
+    });
   }
 
   get isInitialized(): boolean {
@@ -140,9 +153,13 @@ export class MailArchiverApp {
   async unlock(masterPassword: string): Promise<void> {
     await this.config.unlock(masterPassword);
     logger.info('Configuration unlocked');
+    // The broker credentials live in the encrypted configuration, so the
+    // bridge can only start once that is open.
+    await this.mqtt.apply();
   }
 
   lock(): void {
+    void this.mqtt.stop();
     this.config.lock();
   }
 
@@ -150,8 +167,22 @@ export class MailArchiverApp {
     return this.config.getSettings();
   }
 
-  updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
-    return this.config.updateSettings(patch);
+  async updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+    const before = this.config.getSettings().mqtt;
+    const settings = await this.config.updateSettings(patch);
+    // Reconnecting on every settings change would drop the connection when
+    // only the theme was touched.
+    if (JSON.stringify(before) !== JSON.stringify(settings.mqtt)) await this.mqtt.apply();
+    return settings;
+  }
+
+  mqttStatus(): MqttStatus {
+    return this.mqtt.status;
+  }
+
+  /** Reports the next scheduled run over MQTT; only the container has one. */
+  setScheduleProvider(nextRun: () => Date | null): void {
+    this.mqtt.setNextRunProvider(nextRun);
   }
 
   listAccounts(): PublicAccount[] {
@@ -473,6 +504,7 @@ export class MailArchiverApp {
   }
 
   close(): void {
+    void this.mqtt.stop();
     this.db.close();
   }
 }

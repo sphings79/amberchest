@@ -117,6 +117,28 @@ export interface McpSettings {
   };
 }
 
+export interface MqttSettings {
+  /** Master switch; nothing is published while this is off. */
+  enabled: boolean;
+  /** Broker address, for example mqtt://192.168.1.10:1883. */
+  url: string;
+  username: string;
+  password: string;
+  /** Empty lets the client pick one. */
+  clientId: string;
+  /** Everything is published below this topic. */
+  baseTopic: string;
+  /** Publish the Home Assistant discovery messages. */
+  discovery: boolean;
+  discoveryPrefix: string;
+  /** Retained messages survive a restart of Home Assistant. */
+  retain: boolean;
+  /** Off means the bridge only reports and never accepts a command. */
+  allowCommands: boolean;
+  publishIntervalSeconds: number;
+  rejectUnauthorized: boolean;
+}
+
 export interface AppSettings {
   /** Base directory holding one subdirectory per account. */
   archivePath: string;
@@ -125,6 +147,7 @@ export interface AppSettings {
   accentColor: string;
   search: SearchSettings;
   mcp: McpSettings;
+  mqtt: MqttSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can
    * no longer be opened by a mail client directly.

@@ -213,6 +213,21 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.updateSettings(body.data);
   });
 
+  // ------------------------------------------------------------------- mqtt
+
+  server.get('/api/mqtt', { preHandler: requireUnlocked }, async () => app.mqttStatus());
+
+  /** Applies the stored settings again, which reconnects with a clean slate. */
+  server.post('/api/mqtt/reconnect', { preHandler: requireUnlocked }, async () => {
+    await app.mqtt.apply();
+    return app.mqttStatus();
+  });
+
+  server.post('/api/mqtt/publish', { preHandler: requireUnlocked }, async () => {
+    await app.mqtt.publishState();
+    return app.mqttStatus();
+  });
+
   // --------------------------------------------------------------- accounts
 
   server.get('/api/accounts', { preHandler: requireUnlocked }, async () => app.overview());

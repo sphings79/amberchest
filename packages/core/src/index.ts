@@ -84,6 +84,10 @@ export {
   type McpPermissions,
   type ToolDefinition,
 } from './mcp/tools.js';
+export { MqttBridge, type MqttBridgeOptions, type MqttStatus } from './mqtt/bridge.js';
+export { accountSlug, accountSlugs, buildTopics } from './mqtt/topics.js';
+export { accountDiscovery, hubDiscovery, type DiscoveryMessage } from './mqtt/discovery.js';
+export { APP_VERSION } from './util/version.js';
 export {
   RestoreEngine,
   RestoreCancelledError,

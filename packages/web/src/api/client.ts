@@ -9,6 +9,7 @@ import type {
   LogEntry,
   MessageContent,
   MigrationProgress,
+  MqttStatus,
   PublicAccount,
   SearchResult,
 } from '@mail-archiver/core';
@@ -24,6 +25,7 @@ export type {
   LogEntry,
   MessageContent,
   MigrationProgress,
+  MqttStatus,
   PublicAccount,
   SearchResult,
 };
@@ -255,6 +257,10 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  mqttStatus: () => request<MqttStatus>('/mqtt'),
+  mqttReconnect: () => request<MqttStatus>('/mqtt/reconnect', { method: 'POST' }),
+  mqttPublish: () => request<MqttStatus>('/mqtt/publish', { method: 'POST' }),
 
   search: (query: SearchQuery) => {
     const params = new URLSearchParams();

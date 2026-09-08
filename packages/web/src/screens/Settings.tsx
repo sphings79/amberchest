@@ -52,6 +52,20 @@ export function Settings(): ReactNode {
           delete: false,
         },
       },
+      mqtt: {
+        enabled: false,
+        url: '',
+        username: '',
+        password: '',
+        clientId: '',
+        baseTopic: 'mailarchiver',
+        discovery: true,
+        discoveryPrefix: 'homeassistant',
+        retain: true,
+        allowCommands: true,
+        publishIntervalSeconds: 60,
+        rejectUnauthorized: true,
+      },
     },
   );
   const [saved, setSaved] = useState(false);

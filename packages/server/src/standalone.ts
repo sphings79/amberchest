@@ -67,6 +67,8 @@ async function main(): Promise<void> {
         exportAttachments: process.env.MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS === 'true',
       });
       scheduler.start();
+      // The MQTT sensor for the next run needs to know about the schedule.
+      app.setScheduleProvider(() => scheduler?.nextRun ?? null);
     }
   }
 

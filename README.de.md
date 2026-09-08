@@ -13,7 +13,7 @@ schreibgeschützt, inkrementell, mit dem Ordnerbaum deines Postfachs.
 [![Mit TypeScript gebaut](https://img.shields.io/badge/gebaut%20mit-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Sterne](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [FAQ](#faq)
+[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 </div>
 
@@ -250,6 +250,61 @@ Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
 **Über HTTP** (für den Container oder entfernte Clients): in den Einstellungen
 einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
 `Authorization: Bearer <token>` zeigen lassen.
+
+## Home Assistant
+
+Mail Archiver veröffentlicht den Zustand jedes Kontos auf einem MQTT-Broker.
+Home Assistant zeigt damit, wann ein Postfach zuletzt gesichert wurde, und kann
+eine Sicherung per Knopf oder Automatisierung starten. Einschalten unter
+**Home Assistant** in der Seitenleiste, Broker eintragen, fertig: die
+Entitäten entstehen per MQTT-Discovery, in der `configuration.yaml` ist nichts
+nötig.
+
+Das Konto steckt im Topic, damit mehrere Postfächer sauber getrennt bleiben:
+
+```
+mailarchiver/status                       online / offline
+mailarchiver/state                        Summen und der nächste geplante Lauf
+mailarchiver/account/<konto>/state        ein JSON-Dokument je Postfach
+mailarchiver/account/<konto>/set          backup | cancel
+```
+
+Je Postfach entsteht ein Gerät mit vier Entitäten und einem Knopf:
+
+| Entität | Typ |
+| --- | --- |
+| Nachrichten | Sensor |
+| Archivgröße | Sensor, `data_size` |
+| Letzte Sicherung | Sensor, `timestamp` |
+| Sicherung läuft | Binärsensor, `running` |
+| Jetzt sichern | Knopf |
+
+Befehle haben einen eigenen Schalter. Mit ausgeschaltetem **Befehle annehmen**
+abonniert die Anbindung nichts und veröffentlicht keinen Knopf — die Verbindung
+ist dann nur lesend.
+
+Eine Beispielautomatisierung, die bei einer fehlgeschlagenen Sicherung meldet:
+
+```yaml
+automation:
+  - alias: Mail-Sicherung fehlgeschlagen
+    triggers:
+      - trigger: mqtt
+        topic: mailarchiver/account/privat/state
+        value_template: "{{ value_json.last_backup_status }}"
+        payload: failed
+    actions:
+      - action: notify.mobile_app
+        data:
+          message: "Die Mail-Sicherung ist fehlgeschlagen: {{ trigger.payload_json.last_error }}"
+```
+
+## Auf dem Handy
+
+Die Weboberfläche lässt sich installieren. Im Browser des Handys öffnen und
+**Zum Home-Bildschirm hinzufügen** wählen — sie läuft dann im Vollbild mit
+eigenem Symbol wie eine App. Hinter einem Reverse Proxy mit HTTPS klappt das
+von überall; `http://` gilt nur auf localhost als installierbar.
 
 ## Wo die Daten liegen
 

@@ -73,6 +73,26 @@ export const mcpSettingsSchema = z.object({
     })),
 });
 
+export const mqttSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  /** mqtt:// mqtts:// ws:// wss:// with an optional port. */
+  url: z.string().default(''),
+  username: z.string().default(''),
+  password: z.string().default(''),
+  clientId: z.string().default(''),
+  /** Everything is published below this topic. */
+  baseTopic: z.string().min(1).default('mailarchiver'),
+  /** Publish the Home Assistant discovery messages. */
+  discovery: z.boolean().default(true),
+  discoveryPrefix: z.string().min(1).default('homeassistant'),
+  retain: z.boolean().default(true),
+  /** Off means the bridge only reports and never accepts a command. */
+  allowCommands: z.boolean().default(true),
+  publishIntervalSeconds: z.number().int().min(10).max(3600).default(60),
+  /** Only relevant for mqtts:// with a self signed certificate. */
+  rejectUnauthorized: z.boolean().default(true),
+});
+
 export const appSettingsSchema = z.object({
   archivePath: z.string().min(1).default(defaultArchiveDir()),
   language: z.enum(['de', 'en']).default('de'),
@@ -80,6 +100,7 @@ export const appSettingsSchema = z.object({
   accentColor: z.string().default('violet'),
   search: searchSettingsSchema.default(() => searchSettingsSchema.parse({})),
   mcp: mcpSettingsSchema.default(() => mcpSettingsSchema.parse({})),
+  mqtt: mqttSettingsSchema.default(() => mqttSettingsSchema.parse({})),
   encryptArchive: z.boolean().default(false),
 });
 

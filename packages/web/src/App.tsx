@@ -1,6 +1,7 @@
 import {
   Bot,
   FolderTree,
+  HouseWifi,
   Inbox,
   LayoutDashboard,
   Lock,
@@ -18,6 +19,7 @@ import { Button, cx } from './components/ui.js';
 import { Browser } from './screens/Browser.js';
 import { Dashboard } from './screens/Dashboard.js';
 import { GateScreen } from './screens/GateScreen.js';
+import { HomeAssistant } from './screens/HomeAssistant.js';
 import { Logs } from './screens/Logs.js';
 import { Overview } from './screens/Overview.js';
 import { Search } from './screens/Search.js';
@@ -25,7 +27,15 @@ import { McpScreen } from './screens/McpScreen.js';
 import { Settings } from './screens/Settings.js';
 import { useApp } from './state.js';
 
-type View = 'overview' | 'accounts' | 'browser' | 'search' | 'settings' | 'mcp' | 'logs';
+type View =
+  | 'overview'
+  | 'accounts'
+  | 'browser'
+  | 'search'
+  | 'settings'
+  | 'mcp'
+  | 'homeassistant'
+  | 'logs';
 
 function Logo(): ReactNode {
   return (
@@ -77,6 +87,7 @@ export function App(): ReactNode {
     { id: 'search', label: t('nav.search'), icon: <SearchIcon size={16} /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon size={16} /> },
     { id: 'mcp', label: t('nav.mcp'), icon: <Bot size={16} /> },
+    { id: 'homeassistant', label: t('nav.homeAssistant'), icon: <HouseWifi size={16} /> },
     { id: 'logs', label: t('nav.logs'), icon: <ScrollText size={16} /> },
   ];
 
@@ -157,6 +168,7 @@ export function App(): ReactNode {
             {view === 'search' && <Search />}
             {view === 'settings' && <Settings />}
             {view === 'mcp' && <McpScreen />}
+            {view === 'homeassistant' && <HomeAssistant />}
             {view === 'logs' && <Logs />}
           </div>
         </main>

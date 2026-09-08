@@ -9,3 +9,6 @@ export const STAR_URL = `${REPO_URL}/stargazers`;
 
 /** Where the coffee button points. */
 export const COFFEE_URL = 'https://buymeacoffee.com/sphings';
+
+/** Companion integration for Home Assistant, installed through HACS. */
+export const HA_INTEGRATION_URL = 'https://github.com/sphings79/mail-archiver-home-assistant';
