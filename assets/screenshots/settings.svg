@@ -1,0 +1,336 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver settings screen">
+  <title>Mail Archiver — Settings</title>
+  <desc>Settings: archive base folder, language, appearance, accent colours, and the hint about scheduled backups with links to the Docker guide.</desc>
+
+  <defs>
+    <linearGradient id="accent5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <clipPath id="round5">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+      <clipPath id="tear-dark"><path d="M0 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L0 720 Z"/></clipPath>
+    <clipPath id="tear-light"><path d="M1200 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L1200 720 Z"/></clipPath>
+</defs>
+
+  <g clip-path="url(#round5)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <g clip-path="url(#tear-dark)">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- sidebar -->
+    <rect x="0" y="44" width="228" height="676" fill="#151821"/>
+    <line x1="228" y1="44" x2="228" y2="720" stroke="#262c3a" stroke-width="1"/>
+
+    <rect x="18" y="66" width="36" height="36" rx="11" fill="url(#accent)"/>
+    <g stroke="#fff" stroke-width="1.7" fill="none">
+      <rect x="27" y="76" width="18" height="14" rx="2.5"/>
+      <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="64" y="82" fill="#e8eaf0" font-size="13" font-weight="600">Mail Archiver</text>
+    <text x="64" y="96" fill="#6b7386" font-size="9.5">The Mail Backup Solution</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="135" width="7" height="7" rx="1.5"/><rect x="37" y="135" width="7" height="7" rx="1.5"/>
+      <rect x="26" y="146" width="7" height="7" rx="1.5"/><rect x="37" y="146" width="7" height="7" rx="1.5"/>
+    </g>
+    <text x="56" y="149" fill="#9aa2b5" font-size="12.5">Übersicht</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="179" width="18" height="14" rx="2.5"/>
+      <path d="M26 182.5 35 188 44 182.5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="191" fill="#9aa2b5" font-size="12.5">Konten</text>
+    <text x="200" y="191" fill="#6b7386" font-size="11" text-anchor="end">2</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 222h6l2 2.5h8" /><rect x="27" y="222" width="16" height="12" rx="2.5"/>
+      <path d="M31 228h8M31 231h5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="233" fill="#9aa2b5" font-size="12.5">Postfach</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="34" cy="269" r="6"/><path d="M38.5 273.5 43 278" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="275" fill="#9aa2b5" font-size="12.5">Suche</text>
+    <rect x="12" y="294" width="204" height="36" rx="11" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none">
+      <circle cx="35" cy="312" r="3.4"/><circle cx="35" cy="312" r="8"/>
+    </g>
+    <text x="56" y="317" fill="#7c5cff" font-size="12.5" font-weight="500">Einstellungen</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="350" width="16" height="12" rx="3.5"/>
+      <path d="M35 346v4" stroke-linecap="round"/><circle cx="35" cy="346" r="1.4" fill="#9aa2b5"/>
+      <circle cx="32" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="38" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+    </g>
+    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 396 35 389 43 396" stroke-linejoin="round"/>
+      <path d="M29.5 395v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 399.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="401" fill="#9aa2b5" font-size="12.5">Home Assistant</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="430" width="15" height="17" rx="2"/>
+      <path d="M31 435h7M31 439h7M31 443h4" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="443" fill="#9aa2b5" font-size="12.5">Protokoll</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>
+    </g>
+    <text x="56" y="582" fill="#6b7386" font-size="12">Stern auf GitHub</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M28 601h11v7a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z"/>
+      <path d="M39 603h2.5a2.5 2.5 0 0 1 0 5H39"/>
+    </g>
+    <text x="56" y="614" fill="#6b7386" font-size="12">Kaffee spendieren</text>
+
+    <rect x="12" y="630" width="204" height="44" rx="11" fill="#11141b" stroke="#262c3a"/>
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <rect x="26" y="644" width="16" height="11" rx="2"/><path d="M30 659h8"/>
+    </g>
+    <text x="52" y="648" fill="#6b7386" font-size="8.5" letter-spacing="0.7">VERBINDUNG</text>
+    <text x="52" y="663" fill="#9aa2b5" font-size="12">Dieser Rechner</text>
+    <path d="M203 648l4-4 4 4M203 658l4 4 4-4" stroke="#6b7386" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <g stroke="#6b7386" stroke-width="1.6" fill="none">
+      <rect x="28" y="683" width="13" height="9" rx="2"/>
+      <path d="M31 683v-3a3.5 3.5 0 0 1 7 0v3"/>
+    </g>
+    <text x="56" y="692" fill="#6b7386" font-size="12.5">Sperren</text>
+
+    <!-- content -->
+    <text x="268" y="96" fill="#e8eaf0" font-size="20" font-weight="600">Einstellungen</text>
+
+    <rect x="268" y="126" width="700" height="320" rx="14" fill="#151821" stroke="#262c3a"/>
+
+    <text x="292" y="164" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">BASISORDNER FÜR SICHERUNGEN</text>
+    <rect x="292" y="172" width="652" height="36" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <text x="308" y="195" fill="#e8eaf0" font-size="12.5">/Users/dennis/Mail Archive</text>
+    <text x="292" y="226" fill="#6b7386" font-size="10.5">Pro Konto wird darin ein Unterordner angelegt.</text>
+
+    <text x="292" y="262" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">SPRACHE</text>
+    <rect x="292" y="270" width="318" height="36" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <text x="308" y="293" fill="#e8eaf0" font-size="12.5">Deutsch</text>
+    <path d="M586 286l5 5 5-5" stroke="#6b7386" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="626" y="262" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">ERSCHEINUNGSBILD</text>
+    <rect x="626" y="270" width="318" height="36" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <text x="642" y="293" fill="#e8eaf0" font-size="12.5">Dunkel</text>
+    <path d="M920 286l5 5 5-5" stroke="#6b7386" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="292" y="336" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">AKZENTFARBE</text>
+    <g>
+      <rect x="292" y="344" width="34" height="34" rx="11" fill="#7c5cff" stroke="#e8eaf0" stroke-width="1.4"/>
+      <path d="M303 361l3.4 3.4 6-6.6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="334" y="344" width="34" height="34" rx="11" fill="#3b82f6"/>
+      <rect x="376" y="344" width="34" height="34" rx="11" fill="#10a37f"/>
+      <rect x="418" y="344" width="34" height="34" rx="11" fill="#e08b12"/>
+      <rect x="460" y="344" width="34" height="34" rx="11" fill="#e0457b"/>
+    </g>
+
+
+    <rect x="292" y="394" width="112" height="36" rx="11" fill="url(#accent5)"/>
+    <text x="348" y="417" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Speichern</text>
+
+    <!-- docker card -->
+    <rect x="268" y="470" width="700" height="192" rx="14" fill="#151821" stroke="#262c3a"/>
+    <g transform="translate(0,38)">
+    <rect x="292" y="458" width="36" height="36" rx="11" fill="#1b1f2a"/>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="310" cy="476" r="8"/>
+      <path d="M310 471v5l3 2" stroke-linecap="round"/>
+    </g>
+    <g stroke="#e8eaf0" stroke-width="1.5" fill="none">
+      <rect x="342" y="462" width="6" height="5"/>
+      <rect x="350" y="462" width="6" height="5"/>
+      <rect x="346" y="456" width="6" height="5"/>
+      <path d="M338 469h22c0 5-4 8-9 8s-13-1-13-8z" stroke-linejoin="round"/>
+    </g>
+    <text x="370" y="472" fill="#e8eaf0" font-size="13" font-weight="500">Zeitgesteuerte Sicherung</text>
+    <text x="342" y="498" fill="#9aa2b5" font-size="11.5">Die Desktop-App sichert auf Knopfdruck. Für regelmäßige, automatische</text>
+    <text x="342" y="516" fill="#9aa2b5" font-size="11.5">Sicherungen gibt es den Docker-Container - dort wird der Zeitplan per</text>
+    <text x="342" y="534" fill="#9aa2b5" font-size="11.5">Cron-Ausdruck gesetzt.</text>
+
+    <rect x="342" y="552" width="272" height="34" rx="11" fill="url(#accent5)"/>
+    <g stroke="#fff" stroke-width="1.5" fill="none" stroke-linejoin="round">
+      <path d="M362 562h10v14h-10zM372 562h10v14h-10z"/>
+    </g>
+    <text x="392" y="574" fill="#fff" font-size="12.5" font-weight="500">Docker-Installationsanleitung öffnen</text>
+
+    <rect x="626" y="552" width="168" height="34" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <g stroke="#e8eaf0" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M646 570v-6h6M646 564l8 8"/>
+      <path d="M642 568v6h12v-6" />
+    </g>
+    <text x="668" y="574" fill="#e8eaf0" font-size="12.5">Projekt auf GitHub</text>
+    </g>
+  </g>
+    <g clip-path="url(#tear-light)">
+    <rect width="1200" height="720" fill="#f3f5fa"/>
+
+    <rect width="1200" height="44" fill="#ffffff"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#dde2ee"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#4b5568" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#7a8397" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- sidebar -->
+    <rect x="0" y="44" width="228" height="676" fill="#ffffff"/>
+    <line x1="228" y1="44" x2="228" y2="720" stroke="#dde2ee" stroke-width="1"/>
+
+    <rect x="18" y="66" width="36" height="36" rx="11" fill="url(#accent)"/>
+    <g stroke="#fff" stroke-width="1.7" fill="none">
+      <rect x="27" y="76" width="18" height="14" rx="2.5"/>
+      <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="64" y="82" fill="#131722" font-size="13" font-weight="600">Mail Archiver</text>
+    <text x="64" y="96" fill="#7a8397" font-size="9.5">The Mail Backup Solution</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <rect x="26" y="135" width="7" height="7" rx="1.5"/><rect x="37" y="135" width="7" height="7" rx="1.5"/>
+      <rect x="26" y="146" width="7" height="7" rx="1.5"/><rect x="37" y="146" width="7" height="7" rx="1.5"/>
+    </g>
+    <text x="56" y="149" fill="#4b5568" font-size="12.5">Übersicht</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <rect x="26" y="179" width="18" height="14" rx="2.5"/>
+      <path d="M26 182.5 35 188 44 182.5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="191" fill="#4b5568" font-size="12.5">Konten</text>
+    <text x="200" y="191" fill="#7a8397" font-size="11" text-anchor="end">2</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <path d="M27 222h6l2 2.5h8" /><rect x="27" y="222" width="16" height="12" rx="2.5"/>
+      <path d="M31 228h8M31 231h5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="233" fill="#4b5568" font-size="12.5">Postfach</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <circle cx="34" cy="269" r="6"/><path d="M38.5 273.5 43 278" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="275" fill="#4b5568" font-size="12.5">Suche</text>
+    <rect x="12" y="294" width="204" height="36" rx="11" fill="#ede9ff"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none">
+      <circle cx="35" cy="312" r="3.4"/><circle cx="35" cy="312" r="8"/>
+    </g>
+    <text x="56" y="317" fill="#7c5cff" font-size="12.5" font-weight="500">Einstellungen</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <rect x="27" y="350" width="16" height="12" rx="3.5"/>
+      <path d="M35 346v4" stroke-linecap="round"/><circle cx="35" cy="346" r="1.4" fill="#4b5568"/>
+      <circle cx="32" cy="356" r="1.3" fill="#4b5568" stroke="none"/>
+      <circle cx="38" cy="356" r="1.3" fill="#4b5568" stroke="none"/>
+    </g>
+    <text x="56" y="359" fill="#4b5568" font-size="12.5">KI-Anbindung</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <path d="M27 396 35 389 43 396" stroke-linejoin="round"/>
+      <path d="M29.5 395v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 399.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="401" fill="#4b5568" font-size="12.5">Home Assistant</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <rect x="27" y="430" width="15" height="17" rx="2"/>
+      <path d="M31 435h7M31 439h7M31 443h4" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="443" fill="#4b5568" font-size="12.5">Protokoll</text>
+
+    <g stroke="#7a8397" stroke-width="1.5" fill="none">
+      <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>
+    </g>
+    <text x="56" y="582" fill="#7a8397" font-size="12">Stern auf GitHub</text>
+
+    <g stroke="#7a8397" stroke-width="1.5" fill="none">
+      <path d="M28 601h11v7a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z"/>
+      <path d="M39 603h2.5a2.5 2.5 0 0 1 0 5H39"/>
+    </g>
+    <text x="56" y="614" fill="#7a8397" font-size="12">Kaffee spendieren</text>
+
+    <rect x="12" y="630" width="204" height="44" rx="11" fill="#eef1f7" stroke="#dde2ee"/>
+    <g stroke="#7a8397" stroke-width="1.5" fill="none">
+      <rect x="26" y="644" width="16" height="11" rx="2"/><path d="M30 659h8"/>
+    </g>
+    <text x="52" y="648" fill="#7a8397" font-size="8.5" letter-spacing="0.7">VERBINDUNG</text>
+    <text x="52" y="663" fill="#4b5568" font-size="12">Dieser Rechner</text>
+    <path d="M203 648l4-4 4 4M203 658l4 4 4-4" stroke="#7a8397" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <g stroke="#7a8397" stroke-width="1.6" fill="none">
+      <rect x="28" y="683" width="13" height="9" rx="2"/>
+      <path d="M31 683v-3a3.5 3.5 0 0 1 7 0v3"/>
+    </g>
+    <text x="56" y="692" fill="#7a8397" font-size="12.5">Sperren</text>
+
+    <!-- content -->
+    <text x="268" y="96" fill="#131722" font-size="20" font-weight="600">Einstellungen</text>
+
+    <rect x="268" y="126" width="700" height="320" rx="14" fill="#ffffff" stroke="#dde2ee"/>
+
+    <text x="292" y="164" fill="#4b5568" font-size="9.5" letter-spacing="0.6">BASISORDNER FÜR SICHERUNGEN</text>
+    <rect x="292" y="172" width="652" height="36" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <text x="308" y="195" fill="#131722" font-size="12.5">/Users/dennis/Mail Archive</text>
+    <text x="292" y="226" fill="#7a8397" font-size="10.5">Pro Konto wird darin ein Unterordner angelegt.</text>
+
+    <text x="292" y="262" fill="#4b5568" font-size="9.5" letter-spacing="0.6">SPRACHE</text>
+    <rect x="292" y="270" width="318" height="36" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <text x="308" y="293" fill="#131722" font-size="12.5">Deutsch</text>
+    <path d="M586 286l5 5 5-5" stroke="#7a8397" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="626" y="262" fill="#4b5568" font-size="9.5" letter-spacing="0.6">ERSCHEINUNGSBILD</text>
+    <rect x="626" y="270" width="318" height="36" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <text x="642" y="293" fill="#131722" font-size="12.5">Dunkel</text>
+    <path d="M920 286l5 5 5-5" stroke="#7a8397" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="292" y="336" fill="#4b5568" font-size="9.5" letter-spacing="0.6">AKZENTFARBE</text>
+    <g>
+      <rect x="292" y="344" width="34" height="34" rx="11" fill="#7c5cff" stroke="#131722" stroke-width="1.4"/>
+      <path d="M303 361l3.4 3.4 6-6.6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="334" y="344" width="34" height="34" rx="11" fill="#3b82f6"/>
+      <rect x="376" y="344" width="34" height="34" rx="11" fill="#10a37f"/>
+      <rect x="418" y="344" width="34" height="34" rx="11" fill="#e08b12"/>
+      <rect x="460" y="344" width="34" height="34" rx="11" fill="#e0457b"/>
+    </g>
+
+
+    <rect x="292" y="394" width="112" height="36" rx="11" fill="url(#accent5)"/>
+    <text x="348" y="417" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Speichern</text>
+
+    <!-- docker card -->
+    <rect x="268" y="470" width="700" height="192" rx="14" fill="#ffffff" stroke="#dde2ee"/>
+    <g transform="translate(0,38)">
+    <rect x="292" y="458" width="36" height="36" rx="11" fill="#f6f8fc"/>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <circle cx="310" cy="476" r="8"/>
+      <path d="M310 471v5l3 2" stroke-linecap="round"/>
+    </g>
+    <g stroke="#131722" stroke-width="1.5" fill="none">
+      <rect x="342" y="462" width="6" height="5"/>
+      <rect x="350" y="462" width="6" height="5"/>
+      <rect x="346" y="456" width="6" height="5"/>
+      <path d="M338 469h22c0 5-4 8-9 8s-13-1-13-8z" stroke-linejoin="round"/>
+    </g>
+    <text x="370" y="472" fill="#131722" font-size="13" font-weight="500">Zeitgesteuerte Sicherung</text>
+    <text x="342" y="498" fill="#4b5568" font-size="11.5">Die Desktop-App sichert auf Knopfdruck. Für regelmäßige, automatische</text>
+    <text x="342" y="516" fill="#4b5568" font-size="11.5">Sicherungen gibt es den Docker-Container - dort wird der Zeitplan per</text>
+    <text x="342" y="534" fill="#4b5568" font-size="11.5">Cron-Ausdruck gesetzt.</text>
+
+    <rect x="342" y="552" width="272" height="34" rx="11" fill="url(#accent5)"/>
+    <g stroke="#fff" stroke-width="1.5" fill="none" stroke-linejoin="round">
+      <path d="M362 562h10v14h-10zM372 562h10v14h-10z"/>
+    </g>
+    <text x="392" y="574" fill="#fff" font-size="12.5" font-weight="500">Docker-Installationsanleitung öffnen</text>
+
+    <rect x="626" y="552" width="168" height="34" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <g stroke="#131722" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M646 570v-6h6M646 564l8 8"/>
+      <path d="M642 568v6h12v-6" />
+    </g>
+    <text x="668" y="574" fill="#131722" font-size="12.5">Projekt auf GitHub</text>
+    </g>
+  </g>
+    <path d="M720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720" fill="none" stroke="#7c5cff" stroke-width="2" stroke-opacity="0.75" stroke-linejoin="round"/>
+</g>
+</svg>

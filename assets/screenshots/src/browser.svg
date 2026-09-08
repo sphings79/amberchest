@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver mailbox browser with the folder tree and the message list">
+  <title>Mail Archiver — Postfach</title>
+  <desc>The mailbox browser: accounts and folders on the left, the messages of the selected folder on the right.</desc>
+
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+
+    <!-- title bar -->
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a" stroke-width="1"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- sidebar -->
+    <rect x="0" y="44" width="228" height="676" fill="#151821"/>
+    <line x1="228" y1="44" x2="228" y2="720" stroke="#262c3a" stroke-width="1"/>
+
+    <rect x="18" y="66" width="36" height="36" rx="11" fill="url(#accent)"/>
+    <g stroke="#fff" stroke-width="1.7" fill="none">
+      <rect x="27" y="76" width="18" height="14" rx="2.5"/>
+      <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="64" y="82" fill="#e8eaf0" font-size="13" font-weight="600">Mail Archiver</text>
+    <text x="64" y="96" fill="#6b7386" font-size="9.5">The Mail Backup Solution</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="135" width="7" height="7" rx="1.5"/><rect x="37" y="135" width="7" height="7" rx="1.5"/>
+      <rect x="26" y="146" width="7" height="7" rx="1.5"/><rect x="37" y="146" width="7" height="7" rx="1.5"/>
+    </g>
+    <text x="56" y="149" fill="#9aa2b5" font-size="12.5">Übersicht</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="179" width="18" height="14" rx="2.5"/>
+      <path d="M26 182.5 35 188 44 182.5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="191" fill="#9aa2b5" font-size="12.5">Konten</text>
+    <text x="200" y="191" fill="#6b7386" font-size="11" text-anchor="end">2</text>
+    <rect x="12" y="210" width="204" height="36" rx="11" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none">
+      <path d="M27 222h6l2 2.5h8" /><rect x="27" y="222" width="16" height="12" rx="2.5"/>
+      <path d="M31 228h8M31 231h5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="233" fill="#7c5cff" font-size="12.5" font-weight="500">Postfach</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="34" cy="269" r="6"/><path d="M38.5 273.5 43 278" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="275" fill="#9aa2b5" font-size="12.5">Suche</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="35" cy="312" r="3.4"/><circle cx="35" cy="312" r="8"/>
+    </g>
+    <text x="56" y="317" fill="#9aa2b5" font-size="12.5">Einstellungen</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="350" width="16" height="12" rx="3.5"/>
+      <path d="M35 346v4" stroke-linecap="round"/><circle cx="35" cy="346" r="1.4" fill="#9aa2b5"/>
+      <circle cx="32" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="38" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+    </g>
+    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 396 35 389 43 396" stroke-linejoin="round"/>
+      <path d="M29.5 395v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 399.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="401" fill="#9aa2b5" font-size="12.5">Home Assistant</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="430" width="15" height="17" rx="2"/>
+      <path d="M31 435h7M31 439h7M31 443h4" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="443" fill="#9aa2b5" font-size="12.5">Protokoll</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>
+    </g>
+    <text x="56" y="582" fill="#6b7386" font-size="12">Stern auf GitHub</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M28 601h11v7a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z"/>
+      <path d="M39 603h2.5a2.5 2.5 0 0 1 0 5H39"/>
+    </g>
+    <text x="56" y="614" fill="#6b7386" font-size="12">Kaffee spendieren</text>
+
+    <rect x="12" y="630" width="204" height="44" rx="11" fill="#11141b" stroke="#262c3a"/>
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <rect x="26" y="644" width="16" height="11" rx="2"/><path d="M30 659h8"/>
+    </g>
+    <text x="52" y="648" fill="#6b7386" font-size="8.5" letter-spacing="0.7">VERBINDUNG</text>
+    <text x="52" y="663" fill="#9aa2b5" font-size="12">Dieser Rechner</text>
+    <path d="M203 648l4-4 4 4M203 658l4 4 4-4" stroke="#6b7386" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <g stroke="#6b7386" stroke-width="1.6" fill="none">
+      <rect x="28" y="683" width="13" height="9" rx="2"/>
+      <path d="M31 683v-3a3.5 3.5 0 0 1 7 0v3"/>
+    </g>
+    <text x="56" y="692" fill="#6b7386" font-size="12.5">Sperren</text>
+    <text x="268" y="96" fill="#e8eaf0" font-size="20" font-weight="600">Postfach</text>
+    <rect x="268" y="126" width="300" height="560" rx="14" fill="#151821" stroke="#262c3a"/>
+    <rect x="284" y="142" width="268" height="30" rx="9" fill="#11141b" stroke="#262c3a"/>
+    <g stroke="#6b7386" stroke-width="1.5" fill="none"><circle cx="300" cy="157" r="4.5"/><path d="M303.5 160.5 307 164" stroke-linecap="round"/></g>
+    <text x="316" y="161" fill="#6b7386" font-size="11.5">Ordner filtern …</text>
+    <rect x="284" y="181" width="268" height="28" rx="9" fill="#221d3d" stroke="none"/>
+    <rect x="292" y="185" width="16" height="16" rx="5" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.4" fill="none"><rect x="295" y="189" width="10" height="8" rx="1.5"/><path d="M295 190.5 300 194 305 190.5"/></g>
+    <text x="316" y="196" fill="#e8eaf0" font-size="12.5" font-weight="600">Privat</text>
+    <text x="536" y="196" fill="#6b7386" font-size="11" text-anchor="end">12.480</text>
+    <rect x="284" y="217" width="268" height="28" rx="9" fill="#221d3d" stroke="none"/>
+    <g stroke="#7c5cff" stroke-width="1.4" fill="none"><path d="M310 224h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="232" fill="#7c5cff" font-size="12.5">INBOX</text>
+    <text x="536" y="232" fill="#6b7386" font-size="11" text-anchor="end">8.412</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M328 260h5l1.6 2h7.4v8H328z"/></g>
+    <text x="352" y="268" fill="#9aa2b5" font-size="12.5">Rechnungen</text>
+    <text x="536" y="268" fill="#6b7386" font-size="11" text-anchor="end">612</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M328 296h5l1.6 2h7.4v8H328z"/></g>
+    <text x="352" y="304" fill="#9aa2b5" font-size="12.5">Newsletter</text>
+    <text x="536" y="304" fill="#6b7386" font-size="11" text-anchor="end">1.905</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 332h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="340" fill="#9aa2b5" font-size="12.5">Gesendet</text>
+    <text x="536" y="340" fill="#6b7386" font-size="11" text-anchor="end">2.187</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 368h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="376" fill="#9aa2b5" font-size="12.5">Archiv</text>
+    <text x="536" y="376" fill="#6b7386" font-size="11" text-anchor="end">1.881</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M328 404h5l1.6 2h7.4v8H328z"/></g>
+    <text x="352" y="412" fill="#9aa2b5" font-size="12.5">2024</text>
+    <text x="536" y="412" fill="#6b7386" font-size="11" text-anchor="end">934</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M328 440h5l1.6 2h7.4v8H328z"/></g>
+    <text x="352" y="448" fill="#9aa2b5" font-size="12.5">2023</text>
+    <text x="536" y="448" fill="#6b7386" font-size="11" text-anchor="end">947</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 476h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="484" fill="#9aa2b5" font-size="12.5">Papierkorb</text>
+    <text x="536" y="484" fill="#6b7386" font-size="11" text-anchor="end">0</text>
+    <rect x="292" y="509" width="16" height="16" rx="5" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.4" fill="none"><rect x="295" y="513" width="10" height="8" rx="1.5"/><path d="M295 514.5 300 518 305 514.5"/></g>
+    <text x="316" y="520" fill="#e8eaf0" font-size="12.5" font-weight="600">Arbeit</text>
+    <text x="536" y="520" fill="#6b7386" font-size="11" text-anchor="end">35.733</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 548h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="556" fill="#9aa2b5" font-size="12.5">INBOX</text>
+    <text x="536" y="556" fill="#6b7386" font-size="11" text-anchor="end">21.004</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 584h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="592" fill="#9aa2b5" font-size="12.5">Projekte</text>
+    <text x="536" y="592" fill="#6b7386" font-size="11" text-anchor="end">9.884</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M310 620h5l1.6 2h7.4v8H310z"/></g>
+    <text x="334" y="628" fill="#9aa2b5" font-size="12.5">Gesendet</text>
+    <text x="536" y="628" fill="#6b7386" font-size="11" text-anchor="end">4.845</text>
+    <rect x="588" y="126" width="578" height="560" rx="14" fill="#151821" stroke="#262c3a"/>
+    <text x="608" y="158" fill="#e8eaf0" font-size="13.5" font-weight="600">Privat / INBOX</text>
+    <text x="1146" y="158" fill="#6b7386" font-size="11" text-anchor="end">8.412 Nachrichten</text>
+    <line x1="588" y1="176" x2="1166" y2="176" stroke="#262c3a"/>
+    <rect x="600" y="176" width="554" height="58" rx="11" fill="#221d3d" stroke="none"/>
+    <text x="618" y="196" fill="#e8eaf0" font-size="12.5" font-weight="500">Rechnung 2024-114</text>
+    <text x="618" y="215" fill="#6b7386" font-size="11">buchhaltung@stadtwerke.de</text>
+    <text x="1138" y="196" fill="#6b7386" font-size="11" text-anchor="end">14.02.2024</text>
+    <text x="1138" y="215" fill="#6b7386" font-size="10.5" text-anchor="end">42 KB</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M1058 187v7a4 4 0 0 0 8 0v-9a2.6 2.6 0 0 0-5.2 0v9" stroke-linecap="round"/></g>
+    <text x="618" y="256" fill="#9aa2b5" font-size="12.5">Re: Angebot Küche</text>
+    <text x="618" y="275" fill="#6b7386" font-size="11">info@tischlerei-lang.de</text>
+    <text x="1138" y="256" fill="#6b7386" font-size="11" text-anchor="end">13.02.2024</text>
+    <text x="1138" y="275" fill="#6b7386" font-size="10.5" text-anchor="end">18 KB</text>
+    <text x="618" y="316" fill="#9aa2b5" font-size="12.5">Ihre Bestellung ist unterwegs</text>
+    <text x="618" y="335" fill="#6b7386" font-size="11">versand@shop.example</text>
+    <text x="1138" y="316" fill="#6b7386" font-size="11" text-anchor="end">12.02.2024</text>
+    <text x="1138" y="335" fill="#6b7386" font-size="10.5" text-anchor="end">96 KB</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M1058 307v7a4 4 0 0 0 8 0v-9a2.6 2.6 0 0 0-5.2 0v9" stroke-linecap="round"/></g>
+    <text x="618" y="376" fill="#9aa2b5" font-size="12.5">Terminbestätigung Zahnarzt</text>
+    <text x="618" y="395" fill="#6b7386" font-size="11">praxis@dr-mueller.de</text>
+    <text x="1138" y="376" fill="#6b7386" font-size="11" text-anchor="end">11.02.2024</text>
+    <text x="1138" y="395" fill="#6b7386" font-size="10.5" text-anchor="end">9 KB</text>
+    <text x="618" y="436" fill="#9aa2b5" font-size="12.5">Newsletter Februar</text>
+    <text x="618" y="455" fill="#6b7386" font-size="11">news@verein.example</text>
+    <text x="1138" y="436" fill="#6b7386" font-size="11" text-anchor="end">09.02.2024</text>
+    <text x="1138" y="455" fill="#6b7386" font-size="10.5" text-anchor="end">212 KB</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M1058 427v7a4 4 0 0 0 8 0v-9a2.6 2.6 0 0 0-5.2 0v9" stroke-linecap="round"/></g>
+    <text x="618" y="496" fill="#9aa2b5" font-size="12.5">Grüße aus München</text>
+    <text x="618" y="515" fill="#6b7386" font-size="11">familie@example.com</text>
+    <text x="1138" y="496" fill="#6b7386" font-size="11" text-anchor="end">07.02.2024</text>
+    <text x="1138" y="515" fill="#6b7386" font-size="10.5" text-anchor="end">7 KB</text>
+    <text x="618" y="556" fill="#9aa2b5" font-size="12.5">Vertragsunterlagen</text>
+    <text x="618" y="575" fill="#6b7386" font-size="11">service@versicherung.de</text>
+    <text x="1138" y="556" fill="#6b7386" font-size="11" text-anchor="end">05.02.2024</text>
+    <text x="1138" y="575" fill="#6b7386" font-size="10.5" text-anchor="end">1,2 MB</text>
+    <g stroke="#6b7386" stroke-width="1.4" fill="none"><path d="M1058 547v7a4 4 0 0 0 8 0v-9a2.6 2.6 0 0 0-5.2 0v9" stroke-linecap="round"/></g>
+    <text x="618" y="616" fill="#9aa2b5" font-size="12.5">Passwort geändert</text>
+    <text x="618" y="635" fill="#6b7386" font-size="11">noreply@konto.example</text>
+    <text x="1138" y="616" fill="#6b7386" font-size="11" text-anchor="end">03.02.2024</text>
+    <text x="1138" y="635" fill="#6b7386" font-size="10.5" text-anchor="end">6 KB</text>
+  </g>
+</svg>

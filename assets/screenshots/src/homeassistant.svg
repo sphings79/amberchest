@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver Home Assistant screen with the MQTT settings">
+  <title>Mail Archiver — Home Assistant</title>
+  <desc>The Home Assistant screen: MQTT broker, topics, switches for discovery and commands, and the pointer to the integration.</desc>
+
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+
+    <!-- title bar -->
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a" stroke-width="1"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- sidebar -->
+    <rect x="0" y="44" width="228" height="676" fill="#151821"/>
+    <line x1="228" y1="44" x2="228" y2="720" stroke="#262c3a" stroke-width="1"/>
+
+    <rect x="18" y="66" width="36" height="36" rx="11" fill="url(#accent)"/>
+    <g stroke="#fff" stroke-width="1.7" fill="none">
+      <rect x="27" y="76" width="18" height="14" rx="2.5"/>
+      <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="64" y="82" fill="#e8eaf0" font-size="13" font-weight="600">Mail Archiver</text>
+    <text x="64" y="96" fill="#6b7386" font-size="9.5">The Mail Backup Solution</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="135" width="7" height="7" rx="1.5"/><rect x="37" y="135" width="7" height="7" rx="1.5"/>
+      <rect x="26" y="146" width="7" height="7" rx="1.5"/><rect x="37" y="146" width="7" height="7" rx="1.5"/>
+    </g>
+    <text x="56" y="149" fill="#9aa2b5" font-size="12.5">Übersicht</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="179" width="18" height="14" rx="2.5"/>
+      <path d="M26 182.5 35 188 44 182.5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="191" fill="#9aa2b5" font-size="12.5">Konten</text>
+    <text x="200" y="191" fill="#6b7386" font-size="11" text-anchor="end">2</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 222h6l2 2.5h8" /><rect x="27" y="222" width="16" height="12" rx="2.5"/>
+      <path d="M31 228h8M31 231h5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="233" fill="#9aa2b5" font-size="12.5">Postfach</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="34" cy="269" r="6"/><path d="M38.5 273.5 43 278" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="275" fill="#9aa2b5" font-size="12.5">Suche</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="35" cy="312" r="3.4"/><circle cx="35" cy="312" r="8"/>
+    </g>
+    <text x="56" y="317" fill="#9aa2b5" font-size="12.5">Einstellungen</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="350" width="16" height="12" rx="3.5"/>
+      <path d="M35 346v4" stroke-linecap="round"/><circle cx="35" cy="346" r="1.4" fill="#9aa2b5"/>
+      <circle cx="32" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="38" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+    </g>
+    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
+    <rect x="12" y="378" width="204" height="36" rx="11" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none">
+      <path d="M27 396 35 389 43 396" stroke-linejoin="round"/>
+      <path d="M29.5 395v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 399.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="401" fill="#7c5cff" font-size="12.5" font-weight="500">Home Assistant</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="430" width="15" height="17" rx="2"/>
+      <path d="M31 435h7M31 439h7M31 443h4" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="443" fill="#9aa2b5" font-size="12.5">Protokoll</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>
+    </g>
+    <text x="56" y="582" fill="#6b7386" font-size="12">Stern auf GitHub</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M28 601h11v7a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z"/>
+      <path d="M39 603h2.5a2.5 2.5 0 0 1 0 5H39"/>
+    </g>
+    <text x="56" y="614" fill="#6b7386" font-size="12">Kaffee spendieren</text>
+
+    <rect x="12" y="630" width="204" height="44" rx="11" fill="#11141b" stroke="#262c3a"/>
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <rect x="26" y="644" width="16" height="11" rx="2"/><path d="M30 659h8"/>
+    </g>
+    <text x="52" y="648" fill="#6b7386" font-size="8.5" letter-spacing="0.7">VERBINDUNG</text>
+    <text x="52" y="663" fill="#9aa2b5" font-size="12">Dieser Rechner</text>
+    <path d="M203 648l4-4 4 4M203 658l4 4 4-4" stroke="#6b7386" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <g stroke="#6b7386" stroke-width="1.6" fill="none">
+      <rect x="28" y="683" width="13" height="9" rx="2"/>
+      <path d="M31 683v-3a3.5 3.5 0 0 1 7 0v3"/>
+    </g>
+    <text x="56" y="692" fill="#6b7386" font-size="12.5">Sperren</text>
+    <text x="268" y="96" fill="#e8eaf0" font-size="20" font-weight="600">Home Assistant</text>
+    <rect x="268" y="126" width="720" height="540" rx="14" fill="#151821" stroke="#262c3a"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none"><path d="M292 160a12 12 0 0 1 16 0M296 165a7 7 0 0 1 8 0" stroke-linecap="round"/><circle cx="300" cy="170" r="1.6" fill="#7c5cff" stroke="none"/></g>
+    <text x="320" y="166" fill="#e8eaf0" font-size="13.5" font-weight="600">MQTT-Anbindung</text>
+    <rect x="440" y="152" width="86" height="20" rx="10" fill="#12291f"/>
+    <text x="483" y="166" fill="#3ddc97" font-size="10.5" font-weight="500" text-anchor="middle">verbunden</text>
+    <text x="292" y="194" fill="#6b7386" font-size="11.5">Veröffentlicht den Zustand jedes Kontos auf einem MQTT-Broker. Home Assistant legt die</text>
+    <text x="292" y="212" fill="#6b7386" font-size="11.5">Entitäten per Discovery selbst an - Nachrichten, Archivgröße, letzte Sicherung und einen Knopf.</text>
+    <rect x="292" y="232" width="30" height="18" rx="9" fill="#7c5cff"/>
+    <circle cx="313" cy="241" r="6.5" fill="#fff"/>
+    <text x="334" y="245" fill="#9aa2b5" font-size="12.5">MQTT aktivieren</text>
+    <text x="292" y="274" fill="#6b7386" font-size="9.5" letter-spacing="0.6">BROKER</text>
+    <rect x="292" y="282" width="672" height="34" rx="10" fill="#11141b" stroke="#262c3a"/>
+    <text x="306" y="304" fill="#e8eaf0" font-size="12">mqtt://192.168.1.10:1883</text>
+    <text x="292" y="334" fill="#6b7386" font-size="9.5" letter-spacing="0.6">BENUTZER</text>
+    <rect x="292" y="342" width="328" height="34" rx="10" fill="#11141b" stroke="#262c3a"/>
+    <text x="306" y="364" fill="#e8eaf0" font-size="12">mailarchiver</text>
+    <text x="636" y="334" fill="#6b7386" font-size="9.5" letter-spacing="0.6">PASSWORT</text>
+    <rect x="636" y="342" width="328" height="34" rx="10" fill="#11141b" stroke="#262c3a"/>
+    <text x="650" y="364" fill="#e8eaf0" font-size="12">••••••••••</text>
+    <text x="292" y="394" fill="#6b7386" font-size="9.5" letter-spacing="0.6">BASIS-TOPIC</text>
+    <rect x="292" y="402" width="328" height="34" rx="10" fill="#11141b" stroke="#262c3a"/>
+    <text x="306" y="424" fill="#e8eaf0" font-size="12">mailarchiver</text>
+    <text x="636" y="394" fill="#6b7386" font-size="9.5" letter-spacing="0.6">SENDEINTERVALL</text>
+    <rect x="636" y="402" width="328" height="34" rx="10" fill="#11141b" stroke="#262c3a"/>
+    <text x="650" y="424" fill="#e8eaf0" font-size="12">1 min</text>
+    <rect x="292" y="454" width="672" height="96" rx="12" fill="#11141b" stroke="none"/>
+    <text x="310" y="476" fill="#6b7386" font-size="9.5" letter-spacing="0.6">Topics</text>
+    <text x="310" y="494" fill="#9aa2b5" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">mailarchiver/status</text>
+    <text x="310" y="509" fill="#9aa2b5" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">mailarchiver/state</text>
+    <text x="310" y="524" fill="#9aa2b5" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">mailarchiver/account/privat/state</text>
+    <text x="310" y="539" fill="#9aa2b5" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">mailarchiver/account/privat/set</text>
+    <rect x="292" y="566" width="30" height="18" rx="9" fill="#7c5cff"/>
+    <circle cx="313" cy="575" r="6.5" fill="#fff"/>
+    <text x="334" y="579" fill="#9aa2b5" font-size="12.5">Home-Assistant-Discovery senden</text>
+    <rect x="636" y="566" width="30" height="18" rx="9" fill="#7c5cff"/>
+    <circle cx="657" cy="575" r="6.5" fill="#fff"/>
+    <text x="678" y="579" fill="#9aa2b5" font-size="12.5">Befehle annehmen (Sichern per Knopf)</text>
+    <rect x="292" y="596" width="30" height="18" rx="9" fill="#7c5cff"/>
+    <circle cx="313" cy="605" r="6.5" fill="#fff"/>
+    <text x="334" y="609" fill="#9aa2b5" font-size="12.5">Nachrichten behalten (retained)</text>
+    <rect x="636" y="596" width="30" height="18" rx="9" fill="#2a2f3d"/>
+    <circle cx="645" cy="605" r="6.5" fill="#fff"/>
+    <text x="678" y="609" fill="#9aa2b5" font-size="12.5">Selbstsigniertes Zertifikat akzeptieren</text>
+    <rect x="292" y="622" width="156" height="34" rx="11" fill="#181c26" stroke="#262c3a"/>
+    <text x="308" y="644" fill="#9aa2b5" font-size="12.5" font-weight="500">Neu verbinden</text>
+    <rect x="464" y="622" width="136" height="34" rx="11" fill="#181c26" stroke="#262c3a"/>
+    <text x="480" y="644" fill="#9aa2b5" font-size="12.5" font-weight="500">Jetzt senden</text>
+    <text x="964" y="644" fill="#6b7386" font-size="11" text-anchor="end">zuletzt gesendet 21:34</text>
+    <rect x="1008" y="126" width="158" height="344" rx="14" fill="#151821" stroke="#262c3a"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none"><path d="M1030 168l14-12 14 12" stroke-linejoin="round"/><path d="M1034 166v14h20v-14" stroke-linejoin="round"/></g>
+    <text x="1087" y="206" fill="#e8eaf0" font-size="12.5" font-weight="600" text-anchor="middle">Home-Assistant-</text>
+    <text x="1087" y="222" fill="#e8eaf0" font-size="12.5" font-weight="600" text-anchor="middle">Integration</text>
+    <text x="1087" y="250" fill="#6b7386" font-size="11" text-anchor="middle">Eigene Integration</text>
+    <text x="1087" y="266" fill="#6b7386" font-size="11" text-anchor="middle">über HACS, mit</text>
+    <text x="1087" y="282" fill="#6b7386" font-size="11" text-anchor="middle">Lovelace-Karte und</text>
+    <text x="1087" y="298" fill="#6b7386" font-size="11" text-anchor="middle">ohne Broker.</text>
+    <text x="1087" y="330" fill="#7c5cff" font-size="11" text-anchor="middle">Integration auf GitHub</text>
+  </g>
+</svg>

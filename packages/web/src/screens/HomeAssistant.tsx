@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
 import { Badge, Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
-import { HA_INTEGRATION_URL } from '../constants.js';
+import { HA_ADDON_URL, HA_INTEGRATION_URL } from '../constants.js';
 import { useApp } from '../state.js';
 
 type Mqtt = AppSettings['mqtt'];
@@ -252,6 +252,20 @@ export function HomeAssistant(): ReactNode {
         >
           <ExternalLink size={14} />
           {t('ha.integrationLink')}
+        </a>
+
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          {t('ha.addonHint')}
+        </p>
+        <a
+          href={HA_ADDON_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 self-start text-xs"
+          style={{ color: 'var(--accent)' }}
+        >
+          <ExternalLink size={14} />
+          {t('ha.addonLink')}
         </a>
       </Card>
     </div>

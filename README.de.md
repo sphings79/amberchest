@@ -39,25 +39,49 @@ genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 
 <div align="center">
 
-<img src="assets/screenshots/overview-dark.svg" width="880" alt="Übersicht mit Gesamtzahlen, Kontostatus und den letzten Sicherungen">
+<em>Jedes Bild zeigt beide Erscheinungsbilder: links dunkel, rechts hell, entlang eines Risses getrennt.</em>
+
+<br><br>
+
+<img src="assets/screenshots/overview.svg" width="880" alt="Übersicht mit Gesamtzahlen, Kontostatus und den letzten Sicherungen, dunkel und hell nebeneinander">
 
 <em>Übersicht — wie viel gesichert ist, was gerade läuft, was letzte Nacht passiert ist.</em>
 
 <br><br>
 
-<img src="assets/screenshots/folders-dark.svg" width="880" alt="Ordnerauswahl mit Checkboxen, gemerkter Auswahl und hervorgehobenen neuen Ordnern">
+<img src="assets/screenshots/browser.svg" width="880" alt="Postfach-Browser mit Konten und Ordnerbaum links und der Nachrichtenliste rechts, dunkel und hell nebeneinander">
+
+<em>Postfach — links Konten und Ordner wie im Explorer, rechts die Mails des gewählten Ordners.</em>
+
+<br><br>
+
+<img src="assets/screenshots/search.svg" width="880" alt="Suche mit geöffneten Filtern für Feld, Absender, Empfänger, Datum, Größe und Sortierung, dunkel und hell nebeneinander">
+
+<em>Suche — Volltext über Betreff, Text und Anhangsinhalte, mit Filtern für Feld,
+Absender, Empfänger, Zeitraum, Größe, Lesestatus und Sortierung.</em>
+
+<br><br>
+
+<img src="assets/screenshots/homeassistant.svg" width="880" alt="Home-Assistant-Seite mit MQTT-Broker, Topics und Schaltern für Discovery und Befehle, dunkel und hell nebeneinander">
+
+<em>Home Assistant — MQTT-Broker eintragen, fertig: die Entitäten entstehen per
+Discovery, das Konto steckt im Topic.</em>
+
+<br><br>
+
+<img src="assets/screenshots/folders.svg" width="880" alt="Ordnerauswahl mit Checkboxen, gemerkter Auswahl und hervorgehobenen neuen Ordnern, dunkel und hell nebeneinander">
 
 <em>Ordnerauswahl — deine Auswahl wird gemerkt, neue Ordner werden hervorgehoben.</em>
 
 <br><br>
 
-<img src="assets/screenshots/setup-dark.svg" width="880" alt="Erster Start mit der Wahl des Master-Passworts">
+<img src="assets/screenshots/setup.svg" width="880" alt="Erster Start mit der Wahl des Master-Passworts, dunkel und hell nebeneinander">
 
 <em>Erster Start — ein Master-Passwort verschlüsselt alle Zugangsdaten, die später dazukommen.</em>
 
 <br><br>
 
-<img src="assets/screenshots/account-dark.svg" width="880" alt="Kontodialog mit Serverdaten und ausgeklappten erweiterten Einstellungen">
+<img src="assets/screenshots/account.svg" width="880" alt="Kontodialog mit Serverdaten und ausgeklappten erweiterten Einstellungen, dunkel und hell nebeneinander">
 
 <em>Konto einrichten — Verbindungstest, und unter „Erweitert“ alles Wichtige:
 Stapelgröße, Pause zwischen Abrufen, Datumsfilter und der Umgang mit
@@ -65,7 +89,7 @@ serverseitig gelöschten Mails.</em>
 
 <br><br>
 
-<img src="assets/screenshots/settings-dark.svg" width="880" alt="Einstellungen mit Archivordner, Sprache, Erscheinungsbild und Akzentfarben">
+<img src="assets/screenshots/settings.svg" width="880" alt="Einstellungen mit Archivordner, Sprache, Erscheinungsbild und Akzentfarben, dunkel und hell nebeneinander">
 
 <em>Einstellungen — Archivordner, Sprache, hell/dunkel, Akzentfarbe und der Weg
 zur Docker-Anleitung.</em>
@@ -298,6 +322,15 @@ automation:
         data:
           message: "Die Mail-Sicherung ist fehlgeschlagen: {{ trigger.payload_json.last_error }}"
 ```
+
+### Integration und Home Assistant App
+
+Zwei Begleitprojekte gehen über MQTT hinaus:
+
+| Projekt | Was es ist |
+| --- | --- |
+| [Mail Archiver Integration](https://github.com/sphings79/mail-archiver-home-assistant) | Eine echte Home-Assistant-Integration, installierbar über HACS. Spricht direkt mit dieser Instanz, bringt eine eigene Lovelace-Karte mit und braucht keinen MQTT-Broker. |
+| [Home Assistant App (Addon)](https://github.com/sphings79/mail-archiver-ha-app) | Betreibt Mail Archiver als Add-on unter Home Assistant OS. Erscheint per Ingress in der Seitenleiste und damit auch in der Home-Assistant-App auf dem Handy. |
 
 ## Auf dem Handy
 

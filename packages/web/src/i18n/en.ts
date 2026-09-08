@@ -169,6 +169,9 @@ export const en: Translations = {
     integrationHint:
       'There is also a dedicated Home Assistant integration, installable through HACS. It talks to this instance directly, brings its own Lovelace card and needs no MQTT broker.',
     integrationLink: 'Integration on GitHub',
+    addonHint:
+      'And as the Home Assistant App (add-on), Mail Archiver runs on Home Assistant OS itself - in the sidebar through ingress, which means inside the Home Assistant app on your phone too.',
+    addonLink: 'Home Assistant App on GitHub',
   },
   search: {
     title: 'Search',

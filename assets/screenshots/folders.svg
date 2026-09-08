@@ -1,0 +1,323 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver folder selection dialog">
+  <title>Mail Archiver — Folder selection</title>
+  <desc>The folder picker with checkboxes, remembered selection, special use icons and newly appeared folders highlighted.</desc>
+
+  <defs>
+    <linearGradient id="accent2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <filter id="soft2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="26" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="round2">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+      <clipPath id="tear-dark"><path d="M0 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L0 720 Z"/></clipPath>
+    <clipPath id="tear-light"><path d="M1200 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L1200 720 Z"/></clipPath>
+</defs>
+
+  <g clip-path="url(#round2)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <g clip-path="url(#tear-dark)">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+
+    <!-- dimmed application behind the dialog -->
+    <rect x="0" y="44" width="228" height="676" fill="#151821" opacity="0.6"/>
+    <rect x="268" y="80" width="300" height="20" rx="6" fill="#1b1f2a" opacity="0.6"/>
+    <rect x="268" y="126" width="898" height="90" rx="14" fill="#151821" opacity="0.5"/>
+    <rect x="268" y="232" width="898" height="90" rx="14" fill="#151821" opacity="0.5"/>
+    <rect x="0" y="0" width="1200" height="720" fill="#000" opacity="0.45"/>
+
+    <!-- dialog -->
+    <rect x="230" y="60" width="740" height="600" rx="16" fill="#151821" stroke="#262c3a" filter="url(#soft2)"/>
+    <line x1="230" y1="112" x2="970" y2="112" stroke="#262c3a"/>
+    <text x="256" y="93" fill="#e8eaf0" font-size="15" font-weight="600">Ordner auswählen - Privat</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" stroke-linecap="round">
+      <path d="M934 81l12 12M946 81l-12 12"/>
+    </g>
+
+    <text x="256" y="140" fill="#9aa2b5" font-size="11.5">Diese Auswahl wird gespeichert und beim nächsten Mal wieder angezeigt.</text>
+    <text x="812" y="140" fill="#9aa2b5" font-size="11.5">Alle</text>
+    <text x="862" y="140" fill="#9aa2b5" font-size="11.5">Keine</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M925 132a7 7 0 1 1-2 5" stroke-linecap="round"/>
+      <path d="M918 130v6h6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <rect x="256" y="156" width="688" height="404" rx="14" fill="#151821" stroke="#262c3a"/>
+
+    <!-- rows -->
+    <g font-size="12.5">
+      <!-- INBOX -->
+      <g>
+        <path d="M276 182l5 5-5 5" stroke="#6b7386" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g stroke="#9aa2b5" stroke-width="1.5" fill="none">
+          <path d="M320 181h13v10h-13z"/>
+          <path d="M320 187h4l1 2h3l1-2h4" stroke-linejoin="round"/>
+        </g>
+        <text x="344" y="192" fill="#e8eaf0">INBOX</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">12.480</text>
+      </g>
+
+      <!-- Projekte -->
+      <g transform="translate(0,34)">
+        <path d="M276 182l5 5-5 5" stroke="#6b7386" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#e8eaf0">Projekte</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">2.106</text>
+      </g>
+
+      <!-- Projekte/Rechnungen -->
+      <g transform="translate(18,68)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#e8eaf0">Rechnungen</text>
+        <text x="902" y="192" fill="#6b7386" font-size="11" text-anchor="end">843</text>
+      </g>
+
+      <!-- Projekte/Angebote & Verträge - new -->
+      <g transform="translate(18,102)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#343b4d" stroke-width="1.4"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#7c5cff" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#7c5cff">Angebote &amp; Verträge</text>
+        <rect x="486" y="180" width="34" height="15" rx="7.5" fill="#221d3d"/>
+        <text x="503" y="191" fill="#7c5cff" font-size="9.5" font-weight="500" text-anchor="middle">neu</text>
+        <text x="902" y="192" fill="#6b7386" font-size="11" text-anchor="end">31</text>
+      </g>
+
+      <!-- Gesendet -->
+      <g transform="translate(0,136)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M333 181l-13 6 5 2 2 5z" stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#e8eaf0">Gesendete Objekte</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">8.902</text>
+      </g>
+
+      <!-- Archiv -->
+      <g transform="translate(0,170)">
+        <path d="M276 182l5 5-5 5" stroke="#6b7386" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g stroke="#9aa2b5" stroke-width="1.5" fill="none">
+          <rect x="320" y="181" width="13" height="4" rx="1"/>
+          <path d="M321.5 185v7h10v-7M325 188h4"/>
+        </g>
+        <text x="344" y="192" fill="#e8eaf0">Archiv</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">24.117</text>
+      </g>
+
+      <!-- Archiv/2024 -->
+      <g transform="translate(18,204)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#e8eaf0">2024</text>
+        <text x="902" y="192" fill="#6b7386" font-size="11" text-anchor="end">9.640</text>
+      </g>
+
+      <!-- Entwürfe - unchecked special use -->
+      <g transform="translate(0,238)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#343b4d" stroke-width="1.4"/>
+        <g stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linejoin="round">
+          <path d="M320 190v3h3l9-9-3-3-9 9z"/>
+        </g>
+        <text x="344" y="192" fill="#e8eaf0">Entwürfe</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">14</text>
+      </g>
+
+      <!-- Papierkorb - unchecked -->
+      <g transform="translate(0,272)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#343b4d" stroke-width="1.4"/>
+        <g stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M319 183h15M322 183v-2h9v2M321 185l1 9h9l1-9"/>
+        </g>
+        <text x="344" y="192" fill="#e8eaf0">Papierkorb</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">327</text>
+      </g>
+
+      <!-- Spam - unchecked -->
+      <g transform="translate(0,306)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#343b4d" stroke-width="1.4"/>
+        <g stroke="#9aa2b5" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M326.5 180.5l6.5 3v5c0 3.5-3 5.5-6.5 6.5-3.5-1-6.5-3-6.5-6.5v-5z"/>
+          <path d="M326.5 185v3.5M326.5 191v.5"/>
+        </g>
+        <text x="344" y="192" fill="#e8eaf0">Spam</text>
+        <text x="920" y="192" fill="#6b7386" font-size="11" text-anchor="end">1.204</text>
+      </g>
+    </g>
+
+    <!-- footer -->
+    <line x1="230" y1="600" x2="970" y2="600" stroke="#262c3a"/>
+    <text x="256" y="634" fill="#6b7386" font-size="11.5">6 von 9 ausgewählt</text>
+    <text x="580" y="634" fill="#9aa2b5" font-size="12.5">Zurück</text>
+    <rect x="638" y="616" width="140" height="34" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <text x="708" y="637" fill="#e8eaf0" font-size="12.5" text-anchor="middle">Auswahl speichern</text>
+    <rect x="790" y="616" width="154" height="34" rx="11" fill="url(#accent2)"/>
+    <text x="867" y="637" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Speichern und sichern</text>
+  </g>
+    <g clip-path="url(#tear-light)">
+    <rect width="1200" height="720" fill="#f3f5fa"/>
+    <rect width="1200" height="44" fill="#ffffff"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#dde2ee"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#4b5568" font-size="12.5" font-weight="500">Mail Archiver</text>
+
+    <!-- dimmed application behind the dialog -->
+    <rect x="0" y="44" width="228" height="676" fill="#ffffff" opacity="0.6"/>
+    <rect x="268" y="80" width="300" height="20" rx="6" fill="#f6f8fc" opacity="0.6"/>
+    <rect x="268" y="126" width="898" height="90" rx="14" fill="#ffffff" opacity="0.5"/>
+    <rect x="268" y="232" width="898" height="90" rx="14" fill="#ffffff" opacity="0.5"/>
+    <rect x="0" y="0" width="1200" height="720" fill="#000" opacity="0.45"/>
+
+    <!-- dialog -->
+    <rect x="230" y="60" width="740" height="600" rx="16" fill="#ffffff" stroke="#dde2ee" filter="url(#soft2)"/>
+    <line x1="230" y1="112" x2="970" y2="112" stroke="#dde2ee"/>
+    <text x="256" y="93" fill="#131722" font-size="15" font-weight="600">Ordner auswählen - Privat</text>
+    <g stroke="#4b5568" stroke-width="1.6" stroke-linecap="round">
+      <path d="M934 81l12 12M946 81l-12 12"/>
+    </g>
+
+    <text x="256" y="140" fill="#4b5568" font-size="11.5">Diese Auswahl wird gespeichert und beim nächsten Mal wieder angezeigt.</text>
+    <text x="812" y="140" fill="#4b5568" font-size="11.5">Alle</text>
+    <text x="862" y="140" fill="#4b5568" font-size="11.5">Keine</text>
+    <g stroke="#4b5568" stroke-width="1.6" fill="none">
+      <path d="M925 132a7 7 0 1 1-2 5" stroke-linecap="round"/>
+      <path d="M918 130v6h6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <rect x="256" y="156" width="688" height="404" rx="14" fill="#ffffff" stroke="#dde2ee"/>
+
+    <!-- rows -->
+    <g font-size="12.5">
+      <!-- INBOX -->
+      <g>
+        <path d="M276 182l5 5-5 5" stroke="#7a8397" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g stroke="#4b5568" stroke-width="1.5" fill="none">
+          <path d="M320 181h13v10h-13z"/>
+          <path d="M320 187h4l1 2h3l1-2h4" stroke-linejoin="round"/>
+        </g>
+        <text x="344" y="192" fill="#131722">INBOX</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">12.480</text>
+      </g>
+
+      <!-- Projekte -->
+      <g transform="translate(0,34)">
+        <path d="M276 182l5 5-5 5" stroke="#7a8397" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#131722">Projekte</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">2.106</text>
+      </g>
+
+      <!-- Projekte/Rechnungen -->
+      <g transform="translate(18,68)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#131722">Rechnungen</text>
+        <text x="902" y="192" fill="#7a8397" font-size="11" text-anchor="end">843</text>
+      </g>
+
+      <!-- Projekte/Angebote & Verträge - new -->
+      <g transform="translate(18,102)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#c8cfdd" stroke-width="1.4"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#7c5cff" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#7c5cff">Angebote &amp; Verträge</text>
+        <rect x="486" y="180" width="34" height="15" rx="7.5" fill="#ede9ff"/>
+        <text x="503" y="191" fill="#7c5cff" font-size="9.5" font-weight="500" text-anchor="middle">neu</text>
+        <text x="902" y="192" fill="#7a8397" font-size="11" text-anchor="end">31</text>
+      </g>
+
+      <!-- Gesendet -->
+      <g transform="translate(0,136)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M333 181l-13 6 5 2 2 5z" stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#131722">Gesendete Objekte</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">8.902</text>
+      </g>
+
+      <!-- Archiv -->
+      <g transform="translate(0,170)">
+        <path d="M276 182l5 5-5 5" stroke="#7a8397" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 278.5 187)"/>
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g stroke="#4b5568" stroke-width="1.5" fill="none">
+          <rect x="320" y="181" width="13" height="4" rx="1"/>
+          <path d="M321.5 185v7h10v-7M325 188h4"/>
+        </g>
+        <text x="344" y="192" fill="#131722">Archiv</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">24.117</text>
+      </g>
+
+      <!-- Archiv/2024 -->
+      <g transform="translate(18,204)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="#7c5cff"/>
+        <path d="M296.5 187.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M320 183h5l2 2.5h6v8h-13z" stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="344" y="192" fill="#131722">2024</text>
+        <text x="902" y="192" fill="#7a8397" font-size="11" text-anchor="end">9.640</text>
+      </g>
+
+      <!-- Entwürfe - unchecked special use -->
+      <g transform="translate(0,238)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#c8cfdd" stroke-width="1.4"/>
+        <g stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linejoin="round">
+          <path d="M320 190v3h3l9-9-3-3-9 9z"/>
+        </g>
+        <text x="344" y="192" fill="#131722">Entwürfe</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">14</text>
+      </g>
+
+      <!-- Papierkorb - unchecked -->
+      <g transform="translate(0,272)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#c8cfdd" stroke-width="1.4"/>
+        <g stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M319 183h15M322 183v-2h9v2M321 185l1 9h9l1-9"/>
+        </g>
+        <text x="344" y="192" fill="#131722">Papierkorb</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">327</text>
+      </g>
+
+      <!-- Spam - unchecked -->
+      <g transform="translate(0,306)">
+        <rect x="292" y="179" width="17" height="17" rx="5" fill="none" stroke="#c8cfdd" stroke-width="1.4"/>
+        <g stroke="#4b5568" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M326.5 180.5l6.5 3v5c0 3.5-3 5.5-6.5 6.5-3.5-1-6.5-3-6.5-6.5v-5z"/>
+          <path d="M326.5 185v3.5M326.5 191v.5"/>
+        </g>
+        <text x="344" y="192" fill="#131722">Spam</text>
+        <text x="920" y="192" fill="#7a8397" font-size="11" text-anchor="end">1.204</text>
+      </g>
+    </g>
+
+    <!-- footer -->
+    <line x1="230" y1="600" x2="970" y2="600" stroke="#dde2ee"/>
+    <text x="256" y="634" fill="#7a8397" font-size="11.5">6 von 9 ausgewählt</text>
+    <text x="580" y="634" fill="#4b5568" font-size="12.5">Zurück</text>
+    <rect x="638" y="616" width="140" height="34" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <text x="708" y="637" fill="#131722" font-size="12.5" text-anchor="middle">Auswahl speichern</text>
+    <rect x="790" y="616" width="154" height="34" rx="11" fill="url(#accent2)"/>
+    <text x="867" y="637" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Speichern und sichern</text>
+  </g>
+    <path d="M720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720" fill="none" stroke="#7c5cff" stroke-width="2" stroke-opacity="0.75" stroke-linejoin="round"/>
+</g>
+</svg>

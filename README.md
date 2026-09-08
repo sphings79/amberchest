@@ -38,25 +38,49 @@ that exists precisely so a client can read a message without touching its
 
 <div align="center">
 
-<img src="assets/screenshots/overview-dark.svg" width="880" alt="Overview screen with aggregate numbers, account status and recent backups">
+<em>Every picture shows both looks: dark on the left, light on the right, torn apart down the middle.</em>
+
+<br><br>
+
+<img src="assets/screenshots/overview.svg" width="880" alt="Overview screen with aggregate numbers, account status and recent backups, dark and light side by side">
 
 <em>Overview — how much is archived, what is running, what happened last night.</em>
 
 <br><br>
 
-<img src="assets/screenshots/folders-dark.svg" width="880" alt="Folder selection dialog with checkboxes, remembered selection and new folders highlighted">
+<img src="assets/screenshots/browser.svg" width="880" alt="Mailbox browser with accounts and the folder tree on the left and the message list on the right, dark and light side by side">
+
+<em>Mailbox — accounts and folders on the left like a file manager, the messages of the selected folder on the right.</em>
+
+<br><br>
+
+<img src="assets/screenshots/search.svg" width="880" alt="Search screen with the filters open for field, sender, recipient, dates, size and sort order, dark and light side by side">
+
+<em>Search — full text over subject, body and attachment content, with filters for
+field, sender, recipient, date range, size, read state and sort order.</em>
+
+<br><br>
+
+<img src="assets/screenshots/homeassistant.svg" width="880" alt="Home Assistant screen with the MQTT broker, topics and the switches for discovery and commands, dark and light side by side">
+
+<em>Home Assistant — enter the MQTT broker and you are done: the entities appear
+through discovery, with the account in the topic.</em>
+
+<br><br>
+
+<img src="assets/screenshots/folders.svg" width="880" alt="Folder selection dialog with checkboxes, remembered selection and new folders highlighted, dark and light side by side">
 
 <em>Folder selection — your choice is remembered, new folders are highlighted.</em>
 
 <br><br>
 
-<img src="assets/screenshots/setup-dark.svg" width="880" alt="First run screen where the master password is chosen">
+<img src="assets/screenshots/setup.svg" width="880" alt="First run screen where the master password is chosen, dark and light side by side">
 
 <em>First run — one master password encrypts every credential you enter later.</em>
 
 <br><br>
 
-<img src="assets/screenshots/account-dark.svg" width="880" alt="Account dialog with server details and the advanced options expanded">
+<img src="assets/screenshots/account.svg" width="880" alt="Account dialog with server details and the advanced options expanded, dark and light side by side">
 
 <em>Account setup — connection test, and everything that matters under “Advanced”:
 batch size, pause between fetches, date filter and what happens to mail deleted
@@ -64,7 +88,7 @@ on the server.</em>
 
 <br><br>
 
-<img src="assets/screenshots/settings-dark.svg" width="880" alt="Settings screen with archive folder, language, theme and accent colours">
+<img src="assets/screenshots/settings.svg" width="880" alt="Settings screen with archive folder, language, theme and accent colours, dark and light side by side">
 
 <em>Settings — archive folder, language, light/dark, accent colour, and the way
 to the Docker guide.</em>
@@ -289,6 +313,15 @@ automation:
         data:
           message: "The mail backup failed: {{ trigger.payload_json.last_error }}"
 ```
+
+### Integration and Home Assistant App
+
+Two companion projects go beyond MQTT:
+
+| Project | What it is |
+| --- | --- |
+| [Mail Archiver Integration](https://github.com/sphings79/mail-archiver-home-assistant) | A native Home Assistant integration, installable through HACS. Talks to this instance directly, brings its own Lovelace card, needs no MQTT broker. |
+| [Home Assistant App (Add-on)](https://github.com/sphings79/mail-archiver-ha-app) | Runs Mail Archiver as an add-on on Home Assistant OS. Appears in the sidebar through ingress, so it also works in the Home Assistant app on your phone. |
 
 ## On your phone
 

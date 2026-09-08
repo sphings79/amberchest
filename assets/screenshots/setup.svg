@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver first run, choosing the master password">
+  <title>Mail Archiver — First run</title>
+  <desc>The welcome screen where the master password that encrypts all credentials is chosen.</desc>
+
+  <defs>
+    <linearGradient id="accent3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <filter id="soft3" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <clipPath id="round3">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+      <clipPath id="tear-dark"><path d="M0 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L0 720 Z"/></clipPath>
+    <clipPath id="tear-light"><path d="M1200 0 L720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720 L1200 720 Z"/></clipPath>
+</defs>
+
+  <g clip-path="url(#round3)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <g clip-path="url(#tear-dark)">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- brand block -->
+    <rect x="572" y="120" width="56" height="56" rx="17" fill="url(#accent3)" filter="url(#soft3)"/>
+    <g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="587" y="137" width="26" height="21" rx="4"/>
+      <path d="M587 141.5l13 8.5 13-8.5"/>
+    </g>
+    <text x="600" y="206" fill="#e8eaf0" font-size="19" font-weight="600" text-anchor="middle">Mail Archiver</text>
+    <text x="600" y="226" fill="#6b7386" font-size="12" text-anchor="middle">The Mail Backup Solution</text>
+
+    <!-- card -->
+    <rect x="380" y="262" width="440" height="368" rx="16" fill="#151821" stroke="#262c3a" filter="url(#soft3)"/>
+
+    <rect x="412" y="292" width="36" height="36" rx="11" fill="#221d3d"/>
+    <g fill="none" stroke="#7c5cff" stroke-width="1.7" stroke-linejoin="round">
+      <path d="M430 300l8 3.5v5.5c0 4-3.4 6.4-8 7.6-4.6-1.2-8-3.6-8-7.6v-5.5z"/>
+      <path d="M426.5 309.5l2.4 2.4 4.6-4.8" stroke-linecap="round"/>
+    </g>
+    <text x="462" y="315" fill="#e8eaf0" font-size="13.5" font-weight="600">Willkommen</text>
+
+    <text x="412" y="356" fill="#9aa2b5" font-size="11.5">Lege ein Master-Passwort fest. Damit werden deine</text>
+    <text x="412" y="374" fill="#9aa2b5" font-size="11.5">Zugangsdaten verschlüsselt gespeichert - ohne dieses</text>
+    <text x="412" y="392" fill="#9aa2b5" font-size="11.5">Passwort kommt niemand an die Konten.</text>
+
+    <rect x="412" y="408" width="376" height="34" rx="11" fill="#2f2513"/>
+    <text x="428" y="429" fill="#e0a33f" font-size="11">Es gibt keine Wiederherstellung. Bewahre das Passwort sicher auf.</text>
+
+    <text x="412" y="470" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">MASTER-PASSWORT</text>
+    <rect x="412" y="478" width="376" height="36" rx="11" fill="#1b1f2a" stroke="#7c5cff" stroke-width="1.6"/>
+    <g fill="#9aa2b5">
+      <circle cx="430" cy="496" r="2.6"/><circle cx="440" cy="496" r="2.6"/><circle cx="450" cy="496" r="2.6"/>
+      <circle cx="460" cy="496" r="2.6"/><circle cx="470" cy="496" r="2.6"/><circle cx="480" cy="496" r="2.6"/>
+      <circle cx="490" cy="496" r="2.6"/><circle cx="500" cy="496" r="2.6"/><circle cx="510" cy="496" r="2.6"/>
+      <circle cx="520" cy="496" r="2.6"/><circle cx="530" cy="496" r="2.6"/><circle cx="540" cy="496" r="2.6"/>
+    </g>
+    <rect x="548" y="487" width="1.6" height="18" fill="#7c5cff"/>
+
+    <text x="412" y="546" fill="#9aa2b5" font-size="9.5" letter-spacing="0.6">MASTER-PASSWORT WIEDERHOLEN</text>
+    <rect x="412" y="554" width="376" height="36" rx="11" fill="#1b1f2a" stroke="#262c3a"/>
+    <g fill="#9aa2b5">
+      <circle cx="430" cy="572" r="2.6"/><circle cx="440" cy="572" r="2.6"/><circle cx="450" cy="572" r="2.6"/>
+      <circle cx="460" cy="572" r="2.6"/><circle cx="470" cy="572" r="2.6"/><circle cx="480" cy="572" r="2.6"/>
+      <circle cx="490" cy="572" r="2.6"/><circle cx="500" cy="572" r="2.6"/><circle cx="510" cy="572" r="2.6"/>
+      <circle cx="520" cy="572" r="2.6"/><circle cx="530" cy="572" r="2.6"/><circle cx="540" cy="572" r="2.6"/>
+    </g>
+
+    <rect x="412" y="602" width="376" height="38" rx="12" fill="url(#accent3)"/>
+    <text x="600" y="626" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Konfiguration anlegen</text>
+  </g>
+    <g clip-path="url(#tear-light)">
+    <rect width="1200" height="720" fill="#f3f5fa"/>
+
+    <rect width="1200" height="44" fill="#ffffff"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#dde2ee"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#4b5568" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#7a8397" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- brand block -->
+    <rect x="572" y="120" width="56" height="56" rx="17" fill="url(#accent3)" filter="url(#soft3)"/>
+    <g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="587" y="137" width="26" height="21" rx="4"/>
+      <path d="M587 141.5l13 8.5 13-8.5"/>
+    </g>
+    <text x="600" y="206" fill="#131722" font-size="19" font-weight="600" text-anchor="middle">Mail Archiver</text>
+    <text x="600" y="226" fill="#7a8397" font-size="12" text-anchor="middle">The Mail Backup Solution</text>
+
+    <!-- card -->
+    <rect x="380" y="262" width="440" height="368" rx="16" fill="#ffffff" stroke="#dde2ee" filter="url(#soft3)"/>
+
+    <rect x="412" y="292" width="36" height="36" rx="11" fill="#ede9ff"/>
+    <g fill="none" stroke="#7c5cff" stroke-width="1.7" stroke-linejoin="round">
+      <path d="M430 300l8 3.5v5.5c0 4-3.4 6.4-8 7.6-4.6-1.2-8-3.6-8-7.6v-5.5z"/>
+      <path d="M426.5 309.5l2.4 2.4 4.6-4.8" stroke-linecap="round"/>
+    </g>
+    <text x="462" y="315" fill="#131722" font-size="13.5" font-weight="600">Willkommen</text>
+
+    <text x="412" y="356" fill="#4b5568" font-size="11.5">Lege ein Master-Passwort fest. Damit werden deine</text>
+    <text x="412" y="374" fill="#4b5568" font-size="11.5">Zugangsdaten verschlüsselt gespeichert - ohne dieses</text>
+    <text x="412" y="392" fill="#4b5568" font-size="11.5">Passwort kommt niemand an die Konten.</text>
+
+    <rect x="412" y="408" width="376" height="34" rx="11" fill="#fdf0d8"/>
+    <text x="428" y="429" fill="#a97608" font-size="11">Es gibt keine Wiederherstellung. Bewahre das Passwort sicher auf.</text>
+
+    <text x="412" y="470" fill="#4b5568" font-size="9.5" letter-spacing="0.6">MASTER-PASSWORT</text>
+    <rect x="412" y="478" width="376" height="36" rx="11" fill="#f6f8fc" stroke="#7c5cff" stroke-width="1.6"/>
+    <g fill="#4b5568">
+      <circle cx="430" cy="496" r="2.6"/><circle cx="440" cy="496" r="2.6"/><circle cx="450" cy="496" r="2.6"/>
+      <circle cx="460" cy="496" r="2.6"/><circle cx="470" cy="496" r="2.6"/><circle cx="480" cy="496" r="2.6"/>
+      <circle cx="490" cy="496" r="2.6"/><circle cx="500" cy="496" r="2.6"/><circle cx="510" cy="496" r="2.6"/>
+      <circle cx="520" cy="496" r="2.6"/><circle cx="530" cy="496" r="2.6"/><circle cx="540" cy="496" r="2.6"/>
+    </g>
+    <rect x="548" y="487" width="1.6" height="18" fill="#7c5cff"/>
+
+    <text x="412" y="546" fill="#4b5568" font-size="9.5" letter-spacing="0.6">MASTER-PASSWORT WIEDERHOLEN</text>
+    <rect x="412" y="554" width="376" height="36" rx="11" fill="#f6f8fc" stroke="#dde2ee"/>
+    <g fill="#4b5568">
+      <circle cx="430" cy="572" r="2.6"/><circle cx="440" cy="572" r="2.6"/><circle cx="450" cy="572" r="2.6"/>
+      <circle cx="460" cy="572" r="2.6"/><circle cx="470" cy="572" r="2.6"/><circle cx="480" cy="572" r="2.6"/>
+      <circle cx="490" cy="572" r="2.6"/><circle cx="500" cy="572" r="2.6"/><circle cx="510" cy="572" r="2.6"/>
+      <circle cx="520" cy="572" r="2.6"/><circle cx="530" cy="572" r="2.6"/><circle cx="540" cy="572" r="2.6"/>
+    </g>
+
+    <rect x="412" y="602" width="376" height="38" rx="12" fill="url(#accent3)"/>
+    <text x="600" y="626" fill="#fff" font-size="12.5" font-weight="500" text-anchor="middle">Konfiguration anlegen</text>
+  </g>
+    <path d="M720 0 L720 0 718 18 705 36 708 54 691 72 692 90 682 108 685 126 668 144 667 162 665 180 648 198 651 216 640 234 641 252 627 270 626 288 622 306 609 324 609 342 595 360 596 378 594 396 578 414 577 432 564 450 567 468 563 486 550 504 546 522 544 540 531 558 534 576 517 594 518 612 508 630 511 648 494 666 493 684 491 702 474 720" fill="none" stroke="#7c5cff" stroke-width="2" stroke-opacity="0.75" stroke-linejoin="round"/>
+</g>
+</svg>

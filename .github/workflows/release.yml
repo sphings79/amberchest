@@ -38,6 +38,9 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+      # The main process is not part of the root build, and without it
+      # electron-builder packages an app.asar with no entry point.
+      - run: npm run build --workspace @mail-archiver/desktop
 
       - name: Package
         working-directory: packages/desktop
