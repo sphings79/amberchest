@@ -410,6 +410,81 @@ export class ArchiveDatabase {
       .all(accountId, limit) as Array<Record<string, unknown>>;
   }
 
+  // ------------------------------------------------------------ full text
+
+  /** Message ids of an account that have no text index entry yet. */
+  listUnindexedMessages(accountId: string, limit?: number): MessageRow[] {
+    const sql = `SELECT m.* FROM messages m
+                  LEFT JOIN message_text t ON t.message_id = m.id
+                  WHERE m.account_id = ? AND m.state = 'active' AND t.message_id IS NULL
+                  ORDER BY m.folder_id, m.uid${limit ? ' LIMIT ?' : ''}`;
+    return (limit
+      ? this.db.prepare(sql).all(accountId, limit)
+      : this.db.prepare(sql).all(accountId)) as MessageRow[];
+  }
+
+  upsertMessageText(entry: {
+    messageId: number;
+    accountId: string;
+    subject: string | null;
+    fromAddr: string | null;
+    toAddr: string | null;
+    body: string;
+    attachmentText: string;
+  }): void {
+    this.db
+      .prepare(
+        `INSERT INTO message_text
+           (message_id, account_id, subject, from_addr, to_addr, body, attachment_text, indexed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (message_id) DO UPDATE SET
+           subject = excluded.subject,
+           from_addr = excluded.from_addr,
+           to_addr = excluded.to_addr,
+           body = excluded.body,
+           attachment_text = excluded.attachment_text,
+           indexed_at = excluded.indexed_at`,
+      )
+      .run(
+        entry.messageId,
+        entry.accountId,
+        entry.subject,
+        entry.fromAddr,
+        entry.toAddr,
+        entry.body,
+        entry.attachmentText,
+        new Date().toISOString(),
+      );
+  }
+
+  countIndexed(accountId: string): number {
+    const row = this.db
+      .prepare('SELECT COUNT(*) AS count FROM message_text WHERE account_id = ?')
+      .get(accountId) as { count: number };
+    return row.count;
+  }
+
+  clearIndex(accountId: string): void {
+    this.db.prepare('DELETE FROM message_text WHERE account_id = ?').run(accountId);
+  }
+
+  startIndexRun(runId: string, accountId: string): void {
+    this.db
+      .prepare("INSERT INTO index_runs (id, account_id, started_at, status) VALUES (?, ?, ?, 'running')")
+      .run(runId, accountId, new Date().toISOString());
+  }
+
+  finishIndexRun(
+    runId: string,
+    status: 'done' | 'cancelled' | 'failed',
+    stats: unknown,
+    error?: string,
+  ): void {
+    this.db
+      .prepare('UPDATE index_runs SET finished_at = ?, status = ?, stats = ?, error = ? WHERE id = ?')
+      .run(new Date().toISOString(), status, JSON.stringify(stats), error ?? null, runId);
+  }
+
   // -------------------------------------------------------------- sync runs
 
   startRun(runId: string, accountId: string): void {
@@ -440,6 +515,8 @@ export class ArchiveDatabase {
   /** Drops every trace of an account from the index. */
   deleteAccountData(accountId: string): void {
     this.transaction(() => {
+      this.db.prepare('DELETE FROM message_text WHERE account_id = ?').run(accountId);
+      this.db.prepare('DELETE FROM index_runs WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM attachments WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM export_runs WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM messages WHERE account_id = ?').run(accountId);

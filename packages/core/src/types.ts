@@ -91,12 +91,22 @@ export type PublicAccount = Omit<Account, 'password'> & { hasPassword: boolean }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export interface SearchSettings {
+  /** Read text out of PDF and Office attachments while indexing. */
+  indexAttachments: boolean;
+  /** Attachments above this size are not opened; 0 disables the limit. */
+  maxAttachmentBytes: number;
+  /** Index new messages automatically after a backup run. */
+  autoIndex: boolean;
+}
+
 export interface AppSettings {
   /** Base directory holding one subdirectory per account. */
   archivePath: string;
   language: 'de' | 'en';
   theme: ThemeMode;
   accentColor: string;
+  search: SearchSettings;
 }
 
 export interface AppConfig {

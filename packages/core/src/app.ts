@@ -10,6 +10,15 @@ import {
   type ImapConnectionOptions,
 } from './imap/client.js';
 import { AttachmentExportManager } from './attachments/manager.js';
+import {
+  loadAttachment,
+  loadMessage,
+  loadMessageSource,
+  type LoadedAttachment,
+  type MessageContent,
+} from './search/message.js';
+import { SearchIndexManager } from './search/manager.js';
+import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { buildFolderTree } from './sync/folders.js';
 import { SyncManager } from './sync/manager.js';
 import type {
@@ -37,6 +46,9 @@ export interface AccountOverview {
   /** Files written by the attachment export, and their size. */
   attachmentCount: number;
   attachmentBytes: number;
+  /** Messages that carry a full text index entry. */
+  indexedCount: number;
+  indexRunning: boolean;
   exportRunning: boolean;
   exportProgress: ExportProgress | null;
   lastExportRun: Record<string, unknown> | null;
@@ -53,6 +65,7 @@ export class MailArchiverApp {
   readonly db: ArchiveDatabase;
   readonly sync: SyncManager;
   readonly exports: AttachmentExportManager;
+  readonly index: SearchIndexManager;
 
   constructor(options: { configPath?: string; databasePath?: string } = {}) {
     this.config = new ConfigStore(options.configPath);
@@ -62,6 +75,10 @@ export class MailArchiverApp {
       archiveBaseDir: () => this.config.getSettings().archivePath,
     });
     this.exports = new AttachmentExportManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+    });
+    this.index = new SearchIndexManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
     });
@@ -117,6 +134,8 @@ export class MailArchiverApp {
         progress: this.sync.getProgress(account.id) ?? null,
         attachmentCount: attachments.files,
         attachmentBytes: attachments.bytes,
+        indexedCount: this.db.countIndexed(account.id),
+        indexRunning: this.index.isRunning(account.id),
         exportRunning: this.exports.isRunning(account.id),
         exportProgress: this.exports.getProgress(account.id) ?? null,
         lastExportRun: exportRuns[0] ?? null,
@@ -183,6 +202,61 @@ export class MailArchiverApp {
   /** Forgets which attachments were exported, so the next run redoes them. */
   resetAttachmentExport(accountId: string): void {
     this.db.clearAttachments(accountId);
+  }
+
+  // ----------------------------------------------------------- search
+
+  search(options: SearchOptions): SearchResult {
+    return searchMessages(this.db, options);
+  }
+
+  loadMessage(accountId: string, messageId: number): Promise<MessageContent> {
+    return loadMessage(this.requireAccount(accountId), messageId, {
+      db: this.db,
+      archiveBaseDir: this.config.getSettings().archivePath,
+    });
+  }
+
+  loadAttachment(accountId: string, messageId: number, index: number): Promise<LoadedAttachment> {
+    return loadAttachment(this.requireAccount(accountId), messageId, index, {
+      db: this.db,
+      archiveBaseDir: this.config.getSettings().archivePath,
+    });
+  }
+
+  loadMessageSource(
+    accountId: string,
+    messageId: number,
+  ): Promise<{ source: Buffer; filePath: string; fileName: string }> {
+    return loadMessageSource(this.requireAccount(accountId), messageId, {
+      db: this.db,
+      archiveBaseDir: this.config.getSettings().archivePath,
+    });
+  }
+
+  startIndexing(accountId: string): Promise<unknown> {
+    const search = this.config.getSettings().search;
+    return this.index.start(this.requireAccount(accountId), {
+      indexAttachments: search.indexAttachments,
+      maxAttachmentBytes: search.maxAttachmentBytes,
+    });
+  }
+
+  cancelIndexing(accountId: string): boolean {
+    return this.index.cancel(accountId);
+  }
+
+  resetIndex(accountId: string): void {
+    this.db.clearIndex(accountId);
+  }
+
+  /** Starts a backup and, when configured, indexes what it brought in. */
+  async startSyncAndIndex(accountId: string): Promise<SyncProgress | undefined> {
+    const progress = await this.startSync(accountId);
+    if (this.config.getSettings().search.autoIndex && !this.index.isRunning(accountId)) {
+      void this.startIndexing(accountId).catch(() => undefined);
+    }
+    return progress;
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

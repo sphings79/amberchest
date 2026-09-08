@@ -1,4 +1,4 @@
-import type { ExportProgress, LogEntry, SyncProgress } from '@mail-archiver/core';
+import type { ExportProgress, IndexProgress, LogEntry, SyncProgress } from '@mail-archiver/core';
 import {
   createContext,
   useCallback,
@@ -17,6 +17,7 @@ interface AppState {
   accounts: AccountOverview[];
   progress: Record<string, SyncProgress>;
   exportProgress: Record<string, ExportProgress>;
+  indexProgress: Record<string, IndexProgress>;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -47,6 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [accounts, setAccounts] = useState<AccountOverview[]>([]);
   const [progress, setProgress] = useState<Record<string, SyncProgress>>({});
   const [exportProgress, setExportProgress] = useState<Record<string, ExportProgress>>({});
+  const [indexProgress, setIndexProgress] = useState<Record<string, IndexProgress>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +124,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
             void refreshAccounts();
           }
+        } else if (message.type === 'index-progress') {
+          const value = message.payload as IndexProgress;
+          setIndexProgress((current) => ({ ...current, [value.accountId]: value }));
+          if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
+            void refreshAccounts();
+          }
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -147,6 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       accounts,
       progress,
       exportProgress,
+      indexProgress,
       logs,
       loading,
       error,
@@ -159,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       accounts,
       progress,
       exportProgress,
+      indexProgress,
       logs,
       loading,
       error,

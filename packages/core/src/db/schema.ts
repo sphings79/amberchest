@@ -103,6 +103,66 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX idx_export_runs_account ON export_runs (account_id, started_at DESC);
   `,
+
+  // 3 - full text search
+  `
+  /*
+   * External content table: FTS keeps only the index, the text lives here.
+   * The body column holds the extracted plain text of the message, filled by
+   * the indexer; the other columns mirror the message row.
+   */
+  CREATE TABLE message_text (
+    message_id INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    account_id TEXT    NOT NULL,
+    subject    TEXT,
+    from_addr  TEXT,
+    to_addr    TEXT,
+    body       TEXT,
+    /* Concatenated text of the attachments, when that option is enabled. */
+    attachment_text TEXT,
+    indexed_at TEXT    NOT NULL
+  );
+
+  CREATE INDEX idx_message_text_account ON message_text (account_id);
+
+  CREATE VIRTUAL TABLE message_fts USING fts5(
+    subject,
+    from_addr,
+    to_addr,
+    body,
+    attachment_text,
+    content = 'message_text',
+    content_rowid = 'message_id',
+    tokenize = 'unicode61 remove_diacritics 2'
+  );
+
+  CREATE TRIGGER message_text_ai AFTER INSERT ON message_text BEGIN
+    INSERT INTO message_fts (rowid, subject, from_addr, to_addr, body, attachment_text)
+    VALUES (new.message_id, new.subject, new.from_addr, new.to_addr, new.body, new.attachment_text);
+  END;
+
+  CREATE TRIGGER message_text_ad AFTER DELETE ON message_text BEGIN
+    INSERT INTO message_fts (message_fts, rowid, subject, from_addr, to_addr, body, attachment_text)
+    VALUES ('delete', old.message_id, old.subject, old.from_addr, old.to_addr, old.body, old.attachment_text);
+  END;
+
+  CREATE TRIGGER message_text_au AFTER UPDATE ON message_text BEGIN
+    INSERT INTO message_fts (message_fts, rowid, subject, from_addr, to_addr, body, attachment_text)
+    VALUES ('delete', old.message_id, old.subject, old.from_addr, old.to_addr, old.body, old.attachment_text);
+    INSERT INTO message_fts (rowid, subject, from_addr, to_addr, body, attachment_text)
+    VALUES (new.message_id, new.subject, new.from_addr, new.to_addr, new.body, new.attachment_text);
+  END;
+
+  CREATE TABLE index_runs (
+    id          TEXT PRIMARY KEY,
+    account_id  TEXT NOT NULL,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT,
+    status      TEXT NOT NULL,
+    stats       TEXT NOT NULL DEFAULT '{}',
+    error       TEXT
+  );
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

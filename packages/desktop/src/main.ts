@@ -129,6 +129,12 @@ async function start(): Promise<void> {
     webRoot: resolveWebRoot(),
     host: '127.0.0.1',
     port: 0,
+    // Lets the UI hand an archived .eml to the system mail client, where the
+    // user can reply or forward it as usual.
+    openFile: async (path: string) => {
+      const error = await shell.openPath(path);
+      if (error) throw new Error(error);
+    },
   });
 
   logger.info(`Local server ready on ${running.url}`);

@@ -99,6 +99,13 @@ to the Docker guide.</em>
   (folder tree, flat, year/month, one directory per message), filters for
   embedded images, minimum size and file type, de-duplication by content, and a
   CSV/JSON manifest that maps every file back to its message
+- **Full text search** over subject, sender, body and attachment content —
+  PDF, Word, Excel, PowerPoint and the files inside ZIP and TAR archives are
+  read as well. German transliterations are indexed, so "muenchen" finds
+  "München" and "strasse" finds "Straße"
+- **Message viewer** that renders HTML in a sandboxed frame with external
+  content blocked until you ask for it, downloads the .eml or single
+  attachments, and hands the message to your mail client so you can reply
 - **Live progress** over a websocket, with a log you can actually read
 
 ## Install
@@ -226,7 +233,7 @@ machine can talk to the API.
 | --- | --- | --- |
 | 1 | Foundation, accounts, folder selection, incremental backup, desktop app | ✅ done |
 | 2 | Attachment export with layouts, filters and de-duplication | ✅ done |
-| 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP | planned |
+| 3 | Viewer, full text search, "open in mail client" ✅ · export as mbox/PDF/ZIP and the MCP server | in progress |
 | 4 | Restore, and migration to a different server | planned |
 | 5 | Docker image, web login, cron schedule, remote mode | planned |
 | 6 | Polish: themes, translations, optional archive encryption, Windows and Linux releases | planned |

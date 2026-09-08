@@ -5,8 +5,11 @@ import type {
   ConnectionTestResult,
   ExportProgress,
   FolderTreeNode,
+  IndexProgress,
   LogEntry,
+  MessageContent,
   PublicAccount,
+  SearchResult,
 } from '@mail-archiver/core';
 
 export type {
@@ -16,9 +19,24 @@ export type {
   ConnectionTestResult,
   ExportProgress,
   FolderTreeNode,
+  IndexProgress,
   LogEntry,
+  MessageContent,
   PublicAccount,
+  SearchResult,
 };
+
+export interface SearchQuery {
+  q: string;
+  account?: string | undefined;
+  folders?: string[];
+  from?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+  withAttachments?: boolean;
+  limit?: number;
+  offset?: number;
+}
 
 export interface AttachmentState {
   settings: AttachmentSettings;
@@ -165,6 +183,30 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  search: (query: SearchQuery) => {
+    const params = new URLSearchParams();
+    params.set('q', query.q);
+    if (query.account) params.set('account', query.account);
+    // Folder paths may contain anything, so they are newline separated.
+    if (query.folders && query.folders.length > 0) params.set('folders', query.folders.join('\n'));
+    if (query.from) params.set('from', query.from);
+    if (query.dateFrom) params.set('dateFrom', query.dateFrom);
+    if (query.dateTo) params.set('dateTo', query.dateTo);
+    if (query.withAttachments) params.set('attachments', '1');
+    params.set('limit', String(query.limit ?? 50));
+    params.set('offset', String(query.offset ?? 0));
+    return request<SearchResult>(`/search?${params.toString()}`);
+  },
+  message: (accountId: string, messageId: number) =>
+    request<MessageContent>(`/accounts/${accountId}/messages/${messageId}`),
+  openMessage: (accountId: string, messageId: number) =>
+    request<{ opened: boolean }>(`/accounts/${accountId}/messages/${messageId}/open`, { method: 'POST' }),
+
+  startIndex: (id: string) => request<{ started: boolean }>(`/accounts/${id}/index`, { method: 'POST' }),
+  cancelIndex: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/index/cancel`, { method: 'POST' }),
+  resetIndex: (id: string) => request<{ ok: true }>(`/accounts/${id}/index/reset`, { method: 'POST' }),
 
   attachments: (id: string) => request<AttachmentState>(`/accounts/${id}/attachments`),
   updateAttachments: (id: string, patch: Partial<AttachmentSettings>) =>

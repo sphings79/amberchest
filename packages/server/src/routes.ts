@@ -33,11 +33,28 @@ const connectionSchema = z.object({
 export interface RouteOptions {
   app: MailArchiverApp;
   auth: AuthGuard;
+  /**
+   * Hands a file to the operating system. Only the desktop shell can do this,
+   * so in the container the corresponding route reports "not available".
+   */
+  openFile?: ((path: string) => Promise<void>) | undefined;
 }
 
 function fail(reply: FastifyReply, status: number, message: string): FastifyReply {
   return reply.status(status).send({ error: message });
 }
+
+const searchQuerySchema = z.object({
+  q: z.string().default(''),
+  account: z.string().optional(),
+  folders: z.string().optional(),
+  from: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  attachments: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 export async function registerRoutes(server: FastifyInstance, options: RouteOptions): Promise<void> {
   const { app, auth } = options;
@@ -208,7 +225,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const { id } = request.params as { id: string };
     if (app.sync.isRunning(id)) return fail(reply, 409, 'A backup is already running');
     // Fire and forget: progress arrives over the websocket.
-    void app.startSync(id).catch(() => undefined);
+    void app.startSyncAndIndex(id).catch(() => undefined);
     return { started: true };
   });
 
@@ -275,6 +292,105 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return { ok: true };
   });
 
+  // ---------------------------------------------------------- search
+
+  server.get('/api/search', { preHandler: requireUnlocked }, async (request, reply) => {
+    const parsed = searchQuerySchema.safeParse(request.query);
+    if (!parsed.success) return fail(reply, 400, 'Invalid search parameters');
+    const query = parsed.data;
+
+    return app.search({
+      query: query.q,
+      accountId: query.account ?? null,
+      folders: query.folders ? query.folders.split('\n').filter(Boolean) : [],
+      from: query.from ?? null,
+      dateFrom: query.dateFrom ?? null,
+      dateTo: query.dateTo ?? null,
+      withAttachments: query.attachments === '1',
+      limit: query.limit,
+      offset: query.offset,
+    });
+  });
+
+  server.get('/api/accounts/:id/messages/:messageId', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id, messageId } = request.params as { id: string; messageId: string };
+    try {
+      return await app.loadMessage(id, Number(messageId));
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.get('/api/accounts/:id/messages/:messageId/raw', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id, messageId } = request.params as { id: string; messageId: string };
+    try {
+      const message = await app.loadMessageSource(id, Number(messageId));
+      return reply
+        .header('content-type', 'message/rfc822')
+        .header('content-disposition', `attachment; filename="${encodeURIComponent(message.fileName)}"`)
+        .send(message.source);
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.get(
+    '/api/accounts/:id/messages/:messageId/attachments/:index',
+    { preHandler: requireUnlocked },
+    async (request, reply) => {
+      const { id, messageId, index } = request.params as {
+        id: string;
+        messageId: string;
+        index: string;
+      };
+      try {
+        const attachment = await app.loadAttachment(id, Number(messageId), Number(index));
+        return reply
+          .header('content-type', attachment.contentType)
+          .header('content-disposition', `attachment; filename="${encodeURIComponent(attachment.name)}"`)
+          .send(attachment.content);
+      } catch (error) {
+        return fail(reply, 404, (error as Error).message);
+      }
+    },
+  );
+
+  /** Opens the stored .eml in whatever mail client the desktop has. */
+  server.post('/api/accounts/:id/messages/:messageId/open', { preHandler: requireUnlocked }, async (request, reply) => {
+    if (!options.openFile) {
+      return fail(reply, 501, 'Only available in the desktop app');
+    }
+    const { id, messageId } = request.params as { id: string; messageId: string };
+    try {
+      const message = await app.loadMessageSource(id, Number(messageId));
+      await options.openFile(message.filePath);
+      return { opened: true };
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  // ----------------------------------------------------------- index
+
+  server.post('/api/accounts/:id/index', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (app.index.isRunning(id)) return fail(reply, 409, 'Indexing is already running');
+    void app.startIndexing(id).catch(() => undefined);
+    return { started: true };
+  });
+
+  server.post('/api/accounts/:id/index/cancel', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { cancelled: app.cancelIndexing(id) };
+  });
+
+  server.post('/api/accounts/:id/index/reset', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (app.index.isRunning(id)) return fail(reply, 409, 'Indexing is already running');
+    app.resetIndex(id);
+    return { ok: true };
+  });
+
   server.get('/api/runs', { preHandler: requireUnlocked }, async (request) => {
     const query = request.query as { limit?: string };
     return app.db.listRecentRuns(Number(query.limit ?? 10));
@@ -299,18 +415,22 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
     for (const progress of app.sync.allProgress()) send('progress', progress);
     for (const progress of app.exports.allProgress()) send('export-progress', progress);
+    for (const progress of app.index.allProgress()) send('index-progress', progress);
 
     const onProgress = (progress: SyncProgress): void => send('progress', progress);
     const onExportProgress = (progress: ExportProgress): void => send('export-progress', progress);
+    const onIndexProgress = (progress: unknown): void => send('index-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
     app.exports.on('progress', onExportProgress);
+    app.index.on('progress', onIndexProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
       app.sync.off('progress', onProgress);
       app.exports.off('progress', onExportProgress);
+      app.index.off('progress', onIndexProgress);
       logger.off('entry', onLog);
     });
   });

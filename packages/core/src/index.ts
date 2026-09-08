@@ -7,6 +7,7 @@ export {
   accountSettingsSchema,
   appSettingsSchema,
   attachmentSettingsSchema,
+  searchSettingsSchema,
   defaultAccountSettings,
   defaultAttachmentSettings,
   type AccountInput,
@@ -28,6 +29,24 @@ export {
 export { AttachmentExportEngine, ExportCancelledError } from './attachments/engine.js';
 export { AttachmentExportManager } from './attachments/manager.js';
 export { extractAttachments, extensionOf, type ExtractedAttachment } from './attachments/extract.js';
+export { SearchIndexEngine, IndexCancelledError, type IndexProgress, type IndexStats } from './search/indexer.js';
+export { SearchIndexManager } from './search/manager.js';
+export {
+  searchMessages,
+  type SearchHit,
+  type SearchOptions,
+  type SearchResult,
+} from './search/search.js';
+export { toMatchExpression } from './search/query.js';
+export { foldGerman, foldedVariants, withFoldedVariants } from './search/fold.js';
+export { extractText, isExtractable } from './search/text.js';
+export {
+  loadMessage,
+  loadAttachment,
+  loadMessageSource,
+  type MessageContent,
+  type MessageAttachmentInfo,
+} from './search/message.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';

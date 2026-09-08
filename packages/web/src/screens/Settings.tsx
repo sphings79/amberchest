@@ -1,8 +1,8 @@
-import { BookOpen, Check, Clock, Container, ExternalLink } from 'lucide-react';
+import { BookOpen, Check, Clock, Container, Database, ExternalLink, RotateCcw } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
-import { Button, Card, Field, Input, Select } from '../components/ui.js';
+import { Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
 import { useApp } from '../state.js';
 
@@ -17,9 +17,15 @@ const ACCENT_SWATCH: Record<string, string> = {
 
 export function Settings(): ReactNode {
   const { t } = useTranslation();
-  const { server, applySettings } = useApp();
+  const { server, accounts, indexProgress, applySettings } = useApp();
   const [values, setValues] = useState<AppSettings>(
-    server?.settings ?? { archivePath: '', language: 'de', theme: 'system', accentColor: 'violet' },
+    server?.settings ?? {
+      archivePath: '',
+      language: 'de',
+      theme: 'system',
+      accentColor: 'violet',
+      search: { indexAttachments: true, maxAttachmentBytes: 25 * 1024 * 1024, autoIndex: true },
+    },
   );
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +126,70 @@ export function Settings(): ReactNode {
               {t('settings.saved')}
             </span>
           )}
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Database size={16} />
+          {t('settings.searchTitle')}
+        </div>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {t('settings.searchHint')}
+        </p>
+
+        <Toggle
+          checked={values.search.indexAttachments}
+          onChange={(indexAttachments) =>
+            void update({ search: { ...values.search, indexAttachments } }, true)
+          }
+          label={t('settings.indexAttachments')}
+          hint={t('settings.indexAttachmentsHint')}
+        />
+
+        <Field label={t('settings.maxAttachmentSize')} hint={t('settings.maxAttachmentSizeHint')}>
+          <Input
+            type="number"
+            min={0}
+            className="sm:max-w-40"
+            value={Math.round(values.search.maxAttachmentBytes / (1024 * 1024))}
+            onChange={(event) =>
+              void update(
+                { search: { ...values.search, maxAttachmentBytes: Number(event.target.value) * 1024 * 1024 } },
+                false,
+              )
+            }
+          />
+        </Field>
+
+        <Toggle
+          checked={values.search.autoIndex}
+          onChange={(autoIndex) => void update({ search: { ...values.search, autoIndex } }, true)}
+          label={t('settings.autoIndex')}
+        />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs" style={{ color: 'var(--text-faint)' }}>
+            {t('settings.indexStatus', {
+              done: accounts.reduce((sum, entry) => sum + entry.indexedCount, 0),
+              total: accounts.reduce((sum, entry) => sum + entry.messageCount, 0),
+            })}
+          </span>
+          <Button
+            className="ml-auto"
+            disabled={Object.values(indexProgress).some(
+              (progress) => !['done', 'failed', 'cancelled'].includes(progress.phase),
+            )}
+            onClick={() => {
+              if (!window.confirm(t('settings.rebuildConfirm'))) return;
+              for (const entry of accounts) {
+                void api.resetIndex(entry.account.id).then(() => api.startIndex(entry.account.id));
+              }
+            }}
+          >
+            <RotateCcw size={14} />
+            {t('settings.rebuildIndex')}
+          </Button>
         </div>
       </Card>
 

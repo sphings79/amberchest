@@ -103,6 +103,14 @@ zur Docker-Anleitung.</em>
   (Ordnerbaum, flach, Jahr/Monat, ein Ordner pro Mail), Filter für eingebettete
   Bilder, Mindestgröße und Dateityp, Doppelerkennung über den Inhalt und eine
   CSV/JSON-Zuordnungsdatei, die jede Datei ihrer Mail zuordnet
+- **Volltextsuche** über Betreff, Absender, Text und Anhangsinhalte — PDF,
+  Word, Excel, PowerPoint sowie die Dateien in ZIP- und TAR-Archiven werden
+  mitgelesen. Deutsche Umschreibungen stehen im Index, „muenchen“ findet also
+  „München“ und „strasse“ findet „Straße“
+- **Mail-Ansicht**, die HTML in einem abgeschotteten Rahmen darstellt und
+  externe Inhalte erst auf Nachfrage lädt, die `.eml` oder einzelne Anhänge
+  herunterlädt und die Nachricht ans Mailprogramm übergibt, damit du antworten
+  kannst
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
 
 ## Installation
@@ -233,7 +241,7 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 | --- | --- | --- |
 | 1 | Fundament, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
 | 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
-| 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP | geplant |
+| 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“ ✅ · Export als mbox/PDF/ZIP und MCP-Server | in Arbeit |
 | 4 | Rückspielen und Umzug auf einen anderen Server | geplant |
 | 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | geplant |
 | 6 | Feinschliff: Themes, Übersetzungen, optionale Archivverschlüsselung, Windows- und Linux-Releases | geplant |

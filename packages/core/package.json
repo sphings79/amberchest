@@ -21,6 +21,7 @@
     "better-sqlite3": "^13.0.3",
     "imapflow": "^2.0.0",
     "mailparser": "^3.9.23",
+    "unpdf": "^1.8.1",
     "zod": "^4.5.4"
   },
   "devDependencies": {

@@ -43,11 +43,18 @@ export const accountSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const searchSettingsSchema = z.object({
+  indexAttachments: z.boolean().default(true),
+  maxAttachmentBytes: z.number().int().min(0).default(25 * 1024 * 1024),
+  autoIndex: z.boolean().default(true),
+});
+
 export const appSettingsSchema = z.object({
   archivePath: z.string().min(1).default(defaultArchiveDir()),
   language: z.enum(['de', 'en']).default('de'),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   accentColor: z.string().default('violet'),
+  search: searchSettingsSchema.default(() => searchSettingsSchema.parse({})),
 });
 
 export const appConfigSchema = z.object({

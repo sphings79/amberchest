@@ -1,4 +1,11 @@
-import { Inbox, LayoutDashboard, Lock, ScrollText, Settings as SettingsIcon } from 'lucide-react';
+import {
+  Inbox,
+  LayoutDashboard,
+  Lock,
+  ScrollText,
+  Search as SearchIcon,
+  Settings as SettingsIcon,
+} from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, isDesktop, setToken } from './api/client.js';
@@ -8,10 +15,11 @@ import { Dashboard } from './screens/Dashboard.js';
 import { GateScreen } from './screens/GateScreen.js';
 import { Logs } from './screens/Logs.js';
 import { Overview } from './screens/Overview.js';
+import { Search } from './screens/Search.js';
 import { Settings } from './screens/Settings.js';
 import { useApp } from './state.js';
 
-type View = 'overview' | 'accounts' | 'settings' | 'logs';
+type View = 'overview' | 'accounts' | 'search' | 'settings' | 'logs';
 
 function Logo(): ReactNode {
   return (
@@ -59,6 +67,7 @@ export function App(): ReactNode {
   const items: Array<{ id: View; label: string; icon: ReactNode; badge?: number }> = [
     { id: 'overview', label: t('nav.overview'), icon: <LayoutDashboard size={16} /> },
     { id: 'accounts', label: t('nav.accounts'), icon: <Inbox size={16} />, badge: accounts.length },
+    { id: 'search', label: t('nav.search'), icon: <SearchIcon size={16} /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon size={16} /> },
     { id: 'logs', label: t('nav.logs'), icon: <ScrollText size={16} /> },
   ];
@@ -134,6 +143,7 @@ export function App(): ReactNode {
           <div className="mx-auto max-w-5xl">
             {view === 'overview' && <Overview onGoToAccounts={() => setView('accounts')} />}
             {view === 'accounts' && <Dashboard />}
+            {view === 'search' && <Search />}
             {view === 'settings' && <Settings />}
             {view === 'logs' && <Logs />}
           </div>

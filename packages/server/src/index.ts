@@ -14,6 +14,8 @@ export interface ServerOptions {
   webRoot?: string | null;
   host?: string;
   port?: number;
+  /** Desktop only: hands a file to the operating system. */
+  openFile?: ((path: string) => Promise<void>) | undefined;
 }
 
 export interface RunningServer {
@@ -32,7 +34,11 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
   });
 
   await server.register(websocket);
-  await registerRoutes(server, { app: options.app, auth: options.auth });
+  await registerRoutes(server, {
+    app: options.app,
+    auth: options.auth,
+    openFile: options.openFile,
+  });
 
   if (options.webRoot && existsSync(options.webRoot)) {
     await server.register(fastifyStatic, { root: options.webRoot, index: ['index.html'] });
