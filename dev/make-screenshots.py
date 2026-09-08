@@ -17,6 +17,7 @@ from pathlib import Path
 W, H = 1200, 720
 BG = "#0d0f14"
 PANEL = "#151821"
+PANEL_2 = "#1b1f2a"
 BORDER = "#262c3a"
 TEXT = "#e8eaf0"
 MUTED = "#9aa2b5"
@@ -28,7 +29,17 @@ FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
 # Navigation, in the order the application shows it.
-NAV = ["Übersicht", "Konten", "Postfach", "Suche", "Einstellungen", "KI-Anbindung", "Home Assistant", "Protokoll"]
+NAV = [
+    "Übersicht",
+    "Konten",
+    "Postfach",
+    "Suche",
+    "Statistik",
+    "Einstellungen",
+    "KI-Anbindung",
+    "Home Assistant",
+    "Protokoll",
+]
 
 
 def head(height: int, label: str, title: str, desc: str) -> str:
@@ -81,6 +92,10 @@ def nav_icon(name: str, x: int, y: int, colour: str) -> str:
         return f"""<g {s}>
       <path d="M{x + 1} {y + 3}h6l2 2.5h8" /><rect x="{x + 1}" y="{y + 3}" width="16" height="12" rx="2.5"/>
       <path d="M{x + 5} {y + 9}h8M{x + 5} {y + 12}h5" stroke-linecap="round"/>
+    </g>"""
+    if name == "Statistik":
+        return f"""<g {s}>
+      <path d="M{x + 1} {y + 17}v-7M{x + 6.5} {y + 17}v-12M{x + 12} {y + 17}v-4M{x + 17} {y + 17}v-9" stroke-linecap="round"/>
     </g>"""
     if name == "Suche":
         return f"""<g {s}>
@@ -431,6 +446,160 @@ def homeassistant() -> str:
     return "".join(out)
 
 
+def statistics() -> str:
+    out = [
+        head(H, "Mail Archiver statistics screen with messages per year and top senders",
+             "Mail Archiver — Statistik",
+             "The statistics screen: messages per year, the most frequent senders and the largest folders."),
+        titlebar(),
+        sidebar("Statistik"),
+        text(268, 96, "Statistik", TEXT, 20, "600"),
+        button(1010, 74, 156, "Alle Konten"),
+    ]
+
+    tiles = [
+        ("NACHRICHTEN", "48.213", "14.03.2011 bis heute"),
+        ("ARCHIVGRÖSSE", "1,84 GB", "Ø 40 KB je Nachricht"),
+        ("ANHÄNGE", "6.412", "912 MB"),
+        ("MEHRFACH ABGELEGT", "9.204", "einmal gespeichert"),
+    ]
+    x = 268
+    for label, value, note in tiles:
+        out.append(card(x, 126, 212, 92))
+        out.append(text(x + 20, 152, label, FAINT, 9.5, spacing="0.6"))
+        out.append(text(x + 20, 178, value, TEXT, 19, "600"))
+        out.append(text(x + 20, 198, note, FAINT, 10))
+        x += 228
+
+    def bars(bx, by, bw, title, rows):
+        parts = [card(bx, by, bw, 44 + len(rows) * 34)]
+        parts.append(text(bx + 22, by + 30, title, TEXT, 13.5, "600"))
+        top = max(value for _, value, _ in rows)
+        y = by + 62
+        for label, value, note in rows:
+            parts.append(text(bx + 22, y, label, TEXT, 11.5))
+            parts.append(text(bx + bw - 96, y, f"{value:,}".replace(",", "."), MUTED, 11, anchor="end"))
+            parts.append(text(bx + bw - 22, y, note, FAINT, 10.5, anchor="end"))
+            width = int((bw - 44) * value / top)
+            parts.append(f'    <rect x="{bx + 22}" y="{y + 7}" width="{bw - 44}" height="5" rx="2.5" fill="{PANEL_2}"/>\n')
+            parts.append(f'    <rect x="{bx + 22}" y="{y + 7}" width="{width}" height="5" rx="2.5" fill="{ACCENT}"/>\n')
+            y += 34
+        return "".join(parts)
+
+    out.append(bars(268, 238, 898, "Nachrichten je Jahr", [
+        ("2022", 7420, "268 MB"),
+        ("2023", 9880, "402 MB"),
+        ("2024", 12140, "531 MB"),
+        ("2025", 11330, "486 MB"),
+    ]))
+    out.append(bars(268, 434, 440, "Häufigste Absender", [
+        ("newsletter@shop.example", 1840, "96 MB"),
+        ("buchhaltung@stadtwerke.de", 912, "212 MB"),
+        ("info@verein.example", 640, "31 MB"),
+    ]))
+    out.append(bars(726, 434, 440, "Größte Ordner", [
+        ("Archiv/2024", 12140, "531 MB"),
+        ("INBOX", 8412, "402 MB"),
+        ("Projekte/Rechnungen", 3120, "288 MB"),
+    ]))
+
+    out.append(tail())
+    return "".join(out)
+
+
+def verify() -> str:
+    out = [
+        head(H, "Mail Archiver checking an archive, with three findings",
+             "Mail Archiver — Archiv prüfen",
+             "The archive check: every file against its checksum, and the folders against the server."),
+        titlebar(),
+        sidebar("Konten"),
+        text(268, 96, "Konten", TEXT, 20, "600"),
+        f'    <rect y="44" width="{W}" height="{H - 44}" fill="#0d0f14" opacity="0.6"/>\n',
+    ]
+
+    out.append(card(300, 86, 600, 548, r=16))
+    out.append(text(330, 130, "Archiv prüfen — Privat", TEXT, 16, "600"))
+    out.append(text(330, 166, "Liest jede gesicherte Datei und vergleicht sie mit der Prüfsumme vom", MUTED, 11.5))
+    out.append(text(330, 184, "Tag der Sicherung. Es wird nichts geändert und nichts gelöscht.", MUTED, 11.5))
+
+    out.append(toggle(330, 204, True, "Mit dem Server abgleichen"))
+    out.append(toggle(330, 240, False, "Serverseitig gelöschte mitprüfen"))
+
+    out.append(card(330, 282, 540, 214, "#11141b", "none", 12))
+    out.append(text(350, 308, "Fertig", MUTED, 11.5))
+    out.append(text(850, 308, "12.480 / 12.480", FAINT, 11, anchor="end"))
+
+    numbers = [
+        ("Geprüft", "12.480", False),
+        ("Fehlend", "1", True),
+        ("Verändert", "1", True),
+        ("Unlesbar", "0", False),
+        ("Verwaist", "1", True),
+        ("Auf dem Server", "12.479", False),
+    ]
+    for index, (label, value, bad) in enumerate(numbers):
+        bx = 350 + (index % 3) * 174
+        by = 324 + (index // 3) * 60
+        out.append(card(bx, by, 160, 50, PANEL, "none", 10))
+        out.append(text(bx + 14, by + 20, label, FAINT, 9.5))
+        out.append(text(bx + 14, by + 40, value, "#f0645a" if bad else TEXT, 13, "500"))
+
+    out.append(text(350, 476, "48,2 MB gelesen", FAINT, 10.5))
+
+    findings = [
+        ("Inhalt verändert", "INBOX/2024-01-16_…_Grüße-aus-München.eml"),
+        ("Datei fehlt", "INBOX/2024-01-17_…_Rechnung-mit-Anhang.eml"),
+        ("Nicht im Index", "INBOX/fremde-datei.eml"),
+    ]
+    fy = 508
+    for kind, path in findings:
+        out.append(card(330, fy, 540, 34, "#11141b", "none", 9))
+        out.append(text(350, fy + 22, "!", "#f0645a", 12, "700"))
+        out.append(text(366, fy + 22, f"{kind} · {path}", MUTED, 11))
+        fy += 40
+
+    out.append(button(660, 578, 100, "Schließen"))
+    out.append(button(772, 578, 168, "Prüfung starten", True))
+
+    out.append(tail())
+    return "".join(out)
+
+
+def transfer() -> str:
+    out = [
+        head(H, "Mail Archiver moving an archive to another instance",
+             "Mail Archiver — Archiv umziehen",
+             "Moving an archive: the files are sent to another instance, which rebuilds its index."),
+        titlebar(),
+        sidebar("Konten"),
+        text(268, 96, "Konten", TEXT, 20, "600"),
+        f'    <rect y="44" width="{W}" height="{H - 44}" fill="#0d0f14" opacity="0.6"/>\n',
+    ]
+
+    out.append(card(300, 118, 600, 484, r=16))
+    out.append(text(330, 162, "Archiv umziehen — Privat", TEXT, 16, "600"))
+    out.append(text(330, 198, "12.480 Nachrichten, 612 MB. Es wandern die Dateien, nicht der Index —", MUTED, 11.5))
+    out.append(text(330, 216, "die Gegenstelle baut ihn aus den Journalen neu auf.", MUTED, 11.5))
+
+    out.append(field(330, 244, 540, "ADRESSE DER GEGENSTELLE", "http://nas:8484"))
+    out.append(field(330, 306, 540, "ZIELKONTO", "Privat — privat@example.com (0)"))
+
+    out.append(card(330, 376, 540, 122, "#11141b", "none", 12))
+    out.append(text(350, 402, "Dateien werden übertragen …", MUTED, 11.5))
+    out.append(text(850, 402, "8.412 / 12.480", FAINT, 11, anchor="end"))
+    out.append(f'    <rect x="350" y="416" width="500" height="6" rx="3" fill="{PANEL}"/>\n')
+    out.append(f'    <rect x="350" y="416" width="337" height="6" rx="3" fill="{ACCENT}"/>\n')
+    out.append(text(350, 448, "8.412 gesendet, 0 waren schon da, 0 fehlgeschlagen — 402 MB", FAINT, 10.5))
+    out.append(text(350, 476, "INBOX/2024-03-02_100000_1_Angebot.eml", FAINT, 10.5, family=MONO))
+
+    out.append(button(660, 532, 100, "Schließen"))
+    out.append(button(772, 532, 168, "Abbrechen"))
+
+    out.append(tail())
+    return "".join(out)
+
+
 def patch_sidebar(path: Path, active: str) -> None:
     """Replaces the navigation in an older picture with the current one."""
     content = path.read_text()
@@ -525,6 +694,9 @@ OUT = Path("assets/screenshots")
 
 def main() -> None:
     (SRC / "browser.svg").write_text(browser())
+    (SRC / "statistics.svg").write_text(statistics())
+    (SRC / "verify.svg").write_text(verify())
+    (SRC / "transfer.svg").write_text(transfer())
     (SRC / "search.svg").write_text(search())
     (SRC / "homeassistant.svg").write_text(homeassistant())
     patch_sidebar(SRC / "overview.svg", "Übersicht")

@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver checking an archive, with three findings">
+  <title>Mail Archiver — Archiv prüfen</title>
+  <desc>The archive check: every file against its checksum, and the folders against the server.</desc>
+
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1200" height="720" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+    <rect width="1200" height="720" fill="#0d0f14"/>
+
+    <!-- title bar -->
+    <rect width="1200" height="44" fill="#151821"/>
+    <line x1="0" y1="44" x2="1200" y2="44" stroke="#262c3a" stroke-width="1"/>
+    <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+    <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+    <circle cx="64" cy="22" r="6" fill="#28c840"/>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+
+    <!-- sidebar -->
+    <rect x="0" y="44" width="228" height="676" fill="#151821"/>
+    <line x1="228" y1="44" x2="228" y2="720" stroke="#262c3a" stroke-width="1"/>
+
+    <rect x="18" y="66" width="36" height="36" rx="11" fill="url(#accent)"/>
+    <g stroke="#fff" stroke-width="1.7" fill="none">
+      <rect x="27" y="76" width="18" height="14" rx="2.5"/>
+      <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="64" y="82" fill="#e8eaf0" font-size="13" font-weight="600">Mail Archiver</text>
+    <text x="64" y="96" fill="#6b7386" font-size="9.5">The Mail Backup Solution</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="26" y="135" width="7" height="7" rx="1.5"/><rect x="37" y="135" width="7" height="7" rx="1.5"/>
+      <rect x="26" y="146" width="7" height="7" rx="1.5"/><rect x="37" y="146" width="7" height="7" rx="1.5"/>
+    </g>
+    <text x="56" y="149" fill="#9aa2b5" font-size="12.5">Übersicht</text>
+    <rect x="12" y="168" width="204" height="36" rx="11" fill="#221d3d"/>
+    <g stroke="#7c5cff" stroke-width="1.6" fill="none">
+      <rect x="26" y="179" width="18" height="14" rx="2.5"/>
+      <path d="M26 182.5 35 188 44 182.5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="191" fill="#7c5cff" font-size="12.5" font-weight="500">Konten</text>
+    <text x="200" y="191" fill="#6b7386" font-size="11" text-anchor="end">2</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 222h6l2 2.5h8" /><rect x="27" y="222" width="16" height="12" rx="2.5"/>
+      <path d="M31 228h8M31 231h5" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="233" fill="#9aa2b5" font-size="12.5">Postfach</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="34" cy="269" r="6"/><path d="M38.5 273.5 43 278" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="275" fill="#9aa2b5" font-size="12.5">Suche</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 320v-7M32.5 320v-12M38 320v-4M43 320v-9" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="317" fill="#9aa2b5" font-size="12.5">Statistik</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <circle cx="35" cy="354" r="3.4"/><circle cx="35" cy="354" r="8"/>
+    </g>
+    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">Einstellungen</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="392" width="16" height="12" rx="3.5"/>
+      <path d="M35 388v4" stroke-linecap="round"/><circle cx="35" cy="388" r="1.4" fill="#9aa2b5"/>
+      <circle cx="32" cy="398" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="38" cy="398" r="1.3" fill="#9aa2b5" stroke="none"/>
+    </g>
+    <text x="56" y="401" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <path d="M27 438 35 431 43 438" stroke-linejoin="round"/>
+      <path d="M29.5 437v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 441.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="443" fill="#9aa2b5" font-size="12.5">Home Assistant</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="472" width="15" height="17" rx="2"/>
+      <path d="M31 477h7M31 481h7M31 485h4" stroke-linecap="round"/>
+    </g>
+    <text x="56" y="485" fill="#9aa2b5" font-size="12.5">Protokoll</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>
+    </g>
+    <text x="56" y="582" fill="#6b7386" font-size="12">Stern auf GitHub</text>
+
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <path d="M28 601h11v7a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z"/>
+      <path d="M39 603h2.5a2.5 2.5 0 0 1 0 5H39"/>
+    </g>
+    <text x="56" y="614" fill="#6b7386" font-size="12">Kaffee spendieren</text>
+
+    <rect x="12" y="630" width="204" height="44" rx="11" fill="#11141b" stroke="#262c3a"/>
+    <g stroke="#6b7386" stroke-width="1.5" fill="none">
+      <rect x="26" y="644" width="16" height="11" rx="2"/><path d="M30 659h8"/>
+    </g>
+    <text x="52" y="648" fill="#6b7386" font-size="8.5" letter-spacing="0.7">VERBINDUNG</text>
+    <text x="52" y="663" fill="#9aa2b5" font-size="12">Dieser Rechner</text>
+    <path d="M203 648l4-4 4 4M203 658l4 4 4-4" stroke="#6b7386" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <g stroke="#6b7386" stroke-width="1.6" fill="none">
+      <rect x="28" y="683" width="13" height="9" rx="2"/>
+      <path d="M31 683v-3a3.5 3.5 0 0 1 7 0v3"/>
+    </g>
+    <text x="56" y="692" fill="#6b7386" font-size="12.5">Sperren</text>
+    <text x="268" y="96" fill="#e8eaf0" font-size="20" font-weight="600">Konten</text>
+    <rect y="44" width="1200" height="676" fill="#0d0f14" opacity="0.6"/>
+    <rect x="300" y="86" width="600" height="548" rx="16" fill="#151821" stroke="#262c3a"/>
+    <text x="330" y="130" fill="#e8eaf0" font-size="16" font-weight="600">Archiv prüfen — Privat</text>
+    <text x="330" y="166" fill="#9aa2b5" font-size="11.5">Liest jede gesicherte Datei und vergleicht sie mit der Prüfsumme vom</text>
+    <text x="330" y="184" fill="#9aa2b5" font-size="11.5">Tag der Sicherung. Es wird nichts geändert und nichts gelöscht.</text>
+    <rect x="330" y="204" width="30" height="18" rx="9" fill="#7c5cff"/>
+    <circle cx="351" cy="213" r="6.5" fill="#fff"/>
+    <text x="372" y="217" fill="#9aa2b5" font-size="12.5">Mit dem Server abgleichen</text>
+    <rect x="330" y="240" width="30" height="18" rx="9" fill="#2a2f3d"/>
+    <circle cx="339" cy="249" r="6.5" fill="#fff"/>
+    <text x="372" y="253" fill="#9aa2b5" font-size="12.5">Serverseitig gelöschte mitprüfen</text>
+    <rect x="330" y="282" width="540" height="214" rx="12" fill="#11141b" stroke="none"/>
+    <text x="350" y="308" fill="#9aa2b5" font-size="11.5">Fertig</text>
+    <text x="850" y="308" fill="#6b7386" font-size="11" text-anchor="end">12.480 / 12.480</text>
+    <rect x="350" y="324" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="364" y="344" fill="#6b7386" font-size="9.5">Geprüft</text>
+    <text x="364" y="364" fill="#e8eaf0" font-size="13" font-weight="500">12.480</text>
+    <rect x="524" y="324" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="538" y="344" fill="#6b7386" font-size="9.5">Fehlend</text>
+    <text x="538" y="364" fill="#f0645a" font-size="13" font-weight="500">1</text>
+    <rect x="698" y="324" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="712" y="344" fill="#6b7386" font-size="9.5">Verändert</text>
+    <text x="712" y="364" fill="#f0645a" font-size="13" font-weight="500">1</text>
+    <rect x="350" y="384" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="364" y="404" fill="#6b7386" font-size="9.5">Unlesbar</text>
+    <text x="364" y="424" fill="#e8eaf0" font-size="13" font-weight="500">0</text>
+    <rect x="524" y="384" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="538" y="404" fill="#6b7386" font-size="9.5">Verwaist</text>
+    <text x="538" y="424" fill="#f0645a" font-size="13" font-weight="500">1</text>
+    <rect x="698" y="384" width="160" height="50" rx="10" fill="#151821" stroke="none"/>
+    <text x="712" y="404" fill="#6b7386" font-size="9.5">Auf dem Server</text>
+    <text x="712" y="424" fill="#e8eaf0" font-size="13" font-weight="500">12.479</text>
+    <text x="350" y="476" fill="#6b7386" font-size="10.5">48,2 MB gelesen</text>
+    <rect x="330" y="508" width="540" height="34" rx="9" fill="#11141b" stroke="none"/>
+    <text x="350" y="530" fill="#f0645a" font-size="12" font-weight="700">!</text>
+    <text x="366" y="530" fill="#9aa2b5" font-size="11">Inhalt verändert · INBOX/2024-01-16_…_Grüße-aus-München.eml</text>
+    <rect x="330" y="548" width="540" height="34" rx="9" fill="#11141b" stroke="none"/>
+    <text x="350" y="570" fill="#f0645a" font-size="12" font-weight="700">!</text>
+    <text x="366" y="570" fill="#9aa2b5" font-size="11">Datei fehlt · INBOX/2024-01-17_…_Rechnung-mit-Anhang.eml</text>
+    <rect x="330" y="588" width="540" height="34" rx="9" fill="#11141b" stroke="none"/>
+    <text x="350" y="610" fill="#f0645a" font-size="12" font-weight="700">!</text>
+    <text x="366" y="610" fill="#9aa2b5" font-size="11">Nicht im Index · INBOX/fremde-datei.eml</text>
+    <rect x="660" y="578" width="100" height="34" rx="11" fill="#181c26" stroke="#262c3a"/>
+    <text x="676" y="600" fill="#9aa2b5" font-size="12.5" font-weight="500">Schließen</text>
+    <rect x="772" y="578" width="168" height="34" rx="11" fill="url(#accent)" stroke="none"/>
+    <text x="788" y="600" fill="#fff" font-size="12.5" font-weight="500">Prüfung starten</text>
+  </g>
+</svg>

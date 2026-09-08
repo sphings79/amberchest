@@ -56,28 +56,32 @@
     </g>
     <text x="56" y="275" fill="#9aa2b5" font-size="12.5">Suche</text>
     <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
-      <circle cx="35" cy="312" r="3.4"/><circle cx="35" cy="312" r="8"/>
+      <path d="M27 320v-7M32.5 320v-12M38 320v-4M43 320v-9" stroke-linecap="round"/>
     </g>
-    <text x="56" y="317" fill="#9aa2b5" font-size="12.5">Einstellungen</text>
+    <text x="56" y="317" fill="#9aa2b5" font-size="12.5">Statistik</text>
     <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
-      <rect x="27" y="350" width="16" height="12" rx="3.5"/>
-      <path d="M35 346v4" stroke-linecap="round"/><circle cx="35" cy="346" r="1.4" fill="#9aa2b5"/>
-      <circle cx="32" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
-      <circle cx="38" cy="356" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="35" cy="354" r="3.4"/><circle cx="35" cy="354" r="8"/>
     </g>
-    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
-    <rect x="12" y="378" width="204" height="36" rx="11" fill="#221d3d"/>
+    <text x="56" y="359" fill="#9aa2b5" font-size="12.5">Einstellungen</text>
+    <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
+      <rect x="27" y="392" width="16" height="12" rx="3.5"/>
+      <path d="M35 388v4" stroke-linecap="round"/><circle cx="35" cy="388" r="1.4" fill="#9aa2b5"/>
+      <circle cx="32" cy="398" r="1.3" fill="#9aa2b5" stroke="none"/>
+      <circle cx="38" cy="398" r="1.3" fill="#9aa2b5" stroke="none"/>
+    </g>
+    <text x="56" y="401" fill="#9aa2b5" font-size="12.5">KI-Anbindung</text>
+    <rect x="12" y="420" width="204" height="36" rx="11" fill="#221d3d"/>
     <g stroke="#7c5cff" stroke-width="1.6" fill="none">
-      <path d="M27 396 35 389 43 396" stroke-linejoin="round"/>
-      <path d="M29.5 395v8h11v-8" stroke-linejoin="round"/>
-      <path d="M32.5 399.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
+      <path d="M27 438 35 431 43 438" stroke-linejoin="round"/>
+      <path d="M29.5 437v8h11v-8" stroke-linejoin="round"/>
+      <path d="M32.5 441.5a4 4 0 0 1 5 0" stroke-linecap="round"/>
     </g>
-    <text x="56" y="401" fill="#7c5cff" font-size="12.5" font-weight="500">Home Assistant</text>
+    <text x="56" y="443" fill="#7c5cff" font-size="12.5" font-weight="500">Home Assistant</text>
     <g stroke="#9aa2b5" stroke-width="1.6" fill="none">
-      <rect x="27" y="430" width="15" height="17" rx="2"/>
-      <path d="M31 435h7M31 439h7M31 443h4" stroke-linecap="round"/>
+      <rect x="27" y="472" width="15" height="17" rx="2"/>
+      <path d="M31 477h7M31 481h7M31 485h4" stroke-linecap="round"/>
     </g>
-    <text x="56" y="443" fill="#9aa2b5" font-size="12.5">Protokoll</text>
+    <text x="56" y="485" fill="#9aa2b5" font-size="12.5">Protokoll</text>
 
     <g stroke="#6b7386" stroke-width="1.5" fill="none">
       <path d="M35 572l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" stroke-linejoin="round"/>

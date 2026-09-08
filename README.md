@@ -61,6 +61,28 @@ field, sender, recipient, date range, size, read state and sort order.</em>
 
 <br><br>
 
+<img src="assets/screenshots/statistics.svg" width="880" alt="Statistics screen with messages per year, top senders and largest folders, dark and light side by side">
+
+<em>Statistics — what is actually in the archive, straight out of the index: by
+year, by sender, by folder, by attachment type.</em>
+
+<br><br>
+
+<img src="assets/screenshots/verify.svg" width="880" alt="Dialog checking the archive, with counts and three findings, dark and light side by side">
+
+<em>Verify — every file against its checksum, every folder against the server.
+What is missing, changed or does not belong in the index is named.</em>
+
+<br><br>
+
+<img src="assets/screenshots/transfer.svg" width="880" alt="Dialog moving the archive to another instance, with progress, dark and light side by side">
+
+<em>Move — the archive travels to the other instance, which rebuilds its index
+from the journals. An interruption is harmless and the first backup over there
+downloads nothing.</em>
+
+<br><br>
+
 <img src="assets/screenshots/homeassistant.svg" width="880" alt="Home Assistant screen with the MQTT broker, topics and the switches for discovery and commands, dark and light side by side">
 
 <em>Home Assistant — enter the MQTT broker and you are done: the entities appear

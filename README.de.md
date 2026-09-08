@@ -62,6 +62,29 @@ Absender, Empfänger, Zeitraum, Größe, Lesestatus und Sortierung.</em>
 
 <br><br>
 
+<img src="assets/screenshots/statistics.svg" width="880" alt="Statistik mit Nachrichten je Jahr, häufigsten Absendern und größten Ordnern, dunkel und hell nebeneinander">
+
+<em>Statistik — was tatsächlich im Archiv liegt, direkt aus dem Index: je Jahr,
+je Absender, je Ordner, nach Anhangstyp.</em>
+
+<br><br>
+
+<img src="assets/screenshots/verify.svg" width="880" alt="Dialog zum Prüfen des Archivs mit Zahlen und drei Befunden, dunkel und hell nebeneinander">
+
+<em>Archiv prüfen — jede Datei gegen ihre Prüfsumme, jeder Ordner gegen den
+Server. Was fehlt, sich verändert hat oder nicht in den Index gehört, steht
+namentlich da.</em>
+
+<br><br>
+
+<img src="assets/screenshots/transfer.svg" width="880" alt="Dialog zum Umziehen des Archivs auf eine andere Instanz mit Fortschritt, dunkel und hell nebeneinander">
+
+<em>Umziehen — das Archiv wandert zur anderen Instanz, die ihren Index aus den
+Journalen neu aufbaut. Ein Abbruch ist harmlos, die erste Sicherung drüben lädt
+nichts.</em>
+
+<br><br>
+
 <img src="assets/screenshots/homeassistant.svg" width="880" alt="Home-Assistant-Seite mit MQTT-Broker, Topics und Schaltern für Discovery und Befehle, dunkel und hell nebeneinander">
 
 <em>Home Assistant — MQTT-Broker eintragen, fertig: die Entitäten entstehen per
