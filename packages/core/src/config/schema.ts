@@ -53,6 +53,19 @@ export const oauthClientSchema = z.object({
   imapHost: z.string().default(''),
 });
 
+/** What to do as the archive volume fills up. */
+export const storageSettingsSchema = z.object({
+  /** Warn below this, in gigabytes; zero switches the warning off. */
+  warnBelowGb: z.number().min(0).max(10_000).default(5),
+  /**
+   * Stop a running backup below this, in gigabytes.
+   *
+   * Stopping is friendlier than filling the volume: a half written archive is
+   * bad, a system with no room left at all is worse.
+   */
+  stopBelowGb: z.number().min(0).max(10_000).default(1),
+});
+
 export const oauthSettingsSchema = z.object({
   google: oauthClientSchema.default(() => oauthClientSchema.parse({})),
   microsoft: oauthClientSchema.default(() => oauthClientSchema.parse({})),
@@ -137,6 +150,33 @@ export const mqttSettingsSchema = z.object({
   rejectUnauthorized: z.boolean().default(true),
 });
 
+/**
+ * Where to shout when something goes wrong.
+ *
+ * One webhook covers ntfy, Gotify, Discord, Apprise and anything else that
+ * takes a POST, which is why there is a format instead of five integrations.
+ */
+export const notificationSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  url: z.string().default(''),
+  format: z.enum(['json', 'ntfy', 'gotify', 'discord', 'apprise']).default('json'),
+  /** Sent as-is, for services that want a token in a header. */
+  authHeader: z.string().default(''),
+  events: z
+    .object({
+      backupFailed: z.boolean().default(true),
+      backupFinished: z.boolean().default(false),
+      verifyProblems: z.boolean().default(true),
+      lowDiskSpace: z.boolean().default(true),
+    })
+    .default(() => ({
+      backupFailed: true,
+      backupFinished: false,
+      verifyProblems: true,
+      lowDiskSpace: true,
+    })),
+});
+
 export const appSettingsSchema = z.object({
   archivePath: z.string().min(1).default(defaultArchiveDir()),
   language: z.enum(['de', 'en']).default('de'),
@@ -146,6 +186,8 @@ export const appSettingsSchema = z.object({
   mcp: mcpSettingsSchema.default(() => mcpSettingsSchema.parse({})),
   mqtt: mqttSettingsSchema.default(() => mqttSettingsSchema.parse({})),
   oauth: oauthSettingsSchema.default(() => oauthSettingsSchema.parse({})),
+  storage: storageSettingsSchema.default(() => storageSettingsSchema.parse({})),
+  notifications: notificationSettingsSchema.default(() => notificationSettingsSchema.parse({})),
   encryptArchive: z.boolean().default(false),
 });
 

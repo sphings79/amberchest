@@ -268,6 +268,42 @@ Passwords are never readable through MCP — they can only be set.
 settings, copy the generated token and point the client at `POST /mcp` with
 `Authorization: Bearer <token>`.
 
+## Disk space and notifications
+
+Two things a backup that runs unattended needs: room, and somebody to tell when
+there is none.
+
+**Disk space** is shown in the settings, for the volume the archive sits on. Two
+limits go with it: a warning threshold, and one at which a running backup
+**stops** rather than filling the volume. Stopping leaves a complete archive
+that is missing recent mail; filling the disk leaves a machine that cannot even
+write a log file.
+
+**Notifications** go to any address that takes a POST, so ntfy, Gotify,
+Discord, Apprise and anything self-built all work:
+
+| Event | Default |
+| --- | --- |
+| A backup failed | on |
+| A backup finished | off |
+| A verification found something | on |
+| Disk space is running low | on |
+
+Pick the format your service speaks, paste the address, and there is a test
+button. An extra header field covers services that want a token.
+
+```json
+{
+  "event": "backupFailed",
+  "level": "error",
+  "title": "Mail Archiver: backup of Privat failed",
+  "message": "Connection refused - check host and port",
+  "text": "…",
+  "at": "2026-09-09T02:00:11.000Z",
+  "details": { "account": "Privat", "stats": { … } }
+}
+```
+
 ## Checking the archive
 
 A backup nobody ever verifies is a hope, not a backup. **Verify** on an account

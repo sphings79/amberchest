@@ -263,6 +263,16 @@ export const api = {
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
 
+  storage: () =>
+    request<{
+      space: { free: number; total: number; path: string } | null;
+      warnBelow: number;
+      stopBelow: number;
+      low: boolean;
+    }>('/storage'),
+  testNotification: () =>
+    request<{ ok: boolean; error?: string }>('/notifications/test', { method: 'POST' }),
+
   startVerify: (id: string, body: { checkServer?: boolean; includeDeleted?: boolean }) =>
     request<{ started: boolean }>(`/accounts/${id}/verify`, {
       method: 'POST',

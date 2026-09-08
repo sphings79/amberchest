@@ -275,6 +275,43 @@ Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
 einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
 `Authorization: Bearer <token>` zeigen lassen.
 
+## Speicherplatz und Benachrichtigungen
+
+Zwei Dinge braucht eine Sicherung, die unbeaufsichtigt läuft: Platz, und
+jemanden, dem sie Bescheid sagen kann, wenn keiner mehr da ist.
+
+**Der freie Platz** steht in den Einstellungen, für das Laufwerk, auf dem das
+Archiv liegt. Dazu zwei Grenzen: eine, ab der gewarnt wird, und eine, ab der
+eine laufende Sicherung **anhält**, statt die Platte vollzuschreiben. Anhalten
+hinterlässt ein vollständiges Archiv, dem die neuesten Mails fehlen — eine
+volle Platte hinterlässt ein System, das nicht einmal mehr ein Protokoll
+schreiben kann.
+
+**Benachrichtigungen** gehen an jede Adresse, die einen POST annimmt: ntfy,
+Gotify, Discord, Apprise oder etwas Selbstgebautes.
+
+| Ereignis | Voreinstellung |
+| --- | --- |
+| Eine Sicherung ist fehlgeschlagen | an |
+| Eine Sicherung ist durchgelaufen | aus |
+| Eine Archivprüfung hat etwas gefunden | an |
+| Der Speicherplatz wird knapp | an |
+
+Format auswählen, Adresse eintragen, Testknopf drücken. Für Dienste, die einen
+Token wollen, gibt es ein Feld für einen zusätzlichen Header.
+
+```json
+{
+  "event": "backupFailed",
+  "level": "error",
+  "title": "Mail Archiver: backup of Privat failed",
+  "message": "Connection refused - check host and port",
+  "text": "…",
+  "at": "2026-09-09T02:00:11.000Z",
+  "details": { "account": "Privat", "stats": { … } }
+}
+```
+
 ## Das Archiv prüfen
 
 Ein Backup, das nie geprüft wird, ist eine Hoffnung und keine Sicherung.

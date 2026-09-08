@@ -268,6 +268,37 @@ export const de = {
       'folder-differs': 'Anzahl weicht ab',
     },
   },
+  storage: {
+    title: 'Speicherplatz',
+    low: 'wird knapp',
+    freeOf: 'frei von {{total}}',
+    unknown: 'Der freie Platz lässt sich hier nicht ermitteln.',
+    warnBelow: 'Warnen unter (GB)',
+    warnBelowHint: 'Zeigt einen Hinweis und schickt eine Benachrichtigung. 0 schaltet es ab.',
+    stopBelow: 'Sicherung anhalten unter (GB)',
+    stopBelowHint:
+      'Eine laufende Sicherung hört auf, statt die Platte vollzuschreiben. 0 schaltet es ab.',
+  },
+  notify: {
+    title: 'Benachrichtigungen',
+    intro:
+      'Schickt eine Nachricht an eine beliebige Adresse, die einen POST annimmt - ntfy, Gotify, Discord, Apprise oder etwas Eigenes. Eine nachts fehlgeschlagene Sicherung nützt nur, wenn sie jemand mitbekommt.',
+    enable: 'Benachrichtigungen aktivieren',
+    url: 'Adresse',
+    urlHint: 'Wohin der POST geht.',
+    format: 'Format',
+    formatJson: 'JSON (eigenes Schema)',
+    authHeader: 'Zusätzlicher Header',
+    authHeaderHint: 'Etwa „Authorization: Bearer …", falls der Dienst einen Token will.',
+    event: {
+      backupFailed: 'Wenn eine Sicherung fehlschlägt',
+      backupFinished: 'Nach jeder erfolgreichen Sicherung',
+      verifyProblems: 'Wenn eine Archivprüfung etwas findet',
+      lowDiskSpace: 'Wenn der Speicherplatz knapp wird',
+    },
+    test: 'Testnachricht senden',
+    testOk: 'Angekommen.',
+  },
   search: {
     title: 'Suche',
     placeholder: 'Betreff, Absender, Text, Anhänge durchsuchen …',

@@ -97,6 +97,12 @@ export {
   type VerifyStats,
 } from './verify/engine.js';
 export { VerifyManager } from './verify/manager.js';
+export {
+  Notifier,
+  type Notification,
+  type NotificationEvent,
+} from './notify/notifier.js';
+export { diskSpace, assertRoom, DiskFullError, type DiskSpace } from './storage/disk.js';
 export { APP_VERSION } from './util/version.js';
 export {
   OAuthError,

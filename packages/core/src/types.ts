@@ -183,6 +183,26 @@ export interface MqttSettings {
   rejectUnauthorized: boolean;
 }
 
+export interface StorageSettings {
+  /** Warn below this many gigabytes free; zero switches it off. */
+  warnBelowGb: number;
+  /** Stop a running backup below this many gigabytes free. */
+  stopBelowGb: number;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  url: string;
+  format: 'json' | 'ntfy' | 'gotify' | 'discord' | 'apprise';
+  authHeader: string;
+  events: {
+    backupFailed: boolean;
+    backupFinished: boolean;
+    verifyProblems: boolean;
+    lowDiskSpace: boolean;
+  };
+}
+
 export interface AppSettings {
   /** Base directory holding one subdirectory per account. */
   archivePath: string;
@@ -193,6 +213,8 @@ export interface AppSettings {
   mcp: McpSettings;
   mqtt: MqttSettings;
   oauth: OAuthSettings;
+  storage: StorageSettings;
+  notifications: NotificationSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can
    * no longer be opened by a mail client directly.

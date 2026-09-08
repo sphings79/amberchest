@@ -11,11 +11,12 @@ import {
   RotateCcw,
   ShieldAlert,
 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
 import { Button, Card, Field, Input, ProgressBar, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
+import { NotificationSettings } from './NotificationSettings.js';
 import { OAuthSettings } from './OAuthSettings.js';
 import { UpdateCard } from './UpdateCard.js';
 import { useApp } from '../state.js';
@@ -84,8 +85,30 @@ export function Settings(): ReactNode {
         redirectMode: 'loopback',
         publicRedirectUri: '',
       },
+      storage: { warnBelowGb: 5, stopBelowGb: 1 },
+      notifications: {
+        enabled: false,
+        url: '',
+        format: 'json',
+        authHeader: '',
+        events: {
+          backupFailed: true,
+          backupFinished: false,
+          verifyProblems: true,
+          lowDiskSpace: true,
+        },
+      },
     },
   );
+  const [space, setSpace] = useState<{ free: number; total: number } | null>(null);
+
+  // The free space changes while a backup runs, so it is read on every visit.
+  useEffect(() => {
+    void api
+      .storage()
+      .then((value) => setSpace(value.space))
+      .catch(() => undefined);
+  }, []);
   const [saved, setSaved] = useState(false);
   const migrationRunning = migrationProgress
     ? !['done', 'failed', 'cancelled'].includes(migrationProgress.phase)
@@ -348,6 +371,13 @@ export function Settings(): ReactNode {
           </div>
         </div>
       </Card>
+
+      <NotificationSettings
+        notifications={values.notifications}
+        storage={values.storage}
+        space={space}
+        onChange={(part) => void update(part, true)}
+      />
 
       <OAuthSettings
         settings={values.oauth}

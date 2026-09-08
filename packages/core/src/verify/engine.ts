@@ -334,16 +334,22 @@ export class VerifyEngine extends EventEmitter {
       this.stats.serverMessages += there;
       this.stats.localMessages += here;
 
-      if (there !== here) {
-        this.stats.foldersDiffering += 1;
-        this.note({
-          kind: 'folder-differs',
-          folder: folder.path,
-          path: folder.path,
-          detail: there > here ? 'behind' : 'ahead',
-          detailParams: { count: Math.abs(there - here) },
-        });
-      }
+      if (there === here) continue;
+
+      // An account that keeps what the server deleted is meant to hold more
+      // than the server does. Reporting that every time would train the user
+      // to ignore the report.
+      const expected = there < here && this.account.settings.deletedHandling === 'keep';
+      if (expected) continue;
+
+      this.stats.foldersDiffering += 1;
+      this.note({
+        kind: 'folder-differs',
+        folder: folder.path,
+        path: folder.path,
+        detail: there > here ? 'behind' : 'ahead',
+        detailParams: { count: Math.abs(there - here) },
+      });
     }
   }
 }

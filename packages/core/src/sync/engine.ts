@@ -23,6 +23,7 @@ import {
   recordFlagChange,
   storeMessage,
 } from '../storage/archive.js';
+import { assertRoom } from '../storage/disk.js';
 import type { Account, RemoteFolder, SyncProgress, SyncStats } from '../types.js';
 import { mapWithConcurrency, sleep } from '../util/concurrency.js';
 import { logger } from '../util/logger.js';
@@ -64,6 +65,8 @@ interface FolderPlan {
 export interface SyncEngineOptions {
   db: ArchiveDatabase;
   archiveBaseDir: string;
+  /** Stop rather than fill the volume; zero switches the guard off. */
+  stopBelowBytes?: number;
   /** When set, message files are written encrypted. */
   encryptionKey?: Buffer | null;
   /** Prepared connection; an OAuth account arrives with a fresh token. */
@@ -512,6 +515,9 @@ export class SyncEngine extends EventEmitter {
 
     const accountDir = this.layout.accountDir(this.account);
     const folderDir = join(accountDir, plan.folder.local_path);
+    // Checked once per folder rather than per message: cheap enough to be
+    // honest about, and a folder is not big enough to fill a disk on its own.
+    await assertRoom(accountDir, this.options.stopBelowBytes ?? 0);
     const taken = await listMessageFiles(folderDir);
     const scannedByUid = new Map(plan.scanned.map((message) => [message.uid, message]));
     const delay = this.account.settings.requestDelayMs;

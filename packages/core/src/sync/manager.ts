@@ -12,6 +12,8 @@ export interface SyncManagerOptions {
   encryptionKey?: () => Buffer | null;
   /** Builds the connection, refreshing an OAuth token when it is due. */
   connectionFor?: (account: Account) => Promise<ImapConnectionOptions>;
+  /** Free space below which a run stops instead of filling the volume. */
+  stopBelowBytes?: () => number;
 }
 
 /**
@@ -56,6 +58,7 @@ export class SyncManager extends EventEmitter {
       archiveBaseDir: this.options.archiveBaseDir(),
       encryptionKey: this.options.encryptionKey?.() ?? null,
       connection: await this.options.connectionFor?.(account),
+      stopBelowBytes: this.options.stopBelowBytes?.() ?? 0,
     });
 
     engine.on('progress', (progress: SyncProgress) => {

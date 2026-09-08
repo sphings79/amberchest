@@ -211,9 +211,42 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   server.get('/api/settings', { preHandler: requireUnlocked }, async () => app.getSettings());
 
   server.patch('/api/settings', { preHandler: requireUnlocked }, async (request, reply) => {
-    const body = appSettingsSchema.partial().safeParse(request.body);
+    const raw = request.body;
+    if (!raw || typeof raw !== 'object') return fail(reply, 400, 'Invalid settings');
+
+    const body = appSettingsSchema.partial().safeParse(raw);
     if (!body.success) return fail(reply, 400, 'Invalid settings');
-    return app.updateSettings(body.data);
+
+    /*
+     * Only what the client actually sent.
+     *
+     * A partial schema still fills in the defaults of every section that is
+     * missing, so patching the theme alone would quietly reset the archive
+     * path, the MCP token and everything else. The parsed values are kept for
+     * their coercion, but the keys come from the request.
+     */
+    const sent = new Set(Object.keys(raw as Record<string, unknown>));
+    const patch = Object.fromEntries(
+      Object.entries(body.data).filter(([key]) => sent.has(key)),
+    ) as Partial<typeof body.data>;
+
+    return app.updateSettings(patch);
+  });
+
+  // ---------------------------------------------------------------- storage
+
+  server.get('/api/storage', { preHandler: requireUnlocked }, async () => app.storageStatus());
+
+  // ---------------------------------------------------------- notifications
+
+  server.post('/api/notifications/test', { preHandler: requireUnlocked }, async () => {
+    const result = await app.notifier.trySend({
+      event: 'test',
+      level: 'info',
+      title: 'Mail Archiver: test',
+      message: 'If you are reading this, the notification works.',
+    });
+    return result;
   });
 
   // ----------------------------------------------------------------- verify

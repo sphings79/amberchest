@@ -29,7 +29,9 @@ import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
 import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
+import { Notifier } from './notify/notifier.js';
 import { OAuthManager } from './oauth/manager.js';
+import { diskSpace, type DiskSpace } from './storage/disk.js';
 import { VerifyManager } from './verify/manager.js';
 import type { VerifyProgress } from './verify/engine.js';
 import { RestoreManager } from './restore/manager.js';
@@ -90,6 +92,7 @@ export class MailArchiverApp {
   readonly mqtt: MqttBridge;
   readonly oauth: OAuthManager;
   readonly verify: VerifyManager;
+  readonly notifier: Notifier;
   private readonly pdfRenderer: PdfRenderer | undefined;
   private schedule: { expression: string; nextRun: () => Date | null } | null = null;
 
@@ -111,6 +114,7 @@ export class MailArchiverApp {
       // either way, because each file says what it is.
       encryptionKey: () => (this.config.getSettings().encryptArchive ? this.config.archiveKey : null),
       connectionFor: (account) => this.connectionFor(account),
+      stopBelowBytes: () => this.config.getSettings().storage.stopBelowGb * 1024 * 1024 * 1024,
     });
     this.exports = new AttachmentExportManager({
       db: this.db,
@@ -138,6 +142,7 @@ export class MailArchiverApp {
       encryptionKey: () => this.config.archiveKey,
       connectionFor: (account) => this.connectionFor(account),
     });
+    this.notifier = new Notifier(() => this.config.getSettings().notifications);
     this.mqtt = new MqttBridge({
       settings: () => this.config.getSettings().mqtt,
       overview: () => this.overview(),
@@ -148,6 +153,11 @@ export class MailArchiverApp {
     // pushed straight through instead of waiting for the next interval.
     this.sync.on('progress', (progress: SyncProgress) => {
       void this.mqtt.publishAccount(progress.accountId).catch(() => undefined);
+      void this.notifyAboutSync(progress);
+    });
+
+    this.verify.on('progress', (progress: VerifyProgress) => {
+      if (progress.phase === 'done') void this.notifyAboutVerify(progress);
     });
   }
 
@@ -528,6 +538,97 @@ export class MailArchiverApp {
       void this.startIndexing(accountId).catch(() => undefined);
     }
     return progress;
+  }
+
+  /** Free space where the archive lives, or null when it cannot be read. */
+  diskSpace(): Promise<DiskSpace | null> {
+    return diskSpace(this.config.getSettings().archivePath);
+  }
+
+  /**
+   * Free space plus what the user asked to be warned about.
+   *
+   * Kept in one place so the interface, the notification and the MQTT sensors
+   * all mean the same thing by "low".
+   */
+  async storageStatus(): Promise<{
+    space: DiskSpace | null;
+    warnBelow: number;
+    stopBelow: number;
+    low: boolean;
+  }> {
+    const settings = this.config.getSettings().storage;
+    const warnBelow = settings.warnBelowGb * 1024 * 1024 * 1024;
+    const stopBelow = settings.stopBelowGb * 1024 * 1024 * 1024;
+    const space = await this.diskSpace();
+    return {
+      space,
+      warnBelow,
+      stopBelow,
+      low: Boolean(space && warnBelow > 0 && space.free < warnBelow),
+    };
+  }
+
+  /** Tells the user when a backup ends badly, or brought something new. */
+  private async notifyAboutSync(progress: SyncProgress): Promise<void> {
+    const account = this.config.getAccount(progress.accountId);
+    const name = account?.name ?? progress.accountId;
+
+    if (progress.phase === 'failed') {
+      await this.notifier.send({
+        event: 'backupFailed',
+        level: 'error',
+        title: `Mail Archiver: backup of ${name} failed`,
+        message: progress.error ?? 'The run ended with an error.',
+        details: { account: name, accountId: progress.accountId, stats: progress.stats },
+      });
+      return;
+    }
+
+    if (progress.phase !== 'done') return;
+
+    if (this.notifier.wants('backupFinished')) {
+      const { messagesNew, messagesMoved, messagesDeleted } = progress.stats;
+      await this.notifier.send({
+        event: 'backupFinished',
+        level: 'info',
+        title: `Mail Archiver: ${name} backed up`,
+        message: `${messagesNew} new, ${messagesMoved} moved, ${messagesDeleted} removed.`,
+        details: { account: name, accountId: progress.accountId, stats: progress.stats },
+      });
+    }
+
+    // The moment after a run is when a full disk actually matters.
+    const status = await this.storageStatus();
+    if (status.low && status.space) {
+      await this.notifier.send({
+        event: 'lowDiskSpace',
+        level: 'warning',
+        title: 'Mail Archiver: the archive volume is filling up',
+        message:
+          `Only ${Math.round(status.space.free / 1024 / 1024 / 1024)} GB left where the archive ` +
+          `is stored. Below ${this.config.getSettings().storage.stopBelowGb} GB a backup stops ` +
+          'instead of filling the volume.',
+        details: { free: status.space.free, total: status.space.total, path: status.space.path },
+      });
+    }
+  }
+
+  /** Tells the user when a check found something. */
+  private async notifyAboutVerify(progress: VerifyProgress): Promise<void> {
+    const { missing, changed, unreadable, orphans, foldersDiffering } = progress.stats;
+    if (missing + changed + unreadable + orphans + foldersDiffering === 0) return;
+
+    const account = this.config.getAccount(progress.accountId);
+    await this.notifier.send({
+      event: 'verifyProblems',
+      level: missing + changed + unreadable > 0 ? 'error' : 'warning',
+      title: `Mail Archiver: the archive of ${account?.name ?? progress.accountId} has problems`,
+      message:
+        `${missing} missing, ${changed} changed, ${unreadable} unreadable, ${orphans} orphaned, ` +
+        `${foldersDiffering} folder(s) differ from the server.`,
+      details: { accountId: progress.accountId, stats: progress.stats },
+    });
   }
 
   /** Checks the files of one account against the index, and the server. */
