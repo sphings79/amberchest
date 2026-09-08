@@ -29,6 +29,10 @@ import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
 import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
+import { AdoptManager } from './adopt/manager.js';
+import { TransferManager } from './transfer/manager.js';
+import type { TransferProgress, TransferTarget } from './transfer/engine.js';
+import type { AdoptProgress } from './adopt/engine.js';
 import { Notifier } from './notify/notifier.js';
 import { OAuthManager } from './oauth/manager.js';
 import { diskSpace, type DiskSpace } from './storage/disk.js';
@@ -36,7 +40,7 @@ import { VerifyManager } from './verify/manager.js';
 import type { VerifyProgress } from './verify/engine.js';
 import { RestoreManager } from './restore/manager.js';
 import { EncryptionMigrationManager, type MigrationProgress } from './storage/migrate.js';
-import { ArchiveLayout } from './storage/archive.js';
+import { ArchiveLayout, listArchiveFiles, writeArchiveFile } from './storage/archive.js';
 import { suggestMappings, type FolderMapping, type RestoreProgress } from './restore/engine.js';
 import type { McpPermissions } from './mcp/tools.js';
 import { buildFolderTree } from './sync/folders.js';
@@ -93,6 +97,8 @@ export class MailArchiverApp {
   readonly oauth: OAuthManager;
   readonly verify: VerifyManager;
   readonly notifier: Notifier;
+  readonly adopt: AdoptManager;
+  readonly transfer: TransferManager;
   private readonly pdfRenderer: PdfRenderer | undefined;
   private schedule: { expression: string; nextRun: () => Date | null } | null = null;
 
@@ -143,6 +149,15 @@ export class MailArchiverApp {
       connectionFor: (account) => this.connectionFor(account),
     });
     this.notifier = new Notifier(() => this.config.getSettings().notifications);
+    this.transfer = new TransferManager({
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+    });
+    this.adopt = new AdoptManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
+      connectionFor: (account) => this.connectionFor(account),
+    });
     this.mqtt = new MqttBridge({
       settings: () => this.config.getSettings().mqtt,
       overview: () => this.overview(),
@@ -629,6 +644,48 @@ export class MailArchiverApp {
         `${foldersDiffering} folder(s) differ from the server.`,
       details: { accountId: progress.accountId, stats: progress.stats },
     });
+  }
+
+  /**
+   * Takes an archive directory that is already on disk into the index.
+   *
+   * The way an archive moves from the desktop app to a container, and the way
+   * back after a lost index database.
+   */
+  startAdopt(
+    accountId: string,
+    options: { askServer?: boolean; includeDeleted?: boolean } = {},
+  ): Promise<AdoptProgress> {
+    return this.adopt.start(this.requireAccount(accountId), options);
+  }
+
+  /** Every message file and journal of an account, with its size. */
+  async archiveManifest(accountId: string): Promise<Array<{ path: string; size: number }>> {
+    const account = this.requireAccount(accountId);
+    const layout = new ArchiveLayout(this.config.getSettings().archivePath);
+    return listArchiveFiles(layout.accountDir(account));
+  }
+
+  /**
+   * Writes one file into the archive of an account.
+   *
+   * Used by a transfer from another instance. The path segments are checked by
+   * the route before they get here; this only ever writes below the account
+   * directory.
+   */
+  async writeArchiveFile(accountId: string, segments: string[], body: Buffer): Promise<void> {
+    const account = this.requireAccount(accountId);
+    const layout = new ArchiveLayout(this.config.getSettings().archivePath);
+    await writeArchiveFile(layout.accountDir(account), segments, body);
+  }
+
+  /** Sends an archive to another instance, which then adopts it. */
+  startTransfer(
+    accountId: string,
+    target: TransferTarget,
+    options: { includeDeleted?: boolean } = {},
+  ): Promise<TransferProgress> {
+    return this.transfer.start(this.requireAccount(accountId), target, options);
   }
 
   /** Checks the files of one account against the index, and the server. */

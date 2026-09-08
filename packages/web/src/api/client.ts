@@ -13,6 +13,7 @@ import type {
   MqttStatus,
   PublicAccount,
   SearchResult,
+  TransferProgress,
   VerifyProgress,
 } from '@mail-archiver/core';
 
@@ -31,6 +32,7 @@ export type {
   MqttStatus,
   PublicAccount,
   SearchResult,
+  TransferProgress,
   VerifyProgress,
 };
 
@@ -262,6 +264,21 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  startTransfer: (
+    id: string,
+    body: { url: string; token: string; accountId: string; includeDeleted?: boolean },
+  ) => request<{ started: boolean }>(`/accounts/${id}/transfer`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }),
+  cancelTransfer: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/transfer/cancel`, { method: 'POST' }),
+  adoptArchive: (id: string, body: { askServer?: boolean; includeDeleted?: boolean }) =>
+    request<{ phase: string; stats: Record<string, number>; guessedFolders: string[] }>(
+      `/accounts/${id}/adopt`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
 
   storage: () =>
     request<{

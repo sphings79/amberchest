@@ -310,6 +310,13 @@ export class ArchiveDatabase {
     }>;
   }
 
+  /** One message by its file name, for adopting an archive without duplicates. */
+  findMessageByFile(accountId: string, folderId: number, fileName: string): MessageRow | undefined {
+    return this.db
+      .prepare('SELECT * FROM messages WHERE account_id = ? AND folder_id = ? AND file_name = ?')
+      .get(accountId, folderId, fileName) as MessageRow | undefined;
+  }
+
   /** Fills in a checksum that an older version did not write yet. */
   setMessageHash(id: number, sha256: string): void {
     this.db.prepare('UPDATE messages SET sha256 = ? WHERE id = ?').run(sha256, id);

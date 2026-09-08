@@ -233,6 +233,103 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.updateSettings(patch);
   });
 
+  // ----------------------------------------------------------------- archive
+
+  /**
+   * Where a message file may be written by a transfer.
+   *
+   * An endpoint that writes files is only safe with a hard rule about what a
+   * path may look like: relative, no traversal, and only the names the archive
+   * itself uses.
+   */
+  const safeArchivePath = (value: string): string[] | null => {
+    const segments = value.split('/').filter(Boolean);
+    if (segments.length === 0) return null;
+    if (segments.some((segment) => segment === '..' || segment === '.' || segment.includes('\\'))) {
+      return null;
+    }
+    if (value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return null;
+
+    const name = segments[segments.length - 1] ?? '';
+    if (!name.endsWith('.eml') && !name.startsWith('.mailarchiver')) return null;
+    return segments;
+  };
+
+  server.get('/api/accounts/:id/archive/manifest', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return { files: await app.archiveManifest(id) };
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.put('/api/accounts/:id/archive/file', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { path } = request.query as { path?: string };
+    if (!path) return fail(reply, 400, 'No path');
+
+    const segments = safeArchivePath(path);
+    if (!segments) return fail(reply, 400, 'That path is not allowed');
+
+    const body = request.body;
+    if (!Buffer.isBuffer(body)) return fail(reply, 400, 'Expected a file body');
+
+    try {
+      await app.writeArchiveFile(id, segments, body);
+      return { ok: true };
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  server.post('/api/accounts/:id/adopt', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z
+      .object({
+        askServer: z.boolean().default(false),
+        includeDeleted: z.boolean().default(false),
+      })
+      .safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    if (app.adopt.isRunning) return fail(reply, 409, 'An adoption is already running');
+
+    try {
+      const result = await app.startAdopt(id, body.data);
+      return { phase: result.phase, stats: result.stats, guessedFolders: result.guessedFolders };
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  server.post('/api/accounts/:id/transfer', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z
+      .object({
+        url: z.string().min(1),
+        token: z.string().default(''),
+        accountId: z.string().min(1),
+        includeDeleted: z.boolean().default(false),
+      })
+      .safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    if (app.transfer.isRunning) return fail(reply, 409, 'A transfer is already running');
+
+    // Runs on; the interface follows over the websocket.
+    void app
+      .startTransfer(
+        id,
+        { url: body.data.url, token: body.data.token, accountId: body.data.accountId },
+        { includeDeleted: body.data.includeDeleted },
+      )
+      .catch((error: Error) => logger.error(`Transfer failed: ${error.message}`));
+    return { started: true };
+  });
+
+  server.post('/api/accounts/:id/transfer/cancel', { preHandler: requireUnlocked }, async () => ({
+    cancelled: app.transfer.cancel(),
+  }));
+
   // ---------------------------------------------------------------- storage
 
   server.get('/api/storage', { preHandler: requireUnlocked }, async () => app.storageStatus());
@@ -909,6 +1006,8 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onRestoreProgress = (progress: unknown): void => send('restore-progress', progress);
     const onMigrationProgress = (progress: unknown): void => send('migration-progress', progress);
     const onVerifyProgress = (progress: unknown): void => send('verify-progress', progress);
+    const onAdoptProgress = (progress: unknown): void => send('adopt-progress', progress);
+    const onTransferProgress = (progress: unknown): void => send('transfer-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
@@ -918,6 +1017,8 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     app.restore.on('progress', onRestoreProgress);
     app.migration.on('progress', onMigrationProgress);
     app.verify.on('progress', onVerifyProgress);
+    app.adopt.on('progress', onAdoptProgress);
+    app.transfer.on('progress', onTransferProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
@@ -928,6 +1029,8 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.restore.off('progress', onRestoreProgress);
       app.migration.off('progress', onMigrationProgress);
       app.verify.off('progress', onVerifyProgress);
+      app.adopt.off('progress', onAdoptProgress);
+      app.transfer.off('progress', onTransferProgress);
       logger.off('entry', onLog);
     });
   });

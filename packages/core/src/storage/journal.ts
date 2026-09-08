@@ -13,6 +13,21 @@ import { JOURNAL_FILE } from '../util/paths.js';
  */
 export type JournalRecord =
   | {
+      /**
+       * Written whenever the folder is seen on the server.
+       *
+       * The directory name alone does not say what the folder is called on the
+       * server: with a delimiter other than "/" the two differ. Without this
+       * record an archive can only be adopted by asking the server.
+       */
+      op: 'folder';
+      ts: string;
+      path: string;
+      delimiter: string;
+      specialUse: string | null;
+      uidvalidity: number | null;
+    }
+  | {
       op: 'add';
       ts: string;
       file: string;

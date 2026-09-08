@@ -1,5 +1,6 @@
 import type { AccountOverview, SyncProgress } from '@mail-archiver/core';
 import {
+  ArrowRightLeft,
   CalendarClock,
   FolderTree,
   Mail,
@@ -23,6 +24,7 @@ import { AccountForm } from './AccountForm.js';
 import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
 import { RestoreDialog } from './RestoreDialog.js';
+import { TransferDialog } from './TransferDialog.js';
 import { VerifyDialog } from './VerifyDialog.js';
 
 function formatBytes(bytes: number): string {
@@ -105,6 +107,7 @@ function AccountCard({
   onAttachments,
   onRestore,
   onVerify,
+  onTransfer,
   onChanged,
 }: {
   overview: AccountOverview;
@@ -114,6 +117,7 @@ function AccountCard({
   onAttachments: () => void;
   onRestore: () => void;
   onVerify: () => void;
+  onTransfer: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
@@ -201,6 +205,10 @@ function AccountCard({
             <Upload size={15} />
             {t('restore.open')}
           </Button>
+          <Button onClick={onTransfer} disabled={overview.messageCount === 0}>
+            <ArrowRightLeft size={15} />
+            {t('transfer.open')}
+          </Button>
           <Button variant="ghost" onClick={onEdit} aria-label={t('dashboard.edit')}>
             <Pencil size={15} />
           </Button>
@@ -254,6 +262,7 @@ export function Dashboard(): ReactNode {
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
   const [verifyFor, setVerifyFor] = useState<AccountOverview | null>(null);
+  const [transferFor, setTransferFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
   // The filter box only appears once the list is long enough to need it.
@@ -322,6 +331,7 @@ export function Dashboard(): ReactNode {
               onAttachments={() => setAttachmentsFor(overview)}
               onRestore={() => setRestoreFor(overview)}
               onVerify={() => setVerifyFor(overview)}
+              onTransfer={() => setTransferFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
           ))}
@@ -340,6 +350,10 @@ export function Dashboard(): ReactNode {
       {restoreFor && <RestoreDialog overview={restoreFor} onClose={() => setRestoreFor(null)} />}
 
       {verifyFor && <VerifyDialog overview={verifyFor} onClose={() => setVerifyFor(null)} />}
+
+      {transferFor && (
+        <TransferDialog overview={transferFor} onClose={() => setTransferFor(null)} />
+      )}
 
       {attachmentsFor && (
         <AttachmentExport

@@ -21,6 +21,7 @@ import {
   moveMessageFile,
   purgeMessageFile,
   recordFlagChange,
+  recordFolder,
   storeMessage,
 } from '../storage/archive.js';
 import { assertRoom } from '../storage/disk.js';
@@ -263,6 +264,15 @@ export class SyncEngine extends EventEmitter {
 
     const relativeFolder = this.layout.relativeFolderPath(remote.path, remote.delimiter);
     const folder = this.db.upsertFolder(this.account.id, remote, relativeFolder);
+
+    // Once per folder and run: what this directory is called on the server, so
+    // the archive can be adopted elsewhere without asking.
+    await recordFolder(join(this.layout.accountDir(this.account), relativeFolder), {
+      path: remote.path,
+      delimiter: remote.delimiter,
+      specialUse: remote.specialUse,
+      uidvalidity: folder.uidvalidity,
+    });
 
     let state;
     try {

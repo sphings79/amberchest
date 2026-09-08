@@ -31,8 +31,21 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
     logger: false,
     // Behind a reverse proxy the real client address comes from headers.
     trustProxy: true,
-    bodyLimit: 5 * 1024 * 1024,
+    // A transferred message file is the largest body this ever sees.
+    bodyLimit: 128 * 1024 * 1024,
   });
+
+  /*
+   * Raw bodies, for a transfer from another instance.
+   *
+   * Fastify refuses a content type it has no parser for, and a message file is
+   * exactly that: bytes, to be written as they are.
+   */
+  server.addContentTypeParser(
+    'application/octet-stream',
+    { parseAs: 'buffer' },
+    (_request, body, done) => done(null, body),
+  );
 
   /*
    * Home Assistant ingress: nothing but the supervisor may knock.

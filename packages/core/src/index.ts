@@ -98,6 +98,24 @@ export {
 } from './verify/engine.js';
 export { VerifyManager } from './verify/manager.js';
 export {
+  AdoptEngine,
+  AdoptCancelledError,
+  readHeaders,
+  type AdoptPhase,
+  type AdoptProgress,
+  type AdoptStats,
+} from './adopt/engine.js';
+export { AdoptManager } from './adopt/manager.js';
+export {
+  TransferEngine,
+  TransferCancelledError,
+  type TransferPhase,
+  type TransferProgress,
+  type TransferStats,
+  type TransferTarget,
+} from './transfer/engine.js';
+export { TransferManager } from './transfer/manager.js';
+export {
   Notifier,
   type Notification,
   type NotificationEvent,

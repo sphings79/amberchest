@@ -312,6 +312,44 @@ Token wollen, gibt es ein Feld für einen zusätzlichen Header.
 }
 ```
 
+## Ein Archiv umziehen
+
+Ein Archiv, das auf dem Desktop angefangen hat, gehört irgendwann auf den
+Server — und nach einer verlorenen Index-Datenbank sind die Dateien ja noch
+alle da. **Umziehen** schickt das Archiv eines Kontos an eine andere Instanz,
+die ihren Index aus dem Ankommenden neu aufbaut.
+
+1. Auf der Zielinstanz das Konto anlegen, mit derselben Adresse
+2. Beim Quellkonto auf **Umziehen**, Adresse und Oberflächen-Passwort des Ziels
+   eintragen
+3. Zielkonto auswählen und starten
+
+Es wandern die Dateien, nicht der Index: jeder Ordner führt ein Journal, und
+die Gegenstelle baut daraus ihren Index. Ein abgebrochener Umzug ist deshalb
+harmlos — beim nächsten Anlauf geht nur, was noch fehlt, verglichen über Name
+und Größe.
+
+Jede Nachricht behält ihre UID, die erste Sicherung auf der neuen Maschine lädt
+also **nichts** herunter. Eine Datei, deren Journaleintrag fehlt, wird
+stattdessen gelesen und bekommt UIDVALIDITY null — die nächste Sicherung ordnet
+sie dann über den Fingerabdruck zu, denselben Weg wie bei einer echten
+UIDVALIDITY-Änderung, und lädt ebenfalls nichts.
+
+**Auf der Quelle wird nichts gelöscht.** Prüfe das Archiv drüben und lass dort
+einmal sichern; erst wenn beides passt, kommt die alte Kopie weg — von Hand.
+
+Zwei Dinge, die man wissen sollte:
+
+- Ein **verschlüsseltes Archiv** wandert, wie es ist. Die Gegenstelle kann es
+  nur mit demselben Master-Passwort lesen.
+- Der empfangende Endpunkt nimmt ausschließlich relative Pfade an, die auf
+  `.eml` oder den Journalnamen enden, unterhalb des Kontoverzeichnisses. Alles
+  andere wird abgewiesen.
+
+Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
+Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
+Index-Datenbank wieder aufgebaut.
+
 ## Das Archiv prüfen
 
 Ein Backup, das nie geprüft wird, ist eine Hoffnung und keine Sicherung.

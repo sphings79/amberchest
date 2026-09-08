@@ -140,6 +140,21 @@ export async function moveMessageFile(
   });
 }
 
+/** Notes what this directory is called on the server, for a later adoption. */
+export async function recordFolder(
+  folderDir: string,
+  folder: { path: string; delimiter: string; specialUse: string | null; uidvalidity: number | null },
+): Promise<void> {
+  await appendJournal(folderDir, {
+    op: 'folder',
+    ts: new Date().toISOString(),
+    path: folder.path,
+    delimiter: folder.delimiter,
+    specialUse: folder.specialUse,
+    uidvalidity: folder.uidvalidity,
+  });
+}
+
 export async function recordFlagChange(folderDir: string, fileName: string, flags: string[]): Promise<void> {
   await appendJournal(folderDir, { op: 'flags', ts: new Date().toISOString(), file: fileName, flags });
 }
@@ -177,4 +192,52 @@ export async function pathExists(path: string): Promise<boolean> {
 /** Relative path of a folder inside the account directory, for journal entries. */
 export function relativeTo(accountDir: string, folderDir: string): string {
   return relative(accountDir, folderDir) || '.';
+}
+
+/** Every message file and journal below a directory, with sizes. */
+export async function listArchiveFiles(
+  accountDir: string,
+): Promise<Array<{ path: string; size: number }>> {
+  const found: Array<{ path: string; size: number }> = [];
+
+  const walk = async (directory: string): Promise<void> => {
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const full = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!entry.name.endsWith('.eml') && !entry.name.startsWith('.mailarchiver')) continue;
+
+      const info = await stat(full).catch(() => null);
+      if (info) found.push({ path: relative(accountDir, full).split(sep).join('/'), size: info.size });
+    }
+  };
+
+  await walk(accountDir);
+  return found;
+}
+
+/**
+ * Writes one file into an archive, creating the directories on the way.
+ *
+ * The caller has already checked the segments; nothing here can escape the
+ * account directory because the path is rebuilt from them.
+ */
+export async function writeArchiveFile(
+  accountDir: string,
+  segments: string[],
+  body: Buffer,
+): Promise<void> {
+  const target = join(accountDir, ...segments);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, body);
 }

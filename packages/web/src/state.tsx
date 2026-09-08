@@ -6,6 +6,7 @@ import type {
   LogEntry,
   MigrationProgress,
   SyncProgress,
+  TransferProgress,
   VerifyProgress,
 } from '@mail-archiver/core';
 import {
@@ -32,6 +33,7 @@ interface AppState {
   restoreProgress: RestoreProgress | null;
   migrationProgress: MigrationProgress | null;
   verifyProgress: Record<string, VerifyProgress>;
+  transferProgress: TransferProgress | null;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -67,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [restoreProgress, setRestoreProgress] = useState<RestoreProgress | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [verifyProgress, setVerifyProgress] = useState<Record<string, VerifyProgress>>({});
+  const [transferProgress, setTransferProgress] = useState<TransferProgress | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +161,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         } else if (message.type === 'verify-progress') {
           const value = message.payload as VerifyProgress;
           setVerifyProgress((current) => ({ ...current, [value.accountId]: value }));
+        } else if (message.type === 'transfer-progress') {
+          setTransferProgress(message.payload as TransferProgress);
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -188,6 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       restoreProgress,
       migrationProgress,
       verifyProgress,
+      transferProgress,
       logs,
       loading,
       error,
@@ -205,6 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       restoreProgress,
       migrationProgress,
       verifyProgress,
+      transferProgress,
       logs,
       loading,
       error,

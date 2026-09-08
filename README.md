@@ -304,6 +304,43 @@ button. An extra header field covers services that want a token.
 }
 ```
 
+## Moving an archive
+
+An archive that started on the desktop belongs on the server sooner or later —
+and after a lost index database, the files are still all there. **Move** on an
+account sends the archive to another instance, which rebuilds its index from
+what arrives.
+
+1. Create the account on the target instance, with the same address
+2. **Move** on the source account, enter the address of the target and its
+   interface password
+3. Pick the target account and start
+
+The files travel, the index does not: every folder carries a journal, and the
+other side builds its index from that. Which means an interrupted transfer is
+harmless — run it again and only what is still missing is sent, compared by
+name and size.
+
+A message keeps the UID it had, so the first backup on the new machine
+downloads **nothing**. A file whose journal entry is gone is read instead and
+gets UIDVALIDITY zero, which makes the next backup match it to the server by
+fingerprint — the same path an actual UIDVALIDITY change takes, and still no
+download.
+
+**Nothing is deleted on the source.** Verify the archive on the target and run
+one backup there; only when both look right should the old copy go, by hand.
+
+Two things to know:
+
+- An **encrypted archive** travels as it is. The target can only read it with
+  the same master password.
+- The endpoint that receives files only accepts relative paths ending in `.eml`
+  or the journal name, below the account directory. Anything else is refused.
+
+The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
+over an archive directory that is already in place — which is how an index
+database is rebuilt after it was lost.
+
 ## Checking the archive
 
 A backup nobody ever verifies is a hope, not a backup. **Verify** on an account
