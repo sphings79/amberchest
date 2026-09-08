@@ -89,6 +89,21 @@ export { accountSlug, accountSlugs, buildTopics } from './mqtt/topics.js';
 export { accountDiscovery, hubDiscovery, type DiscoveryMessage } from './mqtt/discovery.js';
 export { APP_VERSION } from './util/version.js';
 export {
+  OAuthError,
+  pollDeviceFlow,
+  refreshTokens,
+  startDeviceFlow,
+  type DeviceCode,
+  type OAuthTokens,
+} from './oauth/device.js';
+export {
+  PROVIDERS,
+  resolveProvider,
+  supportsDeviceFlow,
+  type OAuthProvider,
+  type OAuthProviderId,
+} from './oauth/providers.js';
+export {
   RestoreEngine,
   RestoreCancelledError,
   suggestMappings,

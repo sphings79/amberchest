@@ -63,6 +63,35 @@ export interface AttachmentSettings {
   folders: string[];
 }
 
+export interface AccountOAuth {
+  provider: 'google' | 'microsoft' | 'custom';
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  accessToken: string;
+  /** Epoch milliseconds. */
+  expiresAt: number;
+  scope: string;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
+  deviceEndpoint: string;
+  scopes: string[];
+}
+
+/** What the interface may see of an OAuth connection: no secrets. */
+export interface PublicAccountOAuth {
+  provider: 'google' | 'microsoft' | 'custom';
+  clientId: string;
+  scope: string;
+  expiresAt: number;
+  /** True once a refresh token is stored, so backups can run unattended. */
+  connected: boolean;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
+  deviceEndpoint: string;
+  scopes: string[];
+}
+
 export interface Account {
   id: string;
   /** Display name shown in the UI. */
@@ -76,6 +105,9 @@ export interface Account {
   username: string;
   /** Only ever present in the decrypted configuration. */
   password: string;
+  /** A password account keeps its password; an OAuth account keeps tokens. */
+  authType: 'password' | 'oauth';
+  oauth: AccountOAuth | null;
   /** Absolute path overriding the global archive directory. */
   archivePath: string | null;
   /** IMAP paths (server notation) selected for archiving. */
@@ -87,7 +119,10 @@ export interface Account {
 }
 
 /** Account without the password, safe to send to the frontend. */
-export type PublicAccount = Omit<Account, 'password'> & { hasPassword: boolean };
+export type PublicAccount = Omit<Account, 'password' | 'oauth'> & {
+  hasPassword: boolean;
+  oauth: PublicAccountOAuth | null;
+};
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 

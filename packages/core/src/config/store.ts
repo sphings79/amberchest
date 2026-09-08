@@ -18,6 +18,7 @@ import {
   defaultAccountSettings,
   defaultAppConfig,
   defaultAttachmentSettings,
+  defaultOAuth,
   type AccountInput,
 } from './schema.js';
 
@@ -29,8 +30,26 @@ export class ConfigLockedError extends Error {
 }
 
 export function toPublicAccount(account: Account): PublicAccount {
-  const { password, ...rest } = account;
-  return { ...rest, hasPassword: password.length > 0 };
+  const { password, oauth, ...rest } = account;
+  return {
+    ...rest,
+    hasPassword: password.length > 0,
+    // Tokens and the client secret never leave the server; the interface only
+    // needs to know whether the account is connected and to whom.
+    oauth: oauth
+      ? {
+          provider: oauth.provider,
+          clientId: oauth.clientId,
+          scope: oauth.scope,
+          expiresAt: oauth.expiresAt,
+          connected: oauth.refreshToken.length > 0,
+          authorizationEndpoint: oauth.authorizationEndpoint,
+          tokenEndpoint: oauth.tokenEndpoint,
+          deviceEndpoint: oauth.deviceEndpoint,
+          scopes: oauth.scopes,
+        }
+      : null,
+  };
 }
 
 /**
@@ -138,6 +157,8 @@ export class ConfigStore {
       rejectUnauthorized: parsed.rejectUnauthorized,
       username: parsed.username,
       password: parsed.password ?? '',
+      authType: parsed.authType ?? 'password',
+      oauth: parsed.oauth ? { ...defaultOAuth(), ...parsed.oauth } : null,
       archivePath: parsed.archivePath,
       selectedFolders: [],
       settings: { ...defaultAccountSettings(), ...(parsed.settings ?? {}) },
@@ -165,6 +186,13 @@ export class ConfigStore {
     // An omitted password keeps the stored one; that is how the UI edits an
     // account without ever sending the secret back and forth.
     if (input.password) account.password = input.password;
+    if (input.authType !== undefined) account.authType = input.authType;
+    // Null clears the OAuth connection, a partial object patches it - the
+    // tokens are never sent back by the interface.
+    if (input.oauth === null) account.oauth = null;
+    else if (input.oauth) {
+      account.oauth = { ...(account.oauth ?? defaultOAuth()), ...input.oauth };
+    }
     if (input.archivePath !== undefined) account.archivePath = input.archivePath;
     if (input.settings) account.settings = { ...account.settings, ...input.settings };
     account.updatedAt = new Date().toISOString();

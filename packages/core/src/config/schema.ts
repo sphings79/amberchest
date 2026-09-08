@@ -25,6 +25,24 @@ export const attachmentSettingsSchema = z.object({
   folders: z.array(z.string()).default([]),
 });
 
+/** What an account needs to speak OAuth instead of a password. */
+export const oauthSchema = z.object({
+  provider: z.enum(['google', 'microsoft', 'custom']).default('microsoft'),
+  /** Every user registers their own client; there is no shared one. */
+  clientId: z.string().default(''),
+  clientSecret: z.string().default(''),
+  refreshToken: z.string().default(''),
+  accessToken: z.string().default(''),
+  /** Epoch milliseconds, zero when nothing was fetched yet. */
+  expiresAt: z.number().int().default(0),
+  scope: z.string().default(''),
+  /** Only for the custom provider. */
+  authorizationEndpoint: z.string().default(''),
+  tokenEndpoint: z.string().default(''),
+  deviceEndpoint: z.string().default(''),
+  scopes: z.array(z.string()).default([]),
+});
+
 export const accountSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -35,6 +53,9 @@ export const accountSchema = z.object({
   rejectUnauthorized: z.boolean().default(true),
   username: z.string().min(1),
   password: z.string().default(''),
+  /** A password account keeps its password; an OAuth account keeps tokens. */
+  authType: z.enum(['password', 'oauth']).default('password'),
+  oauth: oauthSchema.nullable().default(null),
   archivePath: z.string().nullable().default(null),
   selectedFolders: z.array(z.string()).default([]),
   settings: accountSettingsSchema,
@@ -121,6 +142,8 @@ export const accountInputSchema = z.object({
   username: z.string().min(1),
   /** Omitted on update means "keep the stored password". */
   password: z.string().optional(),
+  authType: z.enum(['password', 'oauth']).optional(),
+  oauth: oauthSchema.partial().nullable().optional(),
   archivePath: z.string().nullable().default(null),
   settings: accountSettingsSchema.partial().optional(),
 });
@@ -129,6 +152,10 @@ export type AccountInput = z.infer<typeof accountInputSchema>;
 
 export function defaultAccountSettings() {
   return accountSettingsSchema.parse({});
+}
+
+export function defaultOAuth() {
+  return oauthSchema.parse({});
 }
 
 export function defaultAttachmentSettings() {

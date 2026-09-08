@@ -9,6 +9,8 @@ export interface ImapConnectionOptions {
   rejectUnauthorized: boolean;
   username: string;
   password: string;
+  /** Set instead of the password for an OAuth account. */
+  accessToken?: string | undefined;
 }
 
 export function connectionOptionsFromAccount(account: Account): ImapConnectionOptions {
@@ -19,6 +21,8 @@ export function connectionOptionsFromAccount(account: Account): ImapConnectionOp
     rejectUnauthorized: account.rejectUnauthorized,
     username: account.username,
     password: account.password,
+    // A stale token is refreshed before this is called; see app.connect().
+    ...(account.authType === 'oauth' ? { accessToken: account.oauth?.accessToken } : {}),
   };
 }
 
@@ -33,7 +37,11 @@ export function createClient(options: ImapConnectionOptions): ImapFlow {
     port: options.port,
     secure: options.security === 'tls',
     doSTARTTLS: options.security === 'starttls',
-    auth: { user: options.username, pass: options.password },
+    // The library picks OAUTHBEARER or XOAUTH2 by itself, depending on what
+    // the server announces.
+    auth: options.accessToken
+      ? { user: options.username, accessToken: options.accessToken }
+      : { user: options.username, pass: options.password },
     tls: { rejectUnauthorized: options.rejectUnauthorized },
     logger: false,
     // We drive the connection ourselves; IDLE would only get in the way.
