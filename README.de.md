@@ -32,9 +32,9 @@ Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt 
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
 
-> **Stand: Etappe 2 von 6.** Konten, Ordnerauswahl, inkrementelle Sicherung,
-> die Desktop-App und der Anhang-Export laufen. Viewer mit Suche, Rückspielen
-> und der Docker-Container folgen — siehe [Fahrplan](#fahrplan).
+> **Stand: Etappe 3 von 6.** Sicherung, Anhang-Export, Volltextsuche, Viewer,
+> Export und der MCP-Server laufen. Rückspielen und der Docker-Container
+> folgen — siehe [Fahrplan](#fahrplan).
 
 ## Bildschirmfotos
 
@@ -111,6 +111,9 @@ zur Docker-Anleitung.</em>
   externe Inhalte erst auf Nachfrage lädt, die `.eml` oder einzelne Anhänge
   herunterlädt und die Nachricht ans Mailprogramm übergibt, damit du antworten
   kannst
+- **Export** jeder Trefferliste als EML-Dateien im ZIP, als mbox für
+  Thunderbird und Apple Mail oder als PDF je Nachricht
+- **KI-Zugriff über MCP** mit Schaltern je Bereich, standardmäßig aus
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
 
 ## Installation
@@ -200,6 +203,41 @@ Die Weboberfläche antwortet dann auf `http://<host>:8484`. Sie funktioniert
 hinter einem Reverse Proxy, sowohl auf einer Subdomain als auch auf einem
 Unterpfad. Images entstehen für `linux/amd64` und `linux/arm64`.
 
+## KI-Zugriff über MCP
+
+Mail Archiver kann das Archiv über das Model Context Protocol für eine KI
+öffnen — zum Suchen, Lesen und, wenn du es erlaubst, zum Bedienen. Das ist
+**standardmäßig aus**, und jede Berechtigungsgruppe hat ihren eigenen Schalter:
+
+| Gruppe | Was sie erlaubt |
+| --- | --- |
+| Lesen | Suchen, Nachrichten und Anhänge öffnen, Statistiken |
+| Sichern | Sicherung und Indizierung starten und abbrechen |
+| Exportieren | Anhang-Export und Export-Pakete |
+| Konten | Konten anlegen, Serverdaten ändern, Ordnerauswahl setzen |
+| Einstellungen | Anwendungseinstellungen ändern |
+| Löschen | Konten entfernen, Index verwerfen |
+
+Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
+
+**Claude Desktop** (stdio):
+
+```json
+{
+  "mcpServers": {
+    "mail-archiver": {
+      "command": "node",
+      "args": ["/pfad/zu/mail-archiver/packages/server/dist/mcp-stdio.js"],
+      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "dein-master-passwort" }
+    }
+  }
+}
+```
+
+**Über HTTP** (für den Container oder entfernte Clients): in den Einstellungen
+einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
+`Authorization: Bearer <token>` zeigen lassen.
+
 ## Wo die Daten liegen
 
 ```
@@ -241,7 +279,7 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 | --- | --- | --- |
 | 1 | Fundament, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
 | 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
-| 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“ ✅ · Export als mbox/PDF/ZIP und MCP-Server | in Arbeit |
+| 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP, MCP-Server | ✅ fertig |
 | 4 | Rückspielen und Umzug auf einen anderen Server | geplant |
 | 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | geplant |
 | 6 | Feinschliff: Themes, Übersetzungen, optionale Archivverschlüsselung, Windows- und Linux-Releases | geplant |

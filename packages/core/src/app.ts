@@ -10,6 +10,14 @@ import {
   type ImapConnectionOptions,
 } from './imap/client.js';
 import { AttachmentExportManager } from './attachments/manager.js';
+import { BundleManager } from './export/manager.js';
+import {
+  chromiumPdfRenderer,
+  isPdfAvailable,
+  messageToPrintableHtml,
+  type PdfRenderer,
+} from './export/pdf.js';
+import type { BundleFormat } from './export/bundle.js';
 import {
   loadAttachment,
   loadMessage,
@@ -19,6 +27,8 @@ import {
 } from './search/message.js';
 import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
+import { McpServer } from './mcp/protocol.js';
+import type { McpPermissions } from './mcp/tools.js';
 import { buildFolderTree } from './sync/folders.js';
 import { SyncManager } from './sync/manager.js';
 import type {
@@ -66,10 +76,20 @@ export class MailArchiverApp {
   readonly sync: SyncManager;
   readonly exports: AttachmentExportManager;
   readonly index: SearchIndexManager;
+  readonly bundles: BundleManager;
+  private readonly pdfRenderer: PdfRenderer | undefined;
 
-  constructor(options: { configPath?: string; databasePath?: string } = {}) {
+  constructor(
+    options: {
+      configPath?: string;
+      databasePath?: string;
+      /** Desktop apps inject Electron's printToPDF here. */
+      pdfRenderer?: PdfRenderer;
+    } = {},
+  ) {
     this.config = new ConfigStore(options.configPath);
     this.db = new ArchiveDatabase(options.databasePath);
+    this.pdfRenderer = options.pdfRenderer;
     this.sync = new SyncManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
@@ -81,6 +101,14 @@ export class MailArchiverApp {
     this.index = new SearchIndexManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
+    });
+    this.bundles = new BundleManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      resolveAccount: (accountId) => this.requireAccount(accountId),
+      // Falls back to a Chromium found on the system, which is how the
+      // container renders PDFs.
+      pdfRenderer: options.pdfRenderer ?? chromiumPdfRenderer,
     });
   }
 
@@ -232,6 +260,56 @@ export class MailArchiverApp {
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
     });
+  }
+
+  /** Permissions as configured, all off while MCP is disabled. */
+  mcpPermissions(): McpPermissions {
+    const mcp = this.config.getSettings().mcp;
+    if (!mcp.enabled) {
+      return {
+        read: false,
+        backup: false,
+        export: false,
+        accountsWrite: false,
+        settingsWrite: false,
+        delete: false,
+      };
+    }
+    return mcp.permissions;
+  }
+
+  /** Builds an MCP server bound to this instance. */
+  createMcpServer(): McpServer {
+    return new McpServer({
+      app: this,
+      permissions: () => this.mcpPermissions(),
+      serverName: 'mail-archiver',
+      serverVersion: '0.1.0',
+    });
+  }
+
+  /** True when this installation can render PDFs. */
+  pdfAvailable(): Promise<boolean> {
+    return isPdfAvailable(this.pdfRenderer);
+  }
+
+  /** Renders one message as PDF, for the button in the viewer. */
+  async messageToPdf(
+    accountId: string,
+    messageId: number,
+  ): Promise<{ fileName: string; content: Buffer }> {
+    const renderer = this.pdfRenderer ?? chromiumPdfRenderer;
+    const message = await this.loadMessage(accountId, messageId);
+    const content = await renderer(
+      messageToPrintableHtml(message, this.config.getSettings().language === 'en' ? 'en-GB' : 'de-DE'),
+    );
+    const stamp = message.date.slice(0, 10);
+    const subject = (message.subject ?? 'nachricht').replace(/[^\p{L}\p{N}\s-]/gu, '').slice(0, 60).trim();
+    return { fileName: `${stamp}_${subject || 'nachricht'}.pdf`, content };
+  }
+
+  startBundle(format: BundleFormat, selection: SearchOptions): string {
+    return this.bundles.start(format, selection);
   }
 
   startIndexing(accountId: string): Promise<unknown> {

@@ -7,6 +7,7 @@ export {
   accountSettingsSchema,
   appSettingsSchema,
   attachmentSettingsSchema,
+  mcpSettingsSchema,
   searchSettingsSchema,
   defaultAccountSettings,
   defaultAttachmentSettings,
@@ -47,6 +48,40 @@ export {
   type MessageContent,
   type MessageAttachmentInfo,
 } from './search/message.js';
+export {
+  BundleEngine,
+  BundleCancelledError,
+  MAX_BUNDLE_MESSAGES,
+  purgeOldBundles,
+  type BundleFormat,
+  type BundleProgress,
+  type BundleStats,
+} from './export/bundle.js';
+export { BundleManager, type FinishedBundle } from './export/manager.js';
+export { MboxWriter, toMboxEntry } from './export/mbox.js';
+export { ZipWriter } from './export/zip.js';
+export {
+  chromiumPdfRenderer,
+  isPdfAvailable,
+  messageToPrintableHtml,
+  type PdfRenderer,
+} from './export/pdf.js';
+export {
+  McpServer,
+  handleRawMessage,
+  SUPPORTED_PROTOCOL_VERSIONS,
+  type JsonRpcRequest,
+  type JsonRpcResponse,
+} from './mcp/protocol.js';
+export {
+  TOOLS,
+  MCP_PERMISSIONS,
+  availableTools,
+  callTool,
+  type McpPermission,
+  type McpPermissions,
+  type ToolDefinition,
+} from './mcp/tools.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';

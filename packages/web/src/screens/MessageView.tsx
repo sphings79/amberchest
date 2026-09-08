@@ -1,5 +1,5 @@
 import type { MessageContent } from '@mail-archiver/core';
-import { Download, ExternalLink, Eye, Paperclip, ShieldAlert } from 'lucide-react';
+import { Download, ExternalLink, Eye, FileText, Paperclip, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, getToken, isDesktop } from '../api/client.js';
@@ -153,6 +153,13 @@ export function MessageView({
               <Button>
                 <Download size={15} />
                 {t('message.download')}
+              </Button>
+            </a>
+
+            <a href={downloadUrl(`/accounts/${accountId}/messages/${messageId}/pdf`)} download>
+              <Button>
+                <FileText size={15} />
+                {t('export.asPdf')}
               </Button>
             </a>
 

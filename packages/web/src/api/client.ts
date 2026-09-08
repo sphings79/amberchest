@@ -203,6 +203,23 @@ export const api = {
   openMessage: (accountId: string, messageId: number) =>
     request<{ opened: boolean }>(`/accounts/${accountId}/messages/${messageId}/open`, { method: 'POST' }),
 
+  exports: () =>
+    request<{ pdfAvailable: boolean; bundles: Array<{ bundleId: string; fileName: string; size: number }> }>(
+      '/exports',
+    ),
+  startExportBundle: (body: {
+    format: 'eml-zip' | 'mbox' | 'pdf-zip';
+    q: string;
+    account?: string | undefined;
+    folders?: string[];
+    from?: string | undefined;
+    dateFrom?: string | undefined;
+    dateTo?: string | undefined;
+    withAttachments?: boolean;
+  }) => request<{ bundleId: string }>('/exports', { method: 'POST', body: JSON.stringify(body) }),
+  cancelExportBundle: (bundleId: string) =>
+    request<{ cancelled: boolean }>(`/exports/${bundleId}/cancel`, { method: 'POST' }),
+
   startIndex: (id: string) => request<{ started: boolean }>(`/accounts/${id}/index`, { method: 'POST' }),
   cancelIndex: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/index/cancel`, { method: 'POST' }),

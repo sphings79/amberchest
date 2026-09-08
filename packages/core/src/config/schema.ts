@@ -49,12 +49,37 @@ export const searchSettingsSchema = z.object({
   autoIndex: z.boolean().default(true),
 });
 
+export const mcpSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  httpEnabled: z.boolean().default(false),
+  token: z.string().default(''),
+  permissions: z
+    .object({
+      // Reading is the only group that is on once MCP is enabled at all.
+      read: z.boolean().default(true),
+      backup: z.boolean().default(false),
+      export: z.boolean().default(false),
+      accountsWrite: z.boolean().default(false),
+      settingsWrite: z.boolean().default(false),
+      delete: z.boolean().default(false),
+    })
+    .default(() => ({
+      read: true,
+      backup: false,
+      export: false,
+      accountsWrite: false,
+      settingsWrite: false,
+      delete: false,
+    })),
+});
+
 export const appSettingsSchema = z.object({
   archivePath: z.string().min(1).default(defaultArchiveDir()),
   language: z.enum(['de', 'en']).default('de'),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   accentColor: z.string().default('violet'),
   search: searchSettingsSchema.default(() => searchSettingsSchema.parse({})),
+  mcp: mcpSettingsSchema.default(() => mcpSettingsSchema.parse({})),
 });
 
 export const appConfigSchema = z.object({

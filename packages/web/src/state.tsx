@@ -1,4 +1,10 @@
-import type { ExportProgress, IndexProgress, LogEntry, SyncProgress } from '@mail-archiver/core';
+import type {
+  BundleProgress,
+  ExportProgress,
+  IndexProgress,
+  LogEntry,
+  SyncProgress,
+} from '@mail-archiver/core';
 import {
   createContext,
   useCallback,
@@ -18,6 +24,8 @@ interface AppState {
   progress: Record<string, SyncProgress>;
   exportProgress: Record<string, ExportProgress>;
   indexProgress: Record<string, IndexProgress>;
+  /** Keyed by bundle id; export jobs are not tied to one account. */
+  bundleProgress: Record<string, BundleProgress>;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -49,6 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [progress, setProgress] = useState<Record<string, SyncProgress>>({});
   const [exportProgress, setExportProgress] = useState<Record<string, ExportProgress>>({});
   const [indexProgress, setIndexProgress] = useState<Record<string, IndexProgress>>({});
+  const [bundleProgress, setBundleProgress] = useState<Record<string, BundleProgress>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +139,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
             void refreshAccounts();
           }
+        } else if (message.type === 'bundle-progress') {
+          const value = message.payload as BundleProgress;
+          setBundleProgress((current) => ({ ...current, [value.bundleId]: value }));
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -156,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       progress,
       exportProgress,
       indexProgress,
+      bundleProgress,
       logs,
       loading,
       error,
@@ -169,6 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       progress,
       exportProgress,
       indexProgress,
+      bundleProgress,
       logs,
       loading,
       error,

@@ -100,6 +100,23 @@ export interface SearchSettings {
   autoIndex: boolean;
 }
 
+export interface McpSettings {
+  /** Master switch; nothing is exposed while this is off. */
+  enabled: boolean;
+  /** Also answer MCP over HTTP, not just over stdio. */
+  httpEnabled: boolean;
+  /** Bearer token for the HTTP transport; generated when empty. */
+  token: string;
+  permissions: {
+    read: boolean;
+    backup: boolean;
+    export: boolean;
+    accountsWrite: boolean;
+    settingsWrite: boolean;
+    delete: boolean;
+  };
+}
+
 export interface AppSettings {
   /** Base directory holding one subdirectory per account. */
   archivePath: string;
@@ -107,6 +124,7 @@ export interface AppSettings {
   theme: ThemeMode;
   accentColor: string;
   search: SearchSettings;
+  mcp: McpSettings;
 }
 
 export interface AppConfig {

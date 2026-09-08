@@ -1,4 +1,5 @@
 import {
+  handleRawMessage,
   accountInputSchema,
   accountSettingsSchema,
   appSettingsSchema,
@@ -43,6 +44,17 @@ export interface RouteOptions {
 function fail(reply: FastifyReply, status: number, message: string): FastifyReply {
   return reply.status(status).send({ error: message });
 }
+
+const bundleSchema = z.object({
+  format: z.enum(['eml-zip', 'mbox', 'pdf-zip']),
+  q: z.string().default(''),
+  account: z.string().optional(),
+  folders: z.array(z.string()).default([]),
+  from: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  withAttachments: z.boolean().default(false),
+});
 
 const searchQuerySchema = z.object({
   q: z.string().default(''),
@@ -355,6 +367,19 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     },
   );
 
+  server.get('/api/accounts/:id/messages/:messageId/pdf', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id, messageId } = request.params as { id: string; messageId: string };
+    try {
+      const pdf = await app.messageToPdf(id, Number(messageId));
+      return reply
+        .header('content-type', 'application/pdf')
+        .header('content-disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)
+        .send(pdf.content);
+    } catch (error) {
+      return fail(reply, 501, (error as Error).message);
+    }
+  });
+
   /** Opens the stored .eml in whatever mail client the desktop has. */
   server.post('/api/accounts/:id/messages/:messageId/open', { preHandler: requireUnlocked }, async (request, reply) => {
     if (!options.openFile) {
@@ -368,6 +393,77 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     } catch (error) {
       return fail(reply, 404, (error as Error).message);
     }
+  });
+
+  // -------------------------------------------------------------------- mcp
+
+  /**
+   * MCP over HTTP. Guarded by its own token so enabling MCP does not hand out
+   * the whole application API, and switched off unless the user asked for it.
+   */
+  server.post('/mcp', async (request, reply) => {
+    if (!app.isUnlocked) return fail(reply, 423, 'Configuration is locked');
+
+    const settings = app.getSettings().mcp;
+    if (!settings.enabled || !settings.httpEnabled) {
+      return fail(reply, 404, 'MCP over HTTP is not enabled');
+    }
+
+    const header = request.headers.authorization;
+    const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!settings.token || token !== settings.token) {
+      return fail(reply, 401, 'Invalid MCP token');
+    }
+
+    const mcp = app.createMcpServer();
+    const response = await mcp.handle(request.body as never);
+    // Notifications produce no answer at all.
+    if (!response) return reply.status(202).send();
+    return reply.header('content-type', 'application/json').send(response);
+  });
+
+  // ---------------------------------------------------------- export files
+
+  server.get('/api/exports', { preHandler: requireUnlocked }, async () => ({
+    pdfAvailable: await app.pdfAvailable(),
+    bundles: app.bundles.list(),
+  }));
+
+  server.post('/api/exports', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = bundleSchema.safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid export request');
+
+    if (body.data.format === 'pdf-zip' && !(await app.pdfAvailable())) {
+      return fail(reply, 501, 'PDF export needs Chromium, which is not available here');
+    }
+
+    const bundleId = app.startBundle(body.data.format, {
+      query: body.data.q,
+      accountId: body.data.account ?? null,
+      folders: body.data.folders,
+      from: body.data.from ?? null,
+      dateFrom: body.data.dateFrom ?? null,
+      dateTo: body.data.dateTo ?? null,
+      withAttachments: body.data.withAttachments,
+    });
+    return { bundleId };
+  });
+
+  server.post('/api/exports/:bundleId/cancel', { preHandler: requireUnlocked }, async (request) => {
+    const { bundleId } = request.params as { bundleId: string };
+    return { cancelled: app.bundles.cancel(bundleId) };
+  });
+
+  server.get('/api/exports/:bundleId/download', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { bundleId } = request.params as { bundleId: string };
+    const bundle = app.bundles.get(bundleId);
+    if (!bundle) return fail(reply, 404, 'Unknown export');
+
+    const { createReadStream } = await import('node:fs');
+    return reply
+      .header('content-type', 'application/octet-stream')
+      .header('content-disposition', `attachment; filename="${encodeURIComponent(bundle.fileName)}"`)
+      .send(createReadStream(bundle.path));
   });
 
   // ----------------------------------------------------------- index
@@ -420,17 +516,20 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onProgress = (progress: SyncProgress): void => send('progress', progress);
     const onExportProgress = (progress: ExportProgress): void => send('export-progress', progress);
     const onIndexProgress = (progress: unknown): void => send('index-progress', progress);
+    const onBundleProgress = (progress: unknown): void => send('bundle-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
     app.exports.on('progress', onExportProgress);
     app.index.on('progress', onIndexProgress);
+    app.bundles.on('progress', onBundleProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
       app.sync.off('progress', onProgress);
       app.exports.off('progress', onExportProgress);
       app.index.off('progress', onIndexProgress);
+      app.bundles.off('progress', onBundleProgress);
       logger.off('entry', onLog);
     });
   });

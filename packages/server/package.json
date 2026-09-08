@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "node --watch src/standalone.ts"
+    "dev": "node --watch src/standalone.ts",
+    "mcp": "node dist/mcp-stdio.js"
   },
   "dependencies": {
     "@fastify/static": "^10.1.3",

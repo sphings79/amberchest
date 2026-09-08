@@ -1,10 +1,18 @@
 import type { SearchHit, SearchResult } from '@mail-archiver/core';
-import { Database, Paperclip, Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
+import {
+  Database,
+  Download,
+  Paperclip,
+  Search as SearchIcon,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Toggle, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
+import { ExportDialog, type ExportSelection } from './ExportDialog.js';
 import { MessageView } from './MessageView.js';
 import { formatBytes } from './Overview.js';
 
@@ -64,6 +72,7 @@ export function Search(): ReactNode {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<{ accountId: string; messageId: number } | null>(null);
+  const [exporting, setExporting] = useState<ExportSelection | null>(null);
   const debounce = useRef<number | undefined>(undefined);
 
   const run = useCallback(
@@ -159,6 +168,25 @@ export function Search(): ReactNode {
           <Button onClick={() => setShowFilters((value) => !value)}>
             <SlidersHorizontal size={15} />
             {t('search.filters')}
+          </Button>
+
+          <Button
+            disabled={!result || result.total === 0}
+            onClick={() =>
+              setExporting({
+                q: query,
+                account: filters.accountId || undefined,
+                folders: filters.folders,
+                from: filters.from || undefined,
+                dateFrom: filters.dateFrom || undefined,
+                dateTo: filters.dateTo || undefined,
+                withAttachments: filters.withAttachments,
+                total: result?.total ?? 0,
+              })
+            }
+          >
+            <Download size={15} />
+            {t('export.button')}
           </Button>
         </div>
 
@@ -325,6 +353,8 @@ export function Search(): ReactNode {
       {open && (
         <MessageView accountId={open.accountId} messageId={open.messageId} onClose={() => setOpen(null)} />
       )}
+
+      {exporting && <ExportDialog selection={exporting} onClose={() => setExporting(null)} />}
     </div>
   );
 }

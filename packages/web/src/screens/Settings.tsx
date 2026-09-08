@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
 import { Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
+import { McpSettings } from './McpSettings.js';
 import { useApp } from '../state.js';
 
 const ACCENTS = ['violet', 'blue', 'emerald', 'amber', 'rose'] as const;
@@ -25,6 +26,19 @@ export function Settings(): ReactNode {
       theme: 'system',
       accentColor: 'violet',
       search: { indexAttachments: true, maxAttachmentBytes: 25 * 1024 * 1024, autoIndex: true },
+      mcp: {
+        enabled: false,
+        httpEnabled: false,
+        token: '',
+        permissions: {
+          read: true,
+          backup: false,
+          export: false,
+          accountsWrite: false,
+          settingsWrite: false,
+          delete: false,
+        },
+      },
     },
   );
   const [saved, setSaved] = useState(false);
@@ -192,6 +206,8 @@ export function Settings(): ReactNode {
           </Button>
         </div>
       </Card>
+
+      <McpSettings settings={values.mcp} onChange={(mcp) => void update({ mcp }, true)} />
 
       <Card className="flex gap-3">
         <span

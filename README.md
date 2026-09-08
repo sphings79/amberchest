@@ -31,9 +31,9 @@ read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
 `\Seen` flag.
 
-> **Status: stage 2 of 6.** Accounts, folder selection, incremental backup, the
-> desktop app and the attachment export work. Viewer and search, restore and
-> the Docker container follow — see the [roadmap](#roadmap).
+> **Status: stage 3 of 6.** Backup, attachment export, full text search, the
+> viewer, exports and the MCP server work. Restore and the Docker container
+> follow — see the [roadmap](#roadmap).
 
 ## Screenshots
 
@@ -106,6 +106,9 @@ to the Docker guide.</em>
 - **Message viewer** that renders HTML in a sandboxed frame with external
   content blocked until you ask for it, downloads the .eml or single
   attachments, and hands the message to your mail client so you can reply
+- **Export** of any search result as EML files in a ZIP, as an mbox for
+  Thunderbird and Apple Mail, or as one PDF per message
+- **AI access over MCP** with per-area switches, off by default
 - **Live progress** over a websocket, with a log you can actually read
 
 ## Install
@@ -194,6 +197,42 @@ The web interface answers on `http://<host>:8484`. It works behind a reverse
 proxy, both on a subdomain and on a sub-path. Images are built for
 `linux/amd64` and `linux/arm64`.
 
+## AI access over MCP
+
+Mail Archiver can expose the archive to an AI assistant through the Model
+Context Protocol — searching, reading, and, if you allow it, operating the
+application. It is **off by default**, and each permission group has its own
+switch:
+
+| Group | What it allows |
+| --- | --- |
+| Read | Search, open messages and attachments, statistics |
+| Back up | Start and cancel backups and indexing |
+| Export | Attachment export and export bundles |
+| Accounts | Create accounts, change server details, set folder selection |
+| Settings | Change application settings |
+| Delete | Remove accounts, drop the index |
+
+Passwords are never readable through MCP — they can only be set.
+
+**Claude Desktop** (stdio transport):
+
+```json
+{
+  "mcpServers": {
+    "mail-archiver": {
+      "command": "node",
+      "args": ["/path/to/mail-archiver/packages/server/dist/mcp-stdio.js"],
+      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "your-master-password" }
+    }
+  }
+}
+```
+
+**Over HTTP** (for the container or a remote client): switch it on in the
+settings, copy the generated token and point the client at `POST /mcp` with
+`Authorization: Bearer <token>`.
+
 ## Where things are stored
 
 ```
@@ -233,7 +272,7 @@ machine can talk to the API.
 | --- | --- | --- |
 | 1 | Foundation, accounts, folder selection, incremental backup, desktop app | ✅ done |
 | 2 | Attachment export with layouts, filters and de-duplication | ✅ done |
-| 3 | Viewer, full text search, "open in mail client" ✅ · export as mbox/PDF/ZIP and the MCP server | in progress |
+| 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP, MCP server | ✅ done |
 | 4 | Restore, and migration to a different server | planned |
 | 5 | Docker image, web login, cron schedule, remote mode | planned |
 | 6 | Polish: themes, translations, optional archive encryption, Windows and Linux releases | planned |

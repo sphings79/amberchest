@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MailArchiverApp, logger } from '@mail-archiver/core';
 import { AuthGuard, startServer, type RunningServer } from '@mail-archiver/server';
+import { tmpdir } from 'node:os';
 import { BrowserWindow, Menu, app, dialog, shell } from 'electron';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -117,8 +118,39 @@ function buildMenu(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+/**
+ * Renders HTML to PDF with the Chromium that Electron already contains.
+ *
+ * JavaScript is switched off and the window is offscreen, so printing a
+ * message cannot execute anything the message brought with it.
+ */
+async function renderPdf(html: string): Promise<Buffer> {
+  const file = join(tmpdir(), `mail-archiver-print-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
+  await writeFile(file, html, 'utf8');
+
+  const window = new BrowserWindow({
+    show: false,
+    width: 900,
+    height: 1200,
+    webPreferences: { javascript: false, sandbox: true, offscreen: true },
+  });
+
+  try {
+    await window.loadFile(file);
+    const pdf = await window.webContents.printToPDF({
+      printBackground: true,
+      margins: { top: 0.6, bottom: 0.6, left: 0.5, right: 0.5 },
+      pageSize: 'A4',
+    });
+    return pdf;
+  } finally {
+    window.destroy();
+    await rm(file, { force: true });
+  }
+}
+
 async function start(): Promise<void> {
-  core = new MailArchiverApp();
+  core = new MailArchiverApp({ pdfRenderer: renderPdf });
   // A random token per launch; the window receives it in the URL and keeps it
   // in sessionStorage. Nothing on the machine can talk to the API without it.
   const auth = AuthGuard.withToken();
