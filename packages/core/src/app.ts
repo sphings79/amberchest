@@ -351,7 +351,7 @@ export class MailArchiverApp {
       app: this,
       permissions: () => this.mcpPermissions(),
       serverName: 'mail-archiver',
-      serverVersion: '0.1.0',
+      serverVersion: '1.0.0',
     });
   }
 

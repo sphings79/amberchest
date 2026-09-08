@@ -147,7 +147,7 @@ install anything. The build is unsigned, so SmartScreen shows a warning:
 Use the AppImage (make it executable and run it) or install the `.deb`:
 
 ```bash
-sudo dpkg -i mail-archiver_0.1.0_amd64.deb
+sudo dpkg -i mail-archiver_1.0.0_amd64.deb
 ```
 
 Both x64 and arm64 are built.

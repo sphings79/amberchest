@@ -5,7 +5,7 @@ import { Badge, Button, Card } from '../components/ui.js';
 import { REPO_URL } from '../constants.js';
 
 /** Version of this build, kept in step with the package version. */
-const CURRENT_VERSION = '0.1.0';
+const CURRENT_VERSION = '1.0.0';
 
 const RELEASES_API = 'https://api.github.com/repos/sphings79/mail-archiver/releases/latest';
 
