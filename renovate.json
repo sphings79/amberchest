@@ -1,0 +1,49 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "timezone": "Europe/Berlin",
+  "schedule": ["* 0-6 * * 1"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "Group backend runtime dependencies",
+      "matchPackageNames": ["imapflow", "mailparser", "better-sqlite3", "fastify", "zod"],
+      "matchPackagePatterns": ["^@fastify/"],
+      "groupName": "backend dependencies"
+    },
+    {
+      "description": "Group frontend dependencies",
+      "matchPackageNames": ["react", "react-dom", "vite", "tailwindcss", "lucide-react", "i18next", "react-i18next"],
+      "matchPackagePatterns": ["^@tanstack/", "^@vitejs/", "^@tailwindcss/"],
+      "groupName": "frontend dependencies"
+    },
+    {
+      "description": "Group build tooling",
+      "matchPackageNames": ["typescript", "vitest", "electron-builder"],
+      "groupName": "build tooling"
+    },
+    {
+      "description": "Electron ships Chromium - always review manually",
+      "matchPackageNames": ["electron"],
+      "groupName": "electron",
+      "automerge": false,
+      "labels": ["security-review"]
+    },
+    {
+      "description": "Automerge patch and minor updates once CI passes",
+      "matchUpdateTypes": ["patch", "minor"],
+      "excludePackageNames": ["electron"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "schedule": ["at any time"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-6 1 * *"]
+  }
+}

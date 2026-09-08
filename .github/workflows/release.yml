@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: --mac
+            artifact: macos
+          - os: windows-latest
+            platform: --win
+            artifact: windows
+          - os: ubuntu-latest
+            platform: --linux
+            artifact: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Package
+        working-directory: packages/desktop
+        # No signing identity anywhere: macOS builds are ad-hoc signed, Windows
+        # builds are unsigned. Both work, both show a first-run warning.
+        run: npx electron-builder ${{ matrix.platform }} --config electron-builder.yml --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mail-archiver-${{ matrix.artifact }}
+          path: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error

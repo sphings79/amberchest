@@ -1,0 +1,196 @@
+@import 'tailwindcss';
+
+/*
+ * Colour system.
+ *
+ * Every surface colour is a CSS variable so the theme (light/dark) and the
+ * accent can be switched at runtime without rebuilding class names.
+ */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: light;
+
+  --surface-0: #f4f5f8;
+  --surface-1: #ffffff;
+  --surface-2: #eceef3;
+  --surface-3: #e2e5ec;
+  --border: #d8dce5;
+  --border-strong: #c2c8d6;
+  --text: #171a21;
+  --text-muted: #5c6478;
+  --text-faint: #8a91a3;
+  --shadow: 0 1px 2px rgb(16 20 30 / 6%), 0 8px 24px rgb(16 20 30 / 6%);
+  --shadow-lg: 0 2px 6px rgb(16 20 30 / 8%), 0 24px 48px rgb(16 20 30 / 12%);
+
+  --accent: #7c5cff;
+  --accent-soft: #ede9ff;
+  --accent-text: #ffffff;
+  --accent-ring: rgb(124 92 255 / 35%);
+
+  --ok: #15925f;
+  --warn: #b5761a;
+  --danger: #d0453b;
+  --ok-soft: #e2f5eb;
+  --warn-soft: #fdf2df;
+  --danger-soft: #fdeae8;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-0: #0d0f14;
+  --surface-1: #151821;
+  --surface-2: #1b1f2a;
+  --surface-3: #232837;
+  --border: #262c3a;
+  --border-strong: #343b4d;
+  --text: #e8eaf0;
+  --text-muted: #9aa2b5;
+  --text-faint: #6b7386;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 2px 8px rgb(0 0 0 / 50%), 0 24px 56px rgb(0 0 0 / 45%);
+
+  --accent-soft: #221d3d;
+  --ok: #35c489;
+  --warn: #e0a33f;
+  --danger: #f0645a;
+  --ok-soft: #12301f;
+  --warn-soft: #2f2513;
+  --danger-soft: #331815;
+}
+
+[data-accent='violet'] { --accent: #7c5cff; --accent-ring: rgb(124 92 255 / 35%); }
+[data-accent='blue'] { --accent: #3b82f6; --accent-ring: rgb(59 130 246 / 35%); }
+[data-accent='emerald'] { --accent: #10a37f; --accent-ring: rgb(16 163 127 / 35%); }
+[data-accent='amber'] { --accent: #e08b12; --accent-ring: rgb(224 139 18 / 35%); }
+[data-accent='rose'] { --accent: #e0457b; --accent-ring: rgb(224 69 123 / 35%); }
+
+[data-theme='light'][data-accent='violet'] { --accent-soft: #ede9ff; }
+[data-theme='light'][data-accent='blue'] { --accent-soft: #e4eeff; }
+[data-theme='light'][data-accent='emerald'] { --accent-soft: #dcf5ee; }
+[data-theme='light'][data-accent='amber'] { --accent-soft: #fdf0da; }
+[data-theme='light'][data-accent='rose'] { --accent-soft: #fde7ef; }
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Scrollbars that do not shout. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Window dragging in the frameless desktop window. */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+@utility surface-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+@keyframes ma-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ma-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-ring);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes ma-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-up {
+  animation: ma-fade-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-pulse-ring {
+  animation: ma-pulse-ring 1.8s ease-out infinite;
+}
+
+.progress-stripes {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgb(255 255 255 / 28%) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: ma-shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

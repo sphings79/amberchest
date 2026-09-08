@@ -1,0 +1,25 @@
+{
+  "name": "@mail-archiver/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "npm run build && electron .",
+    "dist": "electron-builder --mac --arm64"
+  },
+  "dependencies": {
+    "@mail-archiver/core": "*",
+    "@mail-archiver/server": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "44.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "description": "Mail Archiver - The Mail Backup Solution",
+  "author": "sphings79"
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@mail-archiver/web",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.14.11",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.43.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^16.2.4"
+  },
+  "devDependencies": {
+    "@mail-archiver/core": "*",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2"
+  }
+}

@@ -1,0 +1,82 @@
+appId: eu.sphings.mailarchiver
+productName: Mail Archiver
+copyright: Copyright © 2026 sphings79
+
+directories:
+  output: ../../release
+  buildResources: build
+
+# The main process plus its workspace packages; the frontend ships as a
+# resource so the embedded server can serve it.
+files:
+  - dist/**/*
+  - package.json
+  - '!**/*.map'
+
+extraResources:
+  - from: ../web/dist
+    to: web
+
+# Workspace packages are symlinked into the root node_modules, so the builder
+# has to look there for production dependencies.
+nodeGypRebuild: false
+npmRebuild: true
+buildDependenciesFromSource: false
+
+mac:
+  category: public.app-category.utilities
+  darkModeSupport: true
+  minimumSystemVersion: '12.0'
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  # No paid developer account: the app is signed ad-hoc, which means macOS
+  # shows the "unidentified developer" prompt on first launch.
+  identity: null
+  gatekeeperAssess: false
+
+dmg:
+  title: Mail Archiver
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+    - target: portable
+      arch:
+        - x64
+  # Without a code signing certificate Windows shows a SmartScreen warning on
+  # first run. Nothing to do about that short of buying a certificate.
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mail Archiver
+
+linux:
+  category: Utility
+  synopsis: Archive IMAP mailboxes to local .eml files
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64

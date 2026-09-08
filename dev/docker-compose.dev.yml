@@ -1,0 +1,15 @@
+# Local IMAP server used while developing. Start with:
+#   docker compose -f dev/docker-compose.dev.yml up -d
+# then seed it with:  node dev/seed-testserver.mjs
+services:
+  dovecot:
+    image: dovecot/dovecot:2.3.21
+    container_name: mail-archiver-dovecot
+    ports:
+      - "127.0.0.1:11143:143"
+    volumes:
+      - ./dovecot/dovecot.conf:/etc/dovecot/dovecot.conf:ro
+      - dovecot-mail:/srv/mail
+
+volumes:
+  dovecot-mail:
