@@ -11,7 +11,7 @@ schreibgeschützt, inkrementell, mit dem Ordnerbaum deines Postfachs.
 [![Lizenz: AGPL v3](https://img.shields.io/badge/lizenz-AGPL--3.0-7c5cff?style=flat-square)](LICENSE)
 [![Plattformen](https://img.shields.io/badge/plattformen-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Docker-2b3040?style=flat-square)](#installation)
 [![Mit TypeScript gebaut](https://img.shields.io/badge/gebaut%20mit-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
-[![Sterne](https://img.shields.io/github/stars/sphings79/Mail-Archiver---The-Mail-Backup-Solution?style=flat-square&color=f0b429)](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/stargazers)
+[![Sterne](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
 [English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [FAQ](#faq)
 
@@ -107,7 +107,7 @@ Alle drei Desktop-Plattformen entstehen aus derselben Quelle.
 
 ### macOS (Apple Silicon)
 
-Das DMG von der [Releases-Seite](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/releases)
+Das DMG von der [Releases-Seite](https://github.com/sphings79/mail-archiver/releases)
 laden, öffnen und die App nach `Programme` ziehen.
 
 Die App ist **nicht notarisiert** — hinter diesem Projekt steht kein bezahltes
@@ -322,14 +322,14 @@ node dev/test-behaviour.mjs   # prüft Peek, Inkrementell, Verschieben, Löschen
 
 Wenn Mail Archiver eines Tages dein Postfach rettet, helfen zwei Dinge sehr:
 
-⭐ **[Dem Repository einen Stern geben](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution)** —
+⭐ **[Dem Repository einen Stern geben](https://github.com/sphings79/mail-archiver)** —
 die billigste Art, anderen beim Finden zu helfen.
 
 ☕ **[Einen Kaffee spendieren](https://github.com/sponsors/sphings79)** —
 entwickelt wird an Abenden und Wochenenden.
 
 Fehlermeldungen und Wünsche gern in den
-[Issues](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/issues).
+[Issues](https://github.com/sphings79/mail-archiver/issues).
 
 ## Lizenz
 

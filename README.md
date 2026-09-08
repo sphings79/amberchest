@@ -11,7 +11,7 @@ with a folder tree that mirrors your mailbox.
 [![Licence: AGPL v3](https://img.shields.io/badge/licence-AGPL--3.0-7c5cff?style=flat-square)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Docker-2b3040?style=flat-square)](#install)
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
-[![Stars](https://img.shields.io/github/stars/sphings79/Mail-Archiver---The-Mail-Backup-Solution?style=flat-square&color=f0b429)](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/stargazers)
+[![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
 [Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [FAQ](#faq)
 
@@ -103,7 +103,7 @@ Builds for all three desktop platforms come from the same source.
 
 ### macOS (Apple Silicon)
 
-Download the DMG from the [releases](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/releases)
+Download the DMG from the [releases](https://github.com/sphings79/mail-archiver/releases)
 page, open it and drag the app into `Applications`.
 
 The app is **not notarised** — there is no paid Apple developer account behind
@@ -311,14 +311,14 @@ node dev/test-behaviour.mjs   # checks peek, incremental, move and delete
 
 If Mail Archiver saves your mailbox one day, two things help a lot:
 
-⭐ **[Star the repository](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution)** —
+⭐ **[Star the repository](https://github.com/sphings79/mail-archiver)** —
 the cheapest way to help other people find it.
 
 ☕ **[Buy me a coffee](https://github.com/sponsors/sphings79)** — development
 happens in evenings and weekends.
 
 Bug reports and feature requests are welcome in the
-[issues](https://github.com/sphings79/Mail-Archiver---The-Mail-Backup-Solution/issues).
+[issues](https://github.com/sphings79/mail-archiver/issues).
 
 ## Licence
 

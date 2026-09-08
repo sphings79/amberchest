@@ -15,9 +15,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Build first: typecheck resolves @mail-archiver/* through their built
+      # type declarations.
+      - run: npm run build
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
         continue-on-error: true
