@@ -312,6 +312,40 @@ Token wollen, gibt es ein Feld für einen zusätzlichen Header.
 }
 ```
 
+## Statistik und Register
+
+**Die Statistik** beantwortet, was eigentlich im Archiv liegt: Nachrichten je
+Jahr, die häufigsten Absender, die größten Ordner und Nachrichten, Anhänge nach
+Typ. Alles kommt aus dem Index — die Seite kostet ein paar Abfragen und liest
+keine einzige Datei.
+
+**Das Register** macht das Archiv ohne dieses Programm benutzbar. Es schreibt
+neben die Nachrichten eine `index.html` — je Ordner eine Seite, die auf die
+`.eml`-Dateien daneben verweist, dazu eine Übersicht. In jedem Browser aus einem
+gewöhnlichen Verzeichnis zu öffnen: kein Server, keine Datenbank, nichts zu
+installieren. Geschrieben wird es auf Knopfdruck, im Dialog **Prüfen**.
+
+## Gmail: eine Nachricht, mehrere Ordner
+
+Gmail zeigt jede Mail in ihrem Ordner **und** in „Alle Nachrichten" — wer beides
+sichert, hat sie doppelt. Mit **Nachricht nur einmal speichern** in den
+erweiterten Kontoeinstellungen wird aus der zweiten Kopie ein Eintrag, der auf
+die erste Datei zeigt:
+
+| | Dateien | Archiv |
+| --- | --- | --- |
+| Aus | 6 | 1080 Bytes |
+| An | 3 | 540 Bytes |
+
+Beide Ordner zeigen weiterhin alle Nachrichten, die Suche findet sie, und
+öffnen lässt sie sich von beiden Seiten. Heruntergeladen wird sie kein zweites
+Mal — sie wird schon am Umschlag erkannt, bevor ein Byte des Inhalts abgerufen
+wird.
+
+Verliert ausgerechnet der Ordner mit der Datei die Nachricht auf dem Server,
+wandert die Datei in einen Ordner, der sie noch zeigt. Das Löschen einer Kopie
+nimmt nie die andere mit.
+
 ## Ein Archiv umziehen
 
 Ein Archiv, das auf dem Desktop angefangen hat, gehört irgendwann auf den

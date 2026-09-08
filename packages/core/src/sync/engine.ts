@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import type { ImapFlow } from 'imapflow';
 import type { ArchiveDatabase, FolderRow, MessageRow } from '../db/database.js';
 import {
@@ -22,6 +22,7 @@ import {
   purgeMessageFile,
   recordFlagChange,
   recordFolder,
+  recordLink,
   storeMessage,
 } from '../storage/archive.js';
 import { assertRoom } from '../storage/disk.js';
@@ -42,6 +43,7 @@ function emptyStats(): SyncStats {
     foldersTotal: 0,
     foldersDone: 0,
     messagesNew: 0,
+    messagesLinked: 0,
     messagesMoved: 0,
     messagesDeleted: 0,
     messagesRestored: 0,
@@ -450,6 +452,141 @@ export class SyncEngine extends EventEmitter {
     for (const plan of plans) {
       await this.handleMissing(plan);
     }
+
+  }
+
+  /**
+   * Stores a message once when it sits in several folders at the same time.
+   *
+   * Gmail is the reason: every mail is in its folder and in All Mail, so an
+   * archive holds it twice. What is left after the move matching is exactly
+   * that case - the same message, still present elsewhere. The row stays, so
+   * the folder tree is unchanged, and the bytes are neither downloaded nor
+   * written a second time.
+   */
+  private async linkDuplicates(plan: FolderPlan): Promise<void> {
+    {
+      const remaining: number[] = [];
+      const scannedByUid = new Map(plan.scanned.map((message) => [message.uid, message]));
+
+      for (const uid of plan.newUids) {
+        this.checkCancelled();
+        const message = scannedByUid.get(uid);
+        if (!message) {
+          remaining.push(uid);
+          continue;
+        }
+
+        const owner = this.db.findLinkTarget(
+          this.account.id,
+          message.fingerprint,
+          plan.folder.id,
+        );
+        if (!owner) {
+          remaining.push(uid);
+          continue;
+        }
+
+        this.db.insertMessage({
+          accountId: this.account.id,
+          folderId: plan.folder.id,
+          uid,
+          uidvalidity: plan.uidValidity,
+          messageId: message.messageId,
+          fingerprint: message.fingerprint,
+          internalDate: message.internalDate.toISOString(),
+          size: message.size,
+          subject: message.subject,
+          fromAddr: message.fromAddress,
+          toAddr: message.toAddress,
+          flags: message.flags,
+          // No file of its own; the name of the one that holds the bytes.
+          fileName: owner.file_name,
+          sha256: owner.sha256,
+          linkedTo: owner.id,
+        });
+
+        // Into the journal as well, so an adopted archive knows about it.
+        const ownerFolder = this.db
+          .listFolders(this.account.id)
+          .find((entry) => entry.id === owner.folder_id);
+        if (ownerFolder) {
+          await recordLink(
+            join(this.layout.accountDir(this.account), plan.folder.local_path),
+            owner.file_name,
+            `${ownerFolder.local_path}/${owner.file_name}`,
+            {
+              uid,
+              uidvalidity: plan.uidValidity,
+              messageId: message.messageId,
+              fingerprint: message.fingerprint,
+              internalDate: message.internalDate.toISOString(),
+              size: message.size,
+              subject: message.subject,
+              from: message.fromAddress,
+              to: message.toAddress,
+              flags: message.flags,
+            },
+          );
+        }
+
+        this.stats.messagesLinked += 1;
+      }
+
+      plan.newUids = remaining;
+    }
+  }
+
+  /**
+   * Passes a shared file on before its owner is deleted.
+   *
+   * A linked message has no bytes of its own. When the folder that holds them
+   * loses the message, the file moves to one of the folders still showing it,
+   * and the rest point at that one instead.
+   */
+  private async handOverFile(row: MessageRow, sourceDir: string): Promise<boolean> {
+    const links = this.db.listLinks(row.id);
+    const heir = links.find((link) => link.state === 'active');
+    if (!heir) return false;
+
+    const accountDir = this.layout.accountDir(this.account);
+    const heirFolder = this.db.listFolders(this.account.id).find((f) => f.id === heir.folder_id);
+    if (!heirFolder) return false;
+
+    const targetDir = join(accountDir, heirFolder.local_path);
+    const taken = await listMessageFiles(targetDir);
+    const fileName = uniqueFileName(row.file_name, taken);
+
+    await moveMessageFile(
+      sourceDir,
+      row.file_name,
+      targetDir,
+      fileName,
+      {
+        uid: heir.uid,
+        uidvalidity: heir.uidvalidity,
+        messageId: heir.message_id,
+        fingerprint: heir.fingerprint,
+        internalDate: heir.internal_date,
+        size: heir.size,
+        subject: heir.subject,
+        from: heir.from_addr,
+        to: heir.to_addr,
+        flags: JSON.parse(heir.flags) as string[],
+      },
+      'moved',
+      heirFolder.local_path,
+      // The source folder is the one losing the message.
+      relative(accountDir, sourceDir),
+    );
+
+    this.db.promoteLink(heir.id, fileName, heir.folder_id);
+    this.db.removeMessage(row.id);
+    logger.info(
+      `${row.file_name} is still shown by ${heirFolder.path}, the file went there`,
+      { accountId: this.account.id },
+    );
+    return true;
   }
 
   /** Applies the configured policy to messages that are gone from the server. */
@@ -469,6 +606,11 @@ export class SyncEngine extends EventEmitter {
 
     for (const row of plan.missing) {
       this.checkCancelled();
+
+      // Another folder may be showing the same message through this file. It
+      // has to keep it, otherwise deleting one copy would lose both.
+      if (await this.handOverFile(row, sourceDir)) continue;
+
       if (handling === 'mirror') {
         await purgeMessageFile(sourceDir, row.file_name);
         this.db.removeMessage(row.id);
@@ -514,6 +656,9 @@ export class SyncEngine extends EventEmitter {
   }
 
   private async downloadFolder(client: ImapFlow, plan: FolderPlan): Promise<void> {
+    // Before anything is fetched: a message already archived in another folder
+    // gets a row pointing at that file instead of a download of its own.
+    if (this.account.settings.linkDuplicates) await this.linkDuplicates(plan);
     if (plan.newUids.length === 0) return;
 
     this.currentFolder = plan.remote.path;

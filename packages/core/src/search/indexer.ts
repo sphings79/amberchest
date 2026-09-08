@@ -139,7 +139,13 @@ export class SearchIndexEngine extends EventEmitter {
     folder: FolderRow,
     message: MessageRow,
   ): Promise<void> {
-    const path = join(accountDir, folder.local_path, message.file_name);
+    // A linked message keeps its bytes in the folder that owns them.
+    const owner = this.options.db.resolveFile(message);
+    const ownerFolder =
+      owner.id === message.id
+        ? folder
+        : this.options.db.listFolders(owner.account_id).find((entry) => entry.id === owner.folder_id);
+    const path = join(accountDir, (ownerFolder ?? folder).local_path, owner.file_name);
 
     let source: Buffer;
     try {

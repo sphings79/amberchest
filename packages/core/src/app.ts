@@ -34,6 +34,7 @@ import { TransferManager } from './transfer/manager.js';
 import type { TransferProgress, TransferTarget } from './transfer/engine.js';
 import type { AdoptProgress } from './adopt/engine.js';
 import { Notifier } from './notify/notifier.js';
+import { writeRegister, type RegisterResult } from './register/writer.js';
 import { OAuthManager } from './oauth/manager.js';
 import { diskSpace, type DiskSpace } from './storage/disk.js';
 import { VerifyManager } from './verify/manager.js';
@@ -677,6 +678,28 @@ export class MailArchiverApp {
     const account = this.requireAccount(accountId);
     const layout = new ArchiveLayout(this.config.getSettings().archivePath);
     await writeArchiveFile(layout.accountDir(account), segments, body);
+  }
+
+  /**
+   * Writes a plain HTML index into the archive of one account.
+   *
+   * So the archive stays usable without this program: one page per folder,
+   * linking to the .eml files next to it.
+   */
+  writeRegister(accountId: string): Promise<RegisterResult> {
+    const settings = this.config.getSettings();
+    return writeRegister(this.requireAccount(accountId), {
+      db: this.db,
+      archiveBaseDir: settings.archivePath,
+      encrypted: settings.encryptArchive,
+      locale: settings.language === 'en' ? 'en-GB' : 'de-DE',
+    });
+  }
+
+  /** Numbers about the archive, for the statistics screen. */
+  statistics(accountId: string | null = null): ReturnType<ArchiveDatabase['statistics']> {
+    if (accountId) this.requireAccount(accountId);
+    return this.db.statistics(accountId);
   }
 
   /** Sends an archive to another instance, which then adopts it. */

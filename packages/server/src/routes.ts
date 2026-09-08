@@ -330,6 +330,26 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     cancelled: app.transfer.cancel(),
   }));
 
+  server.post('/api/accounts/:id/register', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return await app.writeRegister(id);
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  // ------------------------------------------------------------- statistics
+
+  server.get('/api/statistics', { preHandler: requireUnlocked }, async (request, reply) => {
+    const query = request.query as { account?: string };
+    try {
+      return app.statistics(query.account ?? null);
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
   // ---------------------------------------------------------------- storage
 
   server.get('/api/storage', { preHandler: requireUnlocked }, async () => app.storageStatus());

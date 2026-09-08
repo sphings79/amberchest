@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   deletedHandling: 'move-to-deleted',
   deletedRetentionDays: null,
   autoSelectNewFolders: false,
+  linkDuplicates: false,
 };
 
 const PORT_BY_SECURITY: Record<string, number> = { tls: 993, starttls: 143, none: 143 };
@@ -331,6 +332,13 @@ export function AccountForm({
               checked={settings.autoSelectNewFolders}
               onChange={(autoSelectNewFolders) => setSettings({ ...settings, autoSelectNewFolders })}
               label={t('account.autoSelectNew')}
+            />
+
+            <Toggle
+              checked={settings.linkDuplicates}
+              onChange={(linkDuplicates) => setSettings({ ...settings, linkDuplicates })}
+              label={t('account.linkDuplicates')}
+              hint={t('account.linkDuplicatesHint')}
             />
           </div>
         )}

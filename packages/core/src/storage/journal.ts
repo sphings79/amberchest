@@ -46,6 +46,28 @@ export type JournalRecord =
     }
   | { op: 'flags'; ts: string; file: string; flags: string[] }
   | {
+      /**
+       * The same message, already stored in another folder.
+       *
+       * Written instead of a second copy of the bytes; `target` is the path of
+       * the file that holds them, relative to the account directory.
+       */
+      op: 'link';
+      ts: string;
+      file: string;
+      target: string;
+      uid: number;
+      uidvalidity: number;
+      messageId: string | null;
+      fingerprint: string;
+      internalDate: string;
+      size: number;
+      subject: string | null;
+      from: string | null;
+      to: string | null;
+      flags: string[];
+    }
+  | {
       op: 'remove';
       ts: string;
       file: string;

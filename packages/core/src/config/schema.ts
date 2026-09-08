@@ -11,6 +11,8 @@ export const accountSettingsSchema = z.object({
   deletedHandling: z.enum(['keep', 'move-to-deleted', 'mirror']).default('move-to-deleted'),
   deletedRetentionDays: z.number().int().min(1).max(3650).nullable().default(null),
   autoSelectNewFolders: z.boolean().default(false),
+  /** One file for a message that sits in several folders, as Gmail does. */
+  linkDuplicates: z.boolean().default(false),
 });
 
 export const attachmentSettingsSchema = z.object({

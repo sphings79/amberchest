@@ -1,5 +1,5 @@
 import type { AccountOverview, Finding, VerifyProgress } from '@mail-archiver/core';
-import { CircleAlert, CircleCheck, FileQuestion, ShieldCheck, Square } from 'lucide-react';
+import { CircleAlert, CircleCheck, FileQuestion, ShieldCheck, Square, TableOfContents } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
@@ -35,6 +35,7 @@ export function VerifyDialog({
   const [stored, setStored] = useState<VerifyProgress | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [register, setRegister] = useState<{ folders: number; messages: number } | null>(null);
 
   // The live event wins; the stored result is what is left from last time.
   const progress = verifyProgress[accountId] ?? stored;
@@ -104,6 +105,35 @@ export function VerifyDialog({
           label={t('verify.checkServer')}
           hint={t('verify.checkServerHint')}
         />
+        <div className="flex flex-wrap items-center gap-2 rounded-xl p-3" style={{ background: 'var(--surface-2)' }}>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium">{t('register.title')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {t('register.hint')}
+            </div>
+          </div>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              setError(null);
+              void api
+                .writeRegister(accountId)
+                .then((value) => setRegister(value))
+                .catch((cause: Error) => setError(cause.message))
+                .finally(() => setBusy(false));
+            }}
+          >
+            <TableOfContents size={15} />
+            {t('register.write')}
+          </Button>
+          {register && (
+            <span className="w-full text-xs" style={{ color: 'var(--ok)' }}>
+              {t('register.done', { folders: register.folders, messages: register.messages })}
+            </span>
+          )}
+        </div>
+
         <Toggle
           checked={includeDeleted}
           onChange={setIncludeDeleted}

@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bot,
   FolderTree,
   HouseWifi,
@@ -23,6 +24,7 @@ import { HomeAssistant } from './screens/HomeAssistant.js';
 import { Logs } from './screens/Logs.js';
 import { Overview } from './screens/Overview.js';
 import { Search } from './screens/Search.js';
+import { Statistics } from './screens/Statistics.js';
 import { McpScreen } from './screens/McpScreen.js';
 import { Settings } from './screens/Settings.js';
 import { useApp } from './state.js';
@@ -32,6 +34,7 @@ type View =
   | 'accounts'
   | 'browser'
   | 'search'
+  | 'statistics'
   | 'settings'
   | 'mcp'
   | 'homeassistant'
@@ -50,9 +53,12 @@ function Logo(): ReactNode {
 /** Wraps every screen so the desktop window can always be dragged. */
 function Shell({ children }: { children: ReactNode }): ReactNode {
   return (
-    <div className="flex h-full flex-col" style={{ background: 'var(--surface-0)' }}>
+    <div
+      className="flex h-full flex-col overflow-hidden"
+      style={{ background: 'var(--surface-0)' }}
+    >
       {isDesktop && <TitleBar />}
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -85,6 +91,7 @@ export function App(): ReactNode {
     { id: 'accounts', label: t('nav.accounts'), icon: <Inbox size={16} />, badge: accounts.length },
     { id: 'browser', label: t('nav.browser'), icon: <FolderTree size={16} /> },
     { id: 'search', label: t('nav.search'), icon: <SearchIcon size={16} /> },
+    { id: 'statistics', label: t('nav.statistics'), icon: <BarChart3 size={16} /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon size={16} /> },
     { id: 'mcp', label: t('nav.mcp'), icon: <Bot size={16} /> },
     { id: 'homeassistant', label: t('nav.homeAssistant'), icon: <HouseWifi size={16} /> },
@@ -101,7 +108,7 @@ export function App(): ReactNode {
     <Shell>
       <div className="flex h-full flex-col md:flex-row">
         <aside
-          className="flex shrink-0 flex-row items-center gap-2 border-b px-4 py-3 md:w-60 md:flex-col md:items-stretch md:border-b-0 md:border-r md:px-3 md:py-4"
+          className="flex shrink-0 flex-row items-center gap-2 overflow-x-auto border-b px-4 py-3 md:w-60 md:flex-col md:items-stretch md:overflow-x-visible md:border-b-0 md:border-r md:px-3 md:py-4"
           style={{ background: 'var(--surface-1)' }}
         >
           <button
@@ -166,6 +173,7 @@ export function App(): ReactNode {
             {view === 'accounts' && <Dashboard />}
             {view === 'browser' && <Browser />}
             {view === 'search' && <Search />}
+            {view === 'statistics' && <Statistics />}
             {view === 'settings' && <Settings />}
             {view === 'mcp' && <McpScreen />}
             {view === 'homeassistant' && <HomeAssistant />}

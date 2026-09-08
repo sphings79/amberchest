@@ -106,6 +106,7 @@ export {
   type AdoptStats,
 } from './adopt/engine.js';
 export { AdoptManager } from './adopt/manager.js';
+export { writeRegister, type RegisterResult } from './register/writer.js';
 export {
   TransferEngine,
   TransferCancelledError,

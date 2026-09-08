@@ -140,6 +140,16 @@ export async function moveMessageFile(
   });
 }
 
+/** Notes that this folder shows a message whose file lives elsewhere. */
+export async function recordLink(
+  folderDir: string,
+  file: string,
+  target: string,
+  meta: Omit<Extract<JournalRecord, { op: 'add' }>, 'op' | 'ts' | 'file'>,
+): Promise<void> {
+  await appendJournal(folderDir, { op: 'link', ts: new Date().toISOString(), file, target, ...meta });
+}
+
 /** Notes what this directory is called on the server, for a later adoption. */
 export async function recordFolder(
   folderDir: string,

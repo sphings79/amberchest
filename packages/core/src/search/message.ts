@@ -78,14 +78,16 @@ export async function loadMessage(
   const row = options.db.getMessage(messageId);
   if (!row || row.account_id !== account.id) throw new Error('Unknown message');
 
-  const folder = options.db.listFolders(account.id).find((entry) => entry.id === row.folder_id);
+  // A message that sits in several folders keeps its bytes in one of them.
+  const owner = options.db.resolveFile(row);
+  const folder = options.db.listFolders(account.id).find((entry) => entry.id === owner.folder_id);
   if (!folder) throw new Error('Unknown folder');
 
   const layout = new ArchiveLayout(options.archiveBaseDir);
-  const base = row.state === 'deleted'
+  const base = owner.state === 'deleted'
     ? layout.deletedDir(account, folder.local_path)
     : join(layout.accountDir(account), folder.local_path);
-  const filePath = join(base, row.file_name);
+  const filePath = join(base, owner.file_name);
 
   const source = await readArchiveFile(filePath, options.encryptionKey ?? null);
   const parsed = await simpleParser(source, { skipTextLinks: true });
@@ -164,14 +166,16 @@ export async function loadMessageSource(
   const row = options.db.getMessage(messageId);
   if (!row || row.account_id !== account.id) throw new Error('Unknown message');
 
-  const folder = options.db.listFolders(account.id).find((entry) => entry.id === row.folder_id);
+  // A message that sits in several folders keeps its bytes in one of them.
+  const owner = options.db.resolveFile(row);
+  const folder = options.db.listFolders(account.id).find((entry) => entry.id === owner.folder_id);
   if (!folder) throw new Error('Unknown folder');
 
   const layout = new ArchiveLayout(options.archiveBaseDir);
-  const base = row.state === 'deleted'
+  const base = owner.state === 'deleted'
     ? layout.deletedDir(account, folder.local_path)
     : join(layout.accountDir(account), folder.local_path);
-  const filePath = join(base, row.file_name);
+  const filePath = join(base, owner.file_name);
 
   return {
     source: await readArchiveFile(filePath, options.encryptionKey ?? null),

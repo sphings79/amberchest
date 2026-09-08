@@ -36,6 +36,34 @@ export type {
   VerifyProgress,
 };
 
+/** What the statistics screen shows; all of it comes out of the index. */
+export interface Statistics {
+  perYear: Array<{ year: string; messages: number; bytes: number }>;
+  perFolder: Array<{ path: string; messages: number; bytes: number }>;
+  topSenders: Array<{ address: string; messages: number; bytes: number }>;
+  largest: Array<{
+    id: number;
+    accountId: string;
+    subject: string | null;
+    from: string | null;
+    date: string;
+    size: number;
+  }>;
+  attachments: {
+    files: number;
+    bytes: number;
+    byType: Array<{ type: string; files: number; bytes: number }>;
+  };
+  totals: {
+    messages: number;
+    bytes: number;
+    deleted: number;
+    linked: number;
+    withAttachments: number;
+  };
+  range: { first: string | null; last: string | null };
+}
+
 export interface RestoreTarget {
   host: string;
   port: number;
@@ -110,6 +138,7 @@ export interface AccountSettingsValues {
   deletedHandling: 'keep' | 'move-to-deleted' | 'mirror';
   deletedRetentionDays: number | null;
   autoSelectNewFolders: boolean;
+  linkDuplicates: boolean;
 }
 
 import {
@@ -279,6 +308,14 @@ export const api = {
       `/accounts/${id}/adopt`,
       { method: 'POST', body: JSON.stringify(body) },
     ),
+
+  writeRegister: (id: string) =>
+    request<{ indexPath: string; folders: number; messages: number }>(`/accounts/${id}/register`, {
+      method: 'POST',
+    }),
+
+  statistics: (accountId?: string) =>
+    request<Statistics>(`/statistics${accountId ? `?account=${encodeURIComponent(accountId)}` : ''}`),
 
   storage: () =>
     request<{

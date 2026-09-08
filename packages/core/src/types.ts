@@ -29,6 +29,13 @@ export interface AccountSettings {
   deletedRetentionDays: number | null;
   /** Newly appeared server folders are selected automatically when true. */
   autoSelectNewFolders: boolean;
+  /**
+   * Store a message once when it sits in several folders.
+   *
+   * Gmail shows every mail in its folder and in All Mail; without this the
+   * archive holds it twice.
+   */
+  linkDuplicates: boolean;
 }
 
 /** Where exported attachments are laid out inside the target directory. */
@@ -262,6 +269,8 @@ export interface SyncStats {
   foldersTotal: number;
   foldersDone: number;
   messagesNew: number;
+  /** Stored once although they sit in several folders; Gmail does this. */
+  messagesLinked: number;
   messagesMoved: number;
   messagesDeleted: number;
   messagesRestored: number;

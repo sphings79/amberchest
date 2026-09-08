@@ -55,6 +55,8 @@ export interface VerifyStats {
   orphans: number;
   /** Checksums an older version had not written yet. */
   hashesAdded: number;
+  /** Rows whose bytes live with another message; checked there. */
+  linked: number;
   bytesChecked: number;
   /** Only when the server was asked as well. */
   foldersCompared: number;
@@ -115,6 +117,7 @@ export class VerifyEngine extends EventEmitter {
     changed: 0,
     orphans: 0,
     hashesAdded: 0,
+    linked: 0,
     bytesChecked: 0,
     foldersCompared: 0,
     foldersDiffering: 0,
@@ -169,6 +172,13 @@ export class VerifyEngine extends EventEmitter {
       for (const row of rows) {
         if (this.cancelled) throw new VerifyCancelledError();
         this.currentFolder = row.folder_path;
+
+        // A message stored once but sitting in several folders is checked with
+        // the folder that owns the file, not here.
+        if (row.linked_to) {
+          this.stats.linked += 1;
+          continue;
+        }
 
         const relativePath =
           row.state === 'active'

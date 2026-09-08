@@ -84,6 +84,21 @@ html,
 body,
 #root {
   height: 100%;
+  /* Only the content area scrolls; the navigation has to stay put. */
+  overflow: hidden;
+}
+
+/*
+ * On a phone the address bar grows and shrinks while scrolling, and 100% is
+ * measured against the taller state - which pushes the whole page, navigation
+ * included, out of view. The dynamic viewport unit follows the visible area.
+ */
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
 }
 
 body {

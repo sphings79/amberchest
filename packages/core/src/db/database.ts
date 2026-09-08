@@ -36,6 +36,10 @@ export interface MessageRow {
   to_addr: string | null;
   flags: string;
   file_name: string;
+  /** Checksum of the message source; null for rows written before that existed. */
+  sha256: string | null;
+  /** Set when the bytes live with another message of the same account. */
+  linked_to: number | null;
   state: 'active' | 'deleted';
   deleted_at: string | null;
   created_at: string;
@@ -83,6 +87,8 @@ export interface NewMessage {
   fileName: string;
   /** Checksum of the message source, for the archive check. */
   sha256?: string | null;
+  /** Set when the bytes live with another message of the same account. */
+  linkedTo?: number | null;
 }
 
 /**
@@ -219,9 +225,13 @@ export class ArchiveDatabase {
   }
 
   /** Total size of the archived messages of one account, in bytes. */
+  /** Size of the archive on disk: a message shared by two folders counts once. */
   totalBytes(accountId: string): number {
     const row = this.db
-      .prepare("SELECT COALESCE(SUM(size), 0) AS bytes FROM messages WHERE account_id = ? AND state = 'active'")
+      .prepare(
+        `SELECT COALESCE(SUM(size), 0) AS bytes FROM messages
+          WHERE account_id = ? AND state = 'active' AND linked_to IS NULL`,
+      )
       .get(accountId) as { bytes: number };
     return row.bytes;
   }
@@ -248,8 +258,8 @@ export class ArchiveDatabase {
       .prepare(
         `INSERT INTO messages (
            account_id, folder_id, uid, uidvalidity, message_id, fingerprint, internal_date,
-           size, subject, from_addr, to_addr, flags, file_name, sha256, state, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+           size, subject, from_addr, to_addr, flags, file_name, sha256, linked_to, state, created_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
       )
       .run(
         message.accountId,
@@ -266,6 +276,7 @@ export class ArchiveDatabase {
         JSON.stringify(message.flags),
         message.fileName,
         message.sha256 ?? null,
+        message.linkedTo ?? null,
         new Date().toISOString(),
       );
     return Number(result.lastInsertRowid);
@@ -282,6 +293,7 @@ export class ArchiveDatabase {
     file_name: string;
     size: number;
     sha256: string | null;
+    linked_to: number | null;
     uid: number;
     state: string;
     subject: string | null;
@@ -291,7 +303,7 @@ export class ArchiveDatabase {
     return this.db
       .prepare(
         `SELECT m.id, f.path AS folder_path, f.local_path AS local_path, m.file_name, m.size,
-                m.sha256, m.uid, m.state, m.subject, m.internal_date
+                m.sha256, m.linked_to, m.uid, m.state, m.subject, m.internal_date
            FROM messages m JOIN folders f ON f.id = m.folder_id
           WHERE m.account_id = ?${where}
           ORDER BY f.path, m.internal_date`,
@@ -303,11 +315,59 @@ export class ArchiveDatabase {
       file_name: string;
       size: number;
       sha256: string | null;
+      linked_to: number | null;
       uid: number;
       state: string;
       subject: string | null;
       internal_date: string;
     }>;
+  }
+
+  /**
+   * The message whose file holds the bytes.
+   *
+   * A linked row carries no file of its own; everything that reads a message
+   * goes through here first.
+   */
+  resolveFile(row: MessageRow): MessageRow {
+    if (!row.linked_to) return row;
+    const owner = this.getMessage(row.linked_to);
+    return owner ?? row;
+  }
+
+  /** Rows whose bytes live with this message. */
+  listLinks(messageId: number): MessageRow[] {
+    return this.db
+      .prepare("SELECT * FROM messages WHERE linked_to = ?")
+      .all(messageId) as MessageRow[];
+  }
+
+  /** Hands the file over to another row, which then owns it. */
+  promoteLink(linkId: number, fileName: string, folderId: number): void {
+    this.transaction(() => {
+      this.db
+        .prepare('UPDATE messages SET linked_to = NULL, file_name = ?, folder_id = ? WHERE id = ?')
+        .run(fileName, folderId, linkId);
+      // Everything that pointed at the old owner now points at the new one.
+      this.db.prepare('UPDATE messages SET linked_to = ? WHERE linked_to = ?').run(linkId, linkId);
+    });
+  }
+
+  /** Re-points the links of one message at another. */
+  relinkTo(fromId: number, toId: number): void {
+    this.db.prepare('UPDATE messages SET linked_to = ? WHERE linked_to = ?').run(toId, fromId);
+  }
+
+  /** An active message of this account with the same content, if there is one. */
+  findLinkTarget(accountId: string, fingerprint: string, excludeFolderId: number): MessageRow | undefined {
+    return this.db
+      .prepare(
+        `SELECT * FROM messages
+          WHERE account_id = ? AND fingerprint = ? AND state = 'active'
+            AND folder_id != ? AND linked_to IS NULL
+          LIMIT 1`,
+      )
+      .get(accountId, fingerprint, excludeFolderId) as MessageRow | undefined;
   }
 
   /** One message by its file name, for adopting an archive without duplicates. */
@@ -333,6 +393,128 @@ export class ArchiveDatabase {
       )
       .all(accountId) as Array<{ path: string; count: number }>;
     return new Map(rows.map((row) => [row.path, row.count]));
+  }
+
+  /**
+   * Numbers for the statistics screen.
+   *
+   * All of it comes out of the index, so nothing has to be read from disk and
+   * nothing has to be asked of the server.
+   */
+  statistics(accountId: string | null): {
+    perYear: Array<{ year: string; messages: number; bytes: number }>;
+    perFolder: Array<{ path: string; messages: number; bytes: number }>;
+    topSenders: Array<{ address: string; messages: number; bytes: number }>;
+    largest: Array<{ id: number; accountId: string; subject: string | null; from: string | null; date: string; size: number }>;
+    attachments: { files: number; bytes: number; byType: Array<{ type: string; files: number; bytes: number }> };
+    totals: { messages: number; bytes: number; deleted: number; linked: number; withAttachments: number };
+    range: { first: string | null; last: string | null };
+  } {
+    const where = accountId ? 'AND m.account_id = @accountId' : '';
+    const params = accountId ? { accountId } : {};
+    const active = `FROM messages m WHERE m.state = 'active' ${where}`;
+
+    const perYear = this.db
+      .prepare(
+        `SELECT substr(m.internal_date, 1, 4) AS year, COUNT(*) AS messages,
+                COALESCE(SUM(m.size), 0) AS bytes
+           ${active}
+          GROUP BY year ORDER BY year`,
+      )
+      .all(params) as Array<{ year: string; messages: number; bytes: number }>;
+
+    const perFolder = this.db
+      .prepare(
+        `SELECT f.path AS path, COUNT(*) AS messages, COALESCE(SUM(m.size), 0) AS bytes
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE m.state = 'active' ${where}
+          GROUP BY f.path ORDER BY messages DESC LIMIT 25`,
+      )
+      .all(params) as Array<{ path: string; messages: number; bytes: number }>;
+
+    const topSenders = this.db
+      .prepare(
+        `SELECT COALESCE(m.from_addr, '?') AS address, COUNT(*) AS messages,
+                COALESCE(SUM(m.size), 0) AS bytes
+           ${active}
+          GROUP BY address ORDER BY messages DESC LIMIT 15`,
+      )
+      .all(params) as Array<{ address: string; messages: number; bytes: number }>;
+
+    const largest = this.db
+      .prepare(
+        `SELECT m.id AS id, m.account_id AS accountId, m.subject AS subject,
+                m.from_addr AS "from", m.internal_date AS date, m.size AS size
+           ${active}
+          ORDER BY m.size DESC LIMIT 10`,
+      )
+      .all(params) as Array<{
+      id: number;
+      accountId: string;
+      subject: string | null;
+      from: string | null;
+      date: string;
+      size: number;
+    }>;
+
+    const attachmentWhere = accountId ? 'WHERE a.account_id = @accountId' : '';
+    const attachmentTotals = this.db
+      .prepare(
+        `SELECT COUNT(*) AS files, COALESCE(SUM(a.size), 0) AS bytes FROM attachments a ${attachmentWhere}`,
+      )
+      .get(params) as { files: number; bytes: number };
+
+    const byType = this.db
+      .prepare(
+        `SELECT COALESCE(NULLIF(a.content_type, ''), 'unbekannt') AS type, COUNT(*) AS files,
+                COALESCE(SUM(a.size), 0) AS bytes
+           FROM attachments a ${attachmentWhere}
+          GROUP BY type ORDER BY bytes DESC LIMIT 10`,
+      )
+      .all(params) as Array<{ type: string; files: number; bytes: number }>;
+
+    const totals = this.db
+      .prepare(
+        `SELECT COUNT(*) AS messages,
+                COALESCE(SUM(CASE WHEN m.linked_to IS NULL THEN m.size ELSE 0 END), 0) AS bytes,
+                COALESCE(SUM(CASE WHEN m.linked_to IS NOT NULL THEN 1 ELSE 0 END), 0) AS linked
+           ${active}`,
+      )
+      .get(params) as { messages: number; bytes: number; linked: number };
+
+    const deleted = this.db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM messages m WHERE m.state = 'deleted' ${where}`,
+      )
+      .get(params) as { count: number };
+
+    const withAttachments = this.db
+      .prepare(
+        `SELECT COUNT(DISTINCT a.message_id) AS count FROM attachments a ${attachmentWhere}`,
+      )
+      .get(params) as { count: number };
+
+    const range = this.db
+      .prepare(
+        `SELECT MIN(m.internal_date) AS first, MAX(m.internal_date) AS last ${active}`,
+      )
+      .get(params) as { first: string | null; last: string | null };
+
+    return {
+      perYear,
+      perFolder,
+      topSenders,
+      largest,
+      attachments: { files: attachmentTotals.files, bytes: attachmentTotals.bytes, byType },
+      totals: {
+        messages: totals.messages,
+        bytes: totals.bytes,
+        deleted: deleted.count,
+        linked: totals.linked,
+        withAttachments: withAttachments.count,
+      },
+      range,
+    };
   }
 
   recordVerifyRun(run: {

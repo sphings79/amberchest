@@ -187,6 +187,20 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX idx_verify_runs_account ON verify_runs (account_id, started_at DESC);
   `,
+
+  // 8 - one file for a message that sits in several folders
+  `
+  /*
+   * Points at the message whose file holds the bytes.
+   *
+   * Gmail shows every mail in its folder and in All Mail; without this the
+   * archive stores it twice. The row stays, so the folder tree still shows the
+   * message where it belongs - only the file exists once.
+   */
+  ALTER TABLE messages ADD COLUMN linked_to INTEGER REFERENCES messages(id);
+
+  CREATE INDEX idx_messages_linked_to ON messages (linked_to);
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

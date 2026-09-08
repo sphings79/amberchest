@@ -33,6 +33,8 @@ export interface AdoptStats {
   messagesMissing: number;
   /** Already in the index; adoption never creates a second row. */
   messagesSkipped: number;
+  /** Rows for messages whose file lives in another folder. */
+  messagesLinked: number;
   bytesRead: number;
 }
 
@@ -93,6 +95,11 @@ export class AdoptEngine extends EventEmitter {
   private currentFolder: string | null = null;
   private synthetic = 0;
   private readonly guessed: string[] = [];
+  private readonly pendingLinks: Array<{
+    target: string;
+    message: AdoptedMessage;
+    folderId: number;
+  }> = [];
   private readonly startedAt = new Date().toISOString();
   private readonly stats: AdoptStats = {
     foldersFound: 0,
@@ -102,6 +109,7 @@ export class AdoptEngine extends EventEmitter {
     messagesRebuilt: 0,
     messagesMissing: 0,
     messagesSkipped: 0,
+    messagesLinked: 0,
     bytesRead: 0,
   };
 
@@ -156,6 +164,8 @@ export class AdoptEngine extends EventEmitter {
         await this.adoptFolder(accountDir, relativeDir, remote);
         this.stats.foldersAdopted += 1;
       }
+
+      this.adoptLinks();
 
       this.currentFolder = null;
       this.emitProgress('done');
@@ -221,6 +231,8 @@ export class AdoptEngine extends EventEmitter {
 
     const known = new Map<string, AdoptedMessage>();
     const removed = new Set<string>();
+    // Messages this folder shows although the file lives elsewhere.
+    const links: Array<{ target: string; message: AdoptedMessage }> = [];
 
     for (const record of records) {
       if (record.op === 'add') {
@@ -238,6 +250,23 @@ export class AdoptEngine extends EventEmitter {
           flags: record.flags,
         });
         removed.delete(record.file);
+      } else if (record.op === 'link') {
+        links.push({
+          target: record.target,
+          message: {
+            file: record.file,
+            uid: record.uid,
+            uidvalidity: record.uidvalidity,
+            messageId: record.messageId,
+            fingerprint: record.fingerprint,
+            internalDate: record.internalDate,
+            size: record.size,
+            subject: record.subject,
+            from: record.from,
+            to: record.to,
+            flags: record.flags,
+          },
+        });
       } else if (record.op === 'flags') {
         const entry = known.get(record.file);
         if (entry) entry.flags = record.flags;
@@ -285,9 +314,52 @@ export class AdoptEngine extends EventEmitter {
       else this.stats.messagesRebuilt += 1;
     }
 
+    // Kept for the end: the folder that owns the file has to exist first.
+    this.pendingLinks.push(...links.map((link) => ({ ...link, folderId: folder.id })));
+
     const present = new Set(onDisk);
     for (const file of known.keys()) {
       if (!present.has(file) && !removed.has(file)) this.stats.messagesMissing += 1;
+    }
+  }
+
+  /**
+   * Restores the rows for messages that share a file with another folder.
+   *
+   * Done once every folder is in the index, because a link can only be made to
+   * a message that is already there.
+   */
+  private adoptLinks(): void {
+    for (const link of this.pendingLinks) {
+      const segments = link.target.split('/');
+      const fileName = segments.pop() ?? '';
+      const ownerFolder = this.options.db
+        .listFolders(this.account.id)
+        .find((entry) => entry.local_path === segments.join(sep));
+      if (!ownerFolder) continue;
+
+      const owner = this.options.db.findMessageByFile(this.account.id, ownerFolder.id, fileName);
+      if (!owner) continue;
+      if (this.options.db.findMessageByFile(this.account.id, link.folderId, fileName)) continue;
+
+      this.options.db.insertMessage({
+        accountId: this.account.id,
+        folderId: link.folderId,
+        uid: link.message.uid,
+        uidvalidity: link.message.uidvalidity,
+        messageId: link.message.messageId,
+        fingerprint: link.message.fingerprint,
+        internalDate: link.message.internalDate,
+        size: link.message.size,
+        subject: link.message.subject,
+        fromAddr: link.message.from,
+        toAddr: link.message.to,
+        flags: link.message.flags,
+        fileName,
+        sha256: owner.sha256,
+        linkedTo: owner.id,
+      });
+      this.stats.messagesLinked += 1;
     }
   }
 

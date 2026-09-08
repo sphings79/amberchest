@@ -304,6 +304,38 @@ button. An extra header field covers services that want a token.
 }
 ```
 
+## Statistics and the register
+
+**Statistics** answers what is actually in the archive: messages per year, the
+most frequent senders, the largest folders and messages, attachments by type.
+All of it comes out of the index, so the page costs a few queries and reads no
+file.
+
+**The register** makes the archive usable without this program. It writes an
+`index.html` next to the messages — one page per folder, linking to the `.eml`
+files beside it, plus an overview. Open it in any browser from a plain
+directory: no server, no database, nothing to install. It is written on demand,
+from the **Verify** dialog.
+
+## Gmail: one message, several folders
+
+Gmail shows every mail in its folder **and** in All Mail, so archiving both
+stores it twice. Turn on **Store a message only once** in the account's
+advanced settings and the second copy becomes a row pointing at the first file:
+
+| | Files | Archive |
+| --- | --- | --- |
+| Off | 6 | 1080 bytes |
+| On | 3 | 540 bytes |
+
+Both folders still show all messages, search finds them, and opening one works
+from either side. The message is not even downloaded a second time — it is
+recognised from the envelope before a byte of the body is fetched.
+
+When the folder that holds the file loses the message on the server, the file
+moves to a folder that still shows it. Deleting one copy never takes the other
+with it.
+
 ## Moving an archive
 
 An archive that started on the desktop belongs on the server sooner or later —
