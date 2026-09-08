@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/icon.svg" width="96" height="96" alt="Mail Archiver logo">
+<img src="assets/icon.svg" width="96" height="96" alt="Mail Archiver logo">
 
 # Mail Archiver — The Mail Backup Solution
 
@@ -39,25 +39,25 @@ that exists precisely so a client can read a message without touching its
 
 <div align="center">
 
-<img src="docs/screenshots/overview-dark.svg" width="880" alt="Overview screen with aggregate numbers, account status and recent backups">
+<img src="assets/screenshots/overview-dark.svg" width="880" alt="Overview screen with aggregate numbers, account status and recent backups">
 
 <em>Overview — how much is archived, what is running, what happened last night.</em>
 
 <br><br>
 
-<img src="docs/screenshots/folders-dark.svg" width="880" alt="Folder selection dialog with checkboxes, remembered selection and new folders highlighted">
+<img src="assets/screenshots/folders-dark.svg" width="880" alt="Folder selection dialog with checkboxes, remembered selection and new folders highlighted">
 
 <em>Folder selection — your choice is remembered, new folders are highlighted.</em>
 
 <br><br>
 
-<img src="docs/screenshots/setup-dark.svg" width="880" alt="First run screen where the master password is chosen">
+<img src="assets/screenshots/setup-dark.svg" width="880" alt="First run screen where the master password is chosen">
 
 <em>First run — one master password encrypts every credential you enter later.</em>
 
 <br><br>
 
-<img src="docs/screenshots/account-dark.svg" width="880" alt="Account dialog with server details and the advanced options expanded">
+<img src="assets/screenshots/account-dark.svg" width="880" alt="Account dialog with server details and the advanced options expanded">
 
 <em>Account setup — connection test, and everything that matters under “Advanced”:
 batch size, pause between fetches, date filter and what happens to mail deleted
@@ -65,7 +65,7 @@ on the server.</em>
 
 <br><br>
 
-<img src="docs/screenshots/settings-dark.svg" width="880" alt="Settings screen with archive folder, language, theme and accent colours">
+<img src="assets/screenshots/settings-dark.svg" width="880" alt="Settings screen with archive folder, language, theme and accent colours">
 
 <em>Settings — archive folder, language, light/dark, accent colour, and the way
 to the Docker guide.</em>
@@ -295,6 +295,22 @@ Account: `127.0.0.1:11143`, no encryption, `test@example.com` / `testpass`.
 ```bash
 node dev/test-sync.mjs        # full run, prints the resulting tree
 node dev/test-behaviour.mjs   # checks peek, incremental, move and delete
+```
+
+### Regenerating the artwork
+
+The screenshots and the social preview are SVG files under `assets/`. GitHub
+only accepts PNG for the social preview, so it is rendered with the Chromium
+that ships with Electron:
+
+```bash
+npx electron dev/render-png.cjs assets/social-preview.svg assets/social-preview.png 1280 640
+```
+
+The application icon is generated without any image library:
+
+```bash
+python3 dev/make-icon.py packages/desktop/build/icon.png
 ```
 
 ### Project layout

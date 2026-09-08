@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/icon.svg" width="96" height="96" alt="Mail Archiver Logo">
+<img src="assets/icon.svg" width="96" height="96" alt="Mail Archiver Logo">
 
 # Mail Archiver — The Mail Backup Solution
 
@@ -40,25 +40,25 @@ genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 
 <div align="center">
 
-<img src="docs/screenshots/overview-dark.svg" width="880" alt="Übersicht mit Gesamtzahlen, Kontostatus und den letzten Sicherungen">
+<img src="assets/screenshots/overview-dark.svg" width="880" alt="Übersicht mit Gesamtzahlen, Kontostatus und den letzten Sicherungen">
 
 <em>Übersicht — wie viel gesichert ist, was gerade läuft, was letzte Nacht passiert ist.</em>
 
 <br><br>
 
-<img src="docs/screenshots/folders-dark.svg" width="880" alt="Ordnerauswahl mit Checkboxen, gemerkter Auswahl und hervorgehobenen neuen Ordnern">
+<img src="assets/screenshots/folders-dark.svg" width="880" alt="Ordnerauswahl mit Checkboxen, gemerkter Auswahl und hervorgehobenen neuen Ordnern">
 
 <em>Ordnerauswahl — deine Auswahl wird gemerkt, neue Ordner werden hervorgehoben.</em>
 
 <br><br>
 
-<img src="docs/screenshots/setup-dark.svg" width="880" alt="Erster Start mit der Wahl des Master-Passworts">
+<img src="assets/screenshots/setup-dark.svg" width="880" alt="Erster Start mit der Wahl des Master-Passworts">
 
 <em>Erster Start — ein Master-Passwort verschlüsselt alle Zugangsdaten, die später dazukommen.</em>
 
 <br><br>
 
-<img src="docs/screenshots/account-dark.svg" width="880" alt="Kontodialog mit Serverdaten und ausgeklappten erweiterten Einstellungen">
+<img src="assets/screenshots/account-dark.svg" width="880" alt="Kontodialog mit Serverdaten und ausgeklappten erweiterten Einstellungen">
 
 <em>Konto einrichten — Verbindungstest, und unter „Erweitert“ alles Wichtige:
 Stapelgröße, Pause zwischen Abrufen, Datumsfilter und der Umgang mit
@@ -66,7 +66,7 @@ serverseitig gelöschten Mails.</em>
 
 <br><br>
 
-<img src="docs/screenshots/settings-dark.svg" width="880" alt="Einstellungen mit Archivordner, Sprache, Erscheinungsbild und Akzentfarben">
+<img src="assets/screenshots/settings-dark.svg" width="880" alt="Einstellungen mit Archivordner, Sprache, Erscheinungsbild und Akzentfarben">
 
 <em>Einstellungen — Archivordner, Sprache, hell/dunkel, Akzentfarbe und der Weg
 zur Docker-Anleitung.</em>
@@ -306,6 +306,22 @@ Zugang: `127.0.0.1:11143`, keine Verschlüsselung, `test@example.com` /
 ```bash
 node dev/test-sync.mjs        # kompletter Lauf, gibt den entstandenen Baum aus
 node dev/test-behaviour.mjs   # prüft Peek, Inkrementell, Verschieben, Löschen
+```
+
+### Grafiken neu erzeugen
+
+Die Bildschirmfotos und die Social Preview liegen als SVG unter `assets/`. Für
+die Social Preview akzeptiert GitHub nur PNG, deshalb wird sie mit dem
+Chromium aus Electron gerendert:
+
+```bash
+npx electron dev/render-png.cjs assets/social-preview.svg assets/social-preview.png 1280 640
+```
+
+Das App-Symbol entsteht ganz ohne Bildbibliothek:
+
+```bash
+python3 dev/make-icon.py packages/desktop/build/icon.png
 ```
 
 ### Aufbau des Projekts

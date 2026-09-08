@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Mail Archiver — The Mail Backup Solution">
+  <title>Mail Archiver — The Mail Backup Solution</title>
+
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12141c"/>
+      <stop offset="1" stop-color="#0a0b10"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9674ff"/>
+      <stop offset="1" stop-color="#6244e2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7c5cff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#7c5cff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="cardshadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="30" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif">
+    <rect width="1280" height="640" fill="url(#page)"/>
+    <ellipse cx="980" cy="150" rx="520" ry="380" fill="url(#glow)"/>
+
+    <!-- left column -->
+    <rect x="72" y="72" width="76" height="76" rx="24" fill="url(#brand)"/>
+    <g fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="93" y="95" width="34" height="28" rx="6"/>
+      <path d="M93 101l17 11 17-11"/>
+    </g>
+
+    <text x="168" y="106" fill="#e8eaf0" font-size="30" font-weight="700">Mail Archiver</text>
+    <text x="168" y="136" fill="#8a91a3" font-size="18">The Mail Backup Solution</text>
+
+    <text x="72" y="238" fill="#ffffff" font-size="52" font-weight="700">Your mailbox,</text>
+    <text x="72" y="298" fill="#ffffff" font-size="52" font-weight="700">on your own disk.</text>
+
+    <text x="72" y="348" fill="#9aa2b5" font-size="21">Back up IMAP accounts to plain .eml files —</text>
+    <text x="72" y="378" fill="#9aa2b5" font-size="21">nothing deleted, nothing marked as read.</text>
+
+    <g font-size="19" fill="#c8cdda">
+      <g>
+        <circle cx="82" cy="428" r="9" fill="none" stroke="#35c489" stroke-width="2.2"/>
+        <path d="M78 428l3 3 5.5-6" stroke="#35c489" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="104" y="434">Incremental — only new mail is downloaded</text>
+      </g>
+      <g transform="translate(0,42)">
+        <circle cx="82" cy="428" r="9" fill="none" stroke="#35c489" stroke-width="2.2"/>
+        <path d="M78 428l3 3 5.5-6" stroke="#35c489" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="104" y="434">Your folder tree, mirrored on disk</text>
+      </g>
+      <g transform="translate(0,84)">
+        <circle cx="82" cy="428" r="9" fill="none" stroke="#35c489" stroke-width="2.2"/>
+        <path d="M78 428l3 3 5.5-6" stroke="#35c489" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="104" y="434">Encrypted credentials, one master password</text>
+      </g>
+    </g>
+
+    <!-- platform pills -->
+    <g font-size="16" font-weight="500">
+      <rect x="72" y="556" width="92" height="34" rx="17" fill="#1b1f2a" stroke="#2b3040"/>
+      <text x="118" y="578" fill="#c8cdda" text-anchor="middle">macOS</text>
+      <rect x="172" y="556" width="104" height="34" rx="17" fill="#1b1f2a" stroke="#2b3040"/>
+      <text x="224" y="578" fill="#c8cdda" text-anchor="middle">Windows</text>
+      <rect x="284" y="556" width="80" height="34" rx="17" fill="#1b1f2a" stroke="#2b3040"/>
+      <text x="324" y="578" fill="#c8cdda" text-anchor="middle">Linux</text>
+      <rect x="372" y="556" width="92" height="34" rx="17" fill="#221d3d" stroke="#3a2f6b"/>
+      <text x="418" y="578" fill="#a78bff" text-anchor="middle">Docker</text>
+      <rect x="472" y="556" width="112" height="34" rx="17" fill="#1b1f2a" stroke="#2b3040"/>
+      <text x="528" y="578" fill="#c8cdda" text-anchor="middle">AGPL-3.0</text>
+    </g>
+
+    <!-- right: app window -->
+    <g filter="url(#cardshadow)">
+      <rect x="700" y="96" width="524" height="448" rx="18" fill="#151821" stroke="#262c3a"/>
+    </g>
+    <path d="M700 114a18 18 0 0 1 18-18h488a18 18 0 0 1 18 18v22H700z" fill="#1b1f2a"/>
+    <circle cx="724" cy="116" r="6" fill="#ff5f57"/>
+    <circle cx="744" cy="116" r="6" fill="#febc2e"/>
+    <circle cx="764" cy="116" r="6" fill="#28c840"/>
+    <text x="790" y="121" fill="#6b7386" font-size="13">Mail Archiver</text>
+    <line x1="700" y1="136" x2="1224" y2="136" stroke="#262c3a"/>
+
+    <!-- window sidebar -->
+    <rect x="700" y="136" width="126" height="408" fill="#12151d"/>
+    <line x1="826" y1="136" x2="826" y2="544" stroke="#262c3a"/>
+    <rect x="712" y="156" width="102" height="26" rx="9" fill="#221d3d"/>
+    <text x="726" y="174" fill="#7c5cff" font-size="12" font-weight="500">Übersicht</text>
+    <text x="726" y="206" fill="#6b7386" font-size="12">Konten</text>
+    <text x="726" y="234" fill="#6b7386" font-size="12">Einstellungen</text>
+    <text x="726" y="262" fill="#6b7386" font-size="12">Protokoll</text>
+
+    <!-- stat tiles -->
+    <g>
+      <rect x="846" y="158" width="176" height="72" rx="12" fill="#1b1f2a" stroke="#262c3a"/>
+      <text x="864" y="184" fill="#6b7386" font-size="10" letter-spacing="0.6">NACHRICHTEN</text>
+      <text x="864" y="212" fill="#e8eaf0" font-size="24" font-weight="700">48.213</text>
+
+      <rect x="1032" y="158" width="176" height="72" rx="12" fill="#1b1f2a" stroke="#262c3a"/>
+      <text x="1050" y="184" fill="#6b7386" font-size="10" letter-spacing="0.6">ARCHIVGRÖSSE</text>
+      <text x="1050" y="212" fill="#e8eaf0" font-size="24" font-weight="700">1,84 GB</text>
+    </g>
+
+    <!-- running account -->
+    <rect x="846" y="248" width="362" height="96" rx="12" fill="#1b1f2a" stroke="#262c3a"/>
+    <rect x="864" y="268" width="30" height="30" rx="10" fill="#221d3d"/>
+    <text x="879" y="288" fill="#7c5cff" font-size="11" font-weight="600" text-anchor="middle">PR</text>
+    <text x="906" y="288" fill="#e8eaf0" font-size="14" font-weight="500">Privat</text>
+    <rect x="962" y="276" width="150" height="18" rx="9" fill="#221d3d"/>
+    <text x="1037" y="289" fill="#7c5cff" font-size="10.5" text-anchor="middle">Nachrichten werden geladen</text>
+    <rect x="864" y="312" width="326" height="7" rx="3.5" fill="#232837"/>
+    <rect x="864" y="312" width="212" height="7" rx="3.5" fill="#7c5cff"/>
+
+    <!-- folder rows -->
+    <g font-size="12.5">
+      <rect x="846" y="362" width="362" height="164" rx="12" fill="#1b1f2a" stroke="#262c3a"/>
+      <g transform="translate(0,4)">
+        <rect x="866" y="380" width="14" height="14" rx="4" fill="#7c5cff"/>
+        <path d="M869.5 387l2.6 2.6 4.4-4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="892" y="391" fill="#e8eaf0">INBOX</text>
+        <text x="1188" y="391" fill="#6b7386" text-anchor="end" font-size="11">12.480</text>
+
+        <rect x="866" y="412" width="14" height="14" rx="4" fill="#7c5cff"/>
+        <path d="M869.5 419l2.6 2.6 4.4-4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="892" y="423" fill="#e8eaf0">Projekte</text>
+        <text x="1188" y="423" fill="#6b7386" text-anchor="end" font-size="11">2.106</text>
+
+        <rect x="884" y="444" width="14" height="14" rx="4" fill="none" stroke="#343b4d" stroke-width="1.4"/>
+        <text x="910" y="455" fill="#7c5cff">Angebote &amp; Verträge</text>
+        <rect x="1064" y="444" width="34" height="15" rx="7.5" fill="#221d3d"/>
+        <text x="1081" y="455" fill="#7c5cff" font-size="9.5" text-anchor="middle">neu</text>
+        <text x="1188" y="455" fill="#6b7386" text-anchor="end" font-size="11">31</text>
+
+        <rect x="866" y="476" width="14" height="14" rx="4" fill="#7c5cff"/>
+        <path d="M869.5 483l2.6 2.6 4.4-4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="892" y="487" fill="#e8eaf0">Gesendete Objekte</text>
+        <text x="1188" y="487" fill="#6b7386" text-anchor="end" font-size="11">8.902</text>
+      </g>
+    </g>
+  </g>
+</svg>
