@@ -30,6 +30,8 @@ import { searchMessages, type SearchOptions, type SearchResult } from './search/
 import { McpServer } from './mcp/protocol.js';
 import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
 import { OAuthManager } from './oauth/manager.js';
+import { VerifyManager } from './verify/manager.js';
+import type { VerifyProgress } from './verify/engine.js';
 import { RestoreManager } from './restore/manager.js';
 import { EncryptionMigrationManager, type MigrationProgress } from './storage/migrate.js';
 import { ArchiveLayout } from './storage/archive.js';
@@ -87,6 +89,7 @@ export class MailArchiverApp {
   readonly migration = new EncryptionMigrationManager();
   readonly mqtt: MqttBridge;
   readonly oauth: OAuthManager;
+  readonly verify: VerifyManager;
   private readonly pdfRenderer: PdfRenderer | undefined;
   private schedule: { expression: string; nextRun: () => Date | null } | null = null;
 
@@ -129,6 +132,12 @@ export class MailArchiverApp {
       pdfRenderer: options.pdfRenderer ?? chromiumPdfRenderer,
     });
     this.oauth = new OAuthManager(this.config);
+    this.verify = new VerifyManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
+      connectionFor: (account) => this.connectionFor(account),
+    });
     this.mqtt = new MqttBridge({
       settings: () => this.config.getSettings().mqtt,
       overview: () => this.overview(),
@@ -519,6 +528,22 @@ export class MailArchiverApp {
       void this.startIndexing(accountId).catch(() => undefined);
     }
     return progress;
+  }
+
+  /** Checks the files of one account against the index, and the server. */
+  startVerify(
+    accountId: string,
+    options: { checkServer?: boolean; includeDeleted?: boolean } = {},
+  ): Promise<VerifyProgress> {
+    return this.verify.start(this.requireAccount(accountId), options);
+  }
+
+  cancelVerify(accountId: string): boolean {
+    return this.verify.cancel(accountId);
+  }
+
+  lastVerify(accountId: string): VerifyProgress | null {
+    return this.verify.lastRun(accountId);
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

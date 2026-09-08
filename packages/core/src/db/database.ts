@@ -81,6 +81,8 @@ export interface NewMessage {
   toAddr: string | null;
   flags: string[];
   fileName: string;
+  /** Checksum of the message source, for the archive check. */
+  sha256?: string | null;
 }
 
 /**
@@ -246,8 +248,8 @@ export class ArchiveDatabase {
       .prepare(
         `INSERT INTO messages (
            account_id, folder_id, uid, uidvalidity, message_id, fingerprint, internal_date,
-           size, subject, from_addr, to_addr, flags, file_name, state, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+           size, subject, from_addr, to_addr, flags, file_name, sha256, state, created_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
       )
       .run(
         message.accountId,
@@ -263,9 +265,103 @@ export class ArchiveDatabase {
         message.toAddr,
         JSON.stringify(message.flags),
         message.fileName,
+        message.sha256 ?? null,
         new Date().toISOString(),
       );
     return Number(result.lastInsertRowid);
+  }
+
+  /** Every message of an account, in the order they sit on disk. */
+  listMessagesForVerify(
+    accountId: string,
+    includeDeleted: boolean,
+  ): Array<{
+    id: number;
+    folder_path: string;
+    local_path: string;
+    file_name: string;
+    size: number;
+    sha256: string | null;
+    uid: number;
+    state: string;
+    subject: string | null;
+    internal_date: string;
+  }> {
+    const where = includeDeleted ? '' : " AND m.state = 'active'";
+    return this.db
+      .prepare(
+        `SELECT m.id, f.path AS folder_path, f.local_path AS local_path, m.file_name, m.size,
+                m.sha256, m.uid, m.state, m.subject, m.internal_date
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE m.account_id = ?${where}
+          ORDER BY f.path, m.internal_date`,
+      )
+      .all(accountId) as Array<{
+      id: number;
+      folder_path: string;
+      local_path: string;
+      file_name: string;
+      size: number;
+      sha256: string | null;
+      uid: number;
+      state: string;
+      subject: string | null;
+      internal_date: string;
+    }>;
+  }
+
+  /** Fills in a checksum that an older version did not write yet. */
+  setMessageHash(id: number, sha256: string): void {
+    this.db.prepare('UPDATE messages SET sha256 = ? WHERE id = ?').run(sha256, id);
+  }
+
+  /** Active messages per folder, for the comparison with the server. */
+  countActiveByFolder(accountId: string): Map<string, number> {
+    const rows = this.db
+      .prepare(
+        `SELECT f.path AS path, COUNT(*) AS count
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE m.account_id = ? AND m.state = 'active'
+          GROUP BY f.path`,
+      )
+      .all(accountId) as Array<{ path: string; count: number }>;
+    return new Map(rows.map((row) => [row.path, row.count]));
+  }
+
+  recordVerifyRun(run: {
+    id: string;
+    accountId: string;
+    startedAt: string;
+    finishedAt: string | null;
+    status: string;
+    stats: unknown;
+    findings: unknown;
+    error: string | null;
+  }): void {
+    this.db
+      .prepare(
+        `INSERT INTO verify_runs (id, account_id, started_at, finished_at, status, stats, findings, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           finished_at = excluded.finished_at, status = excluded.status,
+           stats = excluded.stats, findings = excluded.findings, error = excluded.error`,
+      )
+      .run(
+        run.id,
+        run.accountId,
+        run.startedAt,
+        run.finishedAt,
+        run.status,
+        JSON.stringify(run.stats),
+        JSON.stringify(run.findings),
+        run.error,
+      );
+  }
+
+  lastVerifyRun(accountId: string): Record<string, unknown> | undefined {
+    return this.db
+      .prepare('SELECT * FROM verify_runs WHERE account_id = ? ORDER BY started_at DESC LIMIT 1')
+      .get(accountId) as Record<string, unknown> | undefined;
   }
 
   updateFlags(id: number, flags: string[]): void {

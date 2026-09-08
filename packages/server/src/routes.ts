@@ -216,6 +216,39 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.updateSettings(body.data);
   });
 
+  // ----------------------------------------------------------------- verify
+
+  server.post('/api/accounts/:id/verify', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z
+      .object({ checkServer: z.boolean().default(false), includeDeleted: z.boolean().default(false) })
+      .safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    if (app.verify.isRunning(id)) return fail(reply, 409, 'A verification is already running');
+
+    try {
+      app.requireAccount(id);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+
+    // Runs on; the interface follows along over the websocket.
+    void app.startVerify(id, body.data).catch((error: Error) => {
+      logger.error(`Verification failed: ${error.message}`);
+    });
+    return { started: true };
+  });
+
+  server.post('/api/accounts/:id/verify/cancel', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { cancelled: app.cancelVerify(id) };
+  });
+
+  server.get('/api/accounts/:id/verify', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { run: app.lastVerify(id), running: app.verify.isRunning(id) };
+  });
+
   // ------------------------------------------------------------------ oauth
 
   const oauthProviderSchema = z.enum(['google', 'microsoft', 'custom']);
@@ -842,6 +875,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onBundleProgress = (progress: unknown): void => send('bundle-progress', progress);
     const onRestoreProgress = (progress: unknown): void => send('restore-progress', progress);
     const onMigrationProgress = (progress: unknown): void => send('migration-progress', progress);
+    const onVerifyProgress = (progress: unknown): void => send('verify-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
@@ -850,6 +884,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     app.bundles.on('progress', onBundleProgress);
     app.restore.on('progress', onRestoreProgress);
     app.migration.on('progress', onMigrationProgress);
+    app.verify.on('progress', onVerifyProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
@@ -859,6 +894,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.bundles.off('progress', onBundleProgress);
       app.restore.off('progress', onRestoreProgress);
       app.migration.off('progress', onMigrationProgress);
+      app.verify.off('progress', onVerifyProgress);
       logger.off('entry', onLog);
     });
   });

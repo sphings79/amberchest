@@ -275,6 +275,34 @@ Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
 einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
 `Authorization: Bearer <token>` zeigen lassen.
 
+## Das Archiv prüfen
+
+Ein Backup, das nie geprüft wird, ist eine Hoffnung und keine Sicherung.
+**Prüfen** liest bei einem Konto jede gesicherte Datei und vergleicht sie mit
+der Prüfsumme vom Tag des Herunterladens. Ein Bit, das auf der Platte gekippt
+ist, eine gelöschte Datei und eine Datei, die zu nichts mehr gehört, tauchen
+damit namentlich auf.
+
+| Befund | Was er bedeutet |
+| --- | --- |
+| Datei fehlt | Der Index kennt die Nachricht, die Datei ist weg |
+| Inhalt verändert | Die Datei entspricht nicht mehr dem, was vom Server kam |
+| Nicht lesbar | Beschädigt, oder mit einem anderen Master-Passwort verschlüsselt |
+| Nicht im Index | Eine Nachrichtendatei, auf die nichts mehr zeigt |
+| Anzahl weicht ab | Der Ordner hat eine andere Anzahl Nachrichten als auf dem Server |
+
+**Mit dem Server abgleichen** beantwortet die Frage, die man wirklich hat: fehlt
+etwas? Dafür wird je gesichertem Ordner die Anzahl vom Server geholt und neben
+die lokale gestellt. Ein `STATUS` pro Ordner, keine Nachrichteninhalte.
+
+Es wird nichts ins Archiv geschrieben und nichts gelöscht. Die einzige Änderung
+ist eine Prüfsumme, die für Nachrichten nachgetragen wird, die vor dieser
+Funktion gesichert wurden — der erste Lauf nach dem Update schreibt sie, jeder
+weitere vergleicht dagegen.
+
+Für die KI-Anbindung gibt es dasselbe als Werkzeug `verify_archive`, in der
+Rechtegruppe **Sichern**.
+
 ## OAuth für Gmail und Microsoft 365
 
 Google und Microsoft nehmen für IMAP kein Passwort mehr an. Mail Archiver meldet

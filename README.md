@@ -268,6 +268,32 @@ Passwords are never readable through MCP — they can only be set.
 settings, copy the generated token and point the client at `POST /mcp` with
 `Authorization: Bearer <token>`.
 
+## Checking the archive
+
+A backup nobody ever verifies is a hope, not a backup. **Verify** on an account
+reads every archived file and compares it with the checksum taken the day it was
+downloaded, so a bit that rotted on the disk, a file somebody deleted and a file
+that no longer belongs to anything all show up by name.
+
+| Finding | What it means |
+| --- | --- |
+| File is gone | The index knows the message, the file is not there |
+| Content changed | The file no longer matches what came off the server |
+| Cannot be read | Damaged, or encrypted with a different master password |
+| Not in the index | A message file nothing points at any more |
+| Count differs | The folder holds a different number of messages than the server |
+
+**Compare with the server** answers the question one actually has: is anything
+missing? It asks the server how many messages each archived folder holds and
+puts that next to the local count. One `STATUS` per folder, no message bodies.
+
+Nothing is written to the archive and nothing is deleted. The one change is a
+checksum filled in for messages archived before checksums existed — the first
+run after an update writes them, and every run after that compares against them.
+
+There is a `verify_archive` tool for the AI connection as well, in the
+**Back up** permission group.
+
 ## OAuth for Gmail and Microsoft 365
 
 Google and Microsoft no longer accept a password for IMAP. Mail Archiver can

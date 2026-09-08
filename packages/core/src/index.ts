@@ -87,6 +87,16 @@ export {
 export { MqttBridge, type MqttBridgeOptions, type MqttStatus } from './mqtt/bridge.js';
 export { accountSlug, accountSlugs, buildTopics } from './mqtt/topics.js';
 export { accountDiscovery, hubDiscovery, type DiscoveryMessage } from './mqtt/discovery.js';
+export {
+  VerifyEngine,
+  VerifyCancelledError,
+  type Finding,
+  type FindingKind,
+  type VerifyPhase,
+  type VerifyProgress,
+  type VerifyStats,
+} from './verify/engine.js';
+export { VerifyManager } from './verify/manager.js';
 export { APP_VERSION } from './util/version.js';
 export {
   OAuthError,

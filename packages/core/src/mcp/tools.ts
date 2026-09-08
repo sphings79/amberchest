@@ -190,6 +190,38 @@ export const TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'verify_archive',
+    description:
+      'Checks the archived files of one account against the checksums taken when they were ' +
+      'downloaded, looks for files the index does not know, and optionally asks the server how ' +
+      'many messages each folder holds. Changes nothing.',
+    permission: 'backup',
+    inputSchema: objectSchema(
+      {
+        account_id: STRING,
+        check_server: { ...BOOLEAN, description: 'Also compare the folder counts with the server' },
+        include_deleted: { ...BOOLEAN, description: 'Also check the _deleted tree' },
+      },
+      ['account_id'],
+    ),
+    handler: async (app, args) => {
+      const result = await app.startVerify(requireString(args, 'account_id'), {
+        checkServer: bool(args, 'check_server') ?? false,
+        includeDeleted: bool(args, 'include_deleted') ?? false,
+      });
+      return {
+        status: result.phase,
+        ...result.stats,
+        findings: result.findings.map((finding) => ({
+          kind: finding.kind,
+          path: finding.path,
+          detail: finding.detail,
+          ...finding.detailParams,
+        })),
+      };
+    },
+  },
+  {
     name: 'get_message',
     description:
       'Reads one archived message: headers, plain text body and the list of attachments. ' +

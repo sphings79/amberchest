@@ -6,6 +6,7 @@ import type {
   LogEntry,
   MigrationProgress,
   SyncProgress,
+  VerifyProgress,
 } from '@mail-archiver/core';
 import {
   createContext,
@@ -30,6 +31,7 @@ interface AppState {
   bundleProgress: Record<string, BundleProgress>;
   restoreProgress: RestoreProgress | null;
   migrationProgress: MigrationProgress | null;
+  verifyProgress: Record<string, VerifyProgress>;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -64,6 +66,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [bundleProgress, setBundleProgress] = useState<Record<string, BundleProgress>>({});
   const [restoreProgress, setRestoreProgress] = useState<RestoreProgress | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
+  const [verifyProgress, setVerifyProgress] = useState<Record<string, VerifyProgress>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +155,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setRestoreProgress(message.payload as RestoreProgress);
         } else if (message.type === 'migration-progress') {
           setMigrationProgress(message.payload as MigrationProgress);
+        } else if (message.type === 'verify-progress') {
+          const value = message.payload as VerifyProgress;
+          setVerifyProgress((current) => ({ ...current, [value.accountId]: value }));
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -181,6 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       bundleProgress,
       restoreProgress,
       migrationProgress,
+      verifyProgress,
       logs,
       loading,
       error,
@@ -197,6 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       bundleProgress,
       restoreProgress,
       migrationProgress,
+      verifyProgress,
       logs,
       loading,
       error,

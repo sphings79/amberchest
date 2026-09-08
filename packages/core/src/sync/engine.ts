@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { join } from 'node:path';
 import type { ImapFlow } from 'imapflow';
@@ -564,6 +564,9 @@ export class SyncEngine extends EventEmitter {
           toAddr: meta.toAddress,
           flags: flags.length > 0 ? flags : meta.flags,
           fileName,
+          // Of the message, not of the file: the file changes when the
+          // archive is encrypted, the message does not.
+          sha256: createHash('sha256').update(source).digest('hex'),
         });
 
         this.stats.messagesNew += 1;

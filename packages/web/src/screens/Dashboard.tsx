@@ -9,6 +9,7 @@ import {
   Plus,
   Search as SearchIcon,
   Server,
+  ShieldCheck,
   Square,
   Trash2,
   Upload,
@@ -22,6 +23,7 @@ import { AccountForm } from './AccountForm.js';
 import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
 import { RestoreDialog } from './RestoreDialog.js';
+import { VerifyDialog } from './VerifyDialog.js';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -102,6 +104,7 @@ function AccountCard({
   onFolders,
   onAttachments,
   onRestore,
+  onVerify,
   onChanged,
 }: {
   overview: AccountOverview;
@@ -110,6 +113,7 @@ function AccountCard({
   onFolders: () => void;
   onAttachments: () => void;
   onRestore: () => void;
+  onVerify: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
@@ -189,6 +193,10 @@ function AccountCard({
               {t('dashboard.backupNow')}
             </Button>
           )}
+          <Button onClick={onVerify} disabled={overview.messageCount === 0}>
+            <ShieldCheck size={15} />
+            {t('verify.open')}
+          </Button>
           <Button onClick={onRestore} disabled={overview.messageCount === 0}>
             <Upload size={15} />
             {t('restore.open')}
@@ -245,6 +253,7 @@ export function Dashboard(): ReactNode {
   const [foldersFor, setFoldersFor] = useState<AccountOverview | null>(null);
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
+  const [verifyFor, setVerifyFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
   // The filter box only appears once the list is long enough to need it.
@@ -312,6 +321,7 @@ export function Dashboard(): ReactNode {
               onFolders={() => setFoldersFor(overview)}
               onAttachments={() => setAttachmentsFor(overview)}
               onRestore={() => setRestoreFor(overview)}
+              onVerify={() => setVerifyFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
           ))}
@@ -328,6 +338,8 @@ export function Dashboard(): ReactNode {
       )}
 
       {restoreFor && <RestoreDialog overview={restoreFor} onClose={() => setRestoreFor(null)} />}
+
+      {verifyFor && <VerifyDialog overview={verifyFor} onClose={() => setVerifyFor(null)} />}
 
       {attachmentsFor && (
         <AttachmentExport

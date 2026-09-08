@@ -163,6 +163,30 @@ const MIGRATIONS: string[] = [
     error       TEXT
   );
   `,
+
+  // 7 - archive verification
+  `
+  /*
+   * Checksum of the message as it came off the server, not of the file on
+   * disk: the file changes when the archive is encrypted or decrypted, the
+   * message does not.
+   */
+  ALTER TABLE messages ADD COLUMN sha256 TEXT;
+
+  CREATE TABLE verify_runs (
+    id          TEXT PRIMARY KEY,
+    account_id  TEXT NOT NULL,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT,
+    status      TEXT NOT NULL,
+    stats       TEXT NOT NULL DEFAULT '{}',
+    /* The findings, capped, so one broken disk cannot fill the database. */
+    findings    TEXT NOT NULL DEFAULT '[]',
+    error       TEXT
+  );
+
+  CREATE INDEX idx_verify_runs_account ON verify_runs (account_id, started_at DESC);
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

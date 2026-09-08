@@ -13,6 +13,7 @@ import type {
   MqttStatus,
   PublicAccount,
   SearchResult,
+  VerifyProgress,
 } from '@mail-archiver/core';
 
 export type {
@@ -30,6 +31,7 @@ export type {
   MqttStatus,
   PublicAccount,
   SearchResult,
+  VerifyProgress,
 };
 
 export interface RestoreTarget {
@@ -260,6 +262,16 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  startVerify: (id: string, body: { checkServer?: boolean; includeDeleted?: boolean }) =>
+    request<{ started: boolean }>(`/accounts/${id}/verify`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  cancelVerify: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/verify/cancel`, { method: 'POST' }),
+  lastVerify: (id: string) =>
+    request<{ run: VerifyProgress | null; running: boolean }>(`/accounts/${id}/verify`),
 
   oauthProviders: () =>
     request<{
