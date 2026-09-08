@@ -1,5 +1,6 @@
 import type {
   BundleProgress,
+  RestoreProgress,
   ExportProgress,
   IndexProgress,
   LogEntry,
@@ -26,6 +27,7 @@ interface AppState {
   indexProgress: Record<string, IndexProgress>;
   /** Keyed by bundle id; export jobs are not tied to one account. */
   bundleProgress: Record<string, BundleProgress>;
+  restoreProgress: RestoreProgress | null;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -58,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [exportProgress, setExportProgress] = useState<Record<string, ExportProgress>>({});
   const [indexProgress, setIndexProgress] = useState<Record<string, IndexProgress>>({});
   const [bundleProgress, setBundleProgress] = useState<Record<string, BundleProgress>>({});
+  const [restoreProgress, setRestoreProgress] = useState<RestoreProgress | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +145,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         } else if (message.type === 'bundle-progress') {
           const value = message.payload as BundleProgress;
           setBundleProgress((current) => ({ ...current, [value.bundleId]: value }));
+        } else if (message.type === 'restore-progress') {
+          setRestoreProgress(message.payload as RestoreProgress);
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -169,6 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       exportProgress,
       indexProgress,
       bundleProgress,
+      restoreProgress,
       logs,
       loading,
       error,
@@ -183,6 +189,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       exportProgress,
       indexProgress,
       bundleProgress,
+      restoreProgress,
       logs,
       loading,
       error,

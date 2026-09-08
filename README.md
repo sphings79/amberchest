@@ -31,9 +31,9 @@ read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
 `\Seen` flag.
 
-> **Status: stage 3 of 6.** Backup, attachment export, full text search, the
-> viewer, exports and the MCP server work. Restore and the Docker container
-> follow — see the [roadmap](#roadmap).
+> **Status: stage 5 of 6.** Backup, attachment export, search, viewer, exports,
+> MCP, restore and the container all work. What is left is the remote mode in
+> the desktop app and the final polish — see the [roadmap](#roadmap).
 
 ## Screenshots
 
@@ -109,6 +109,11 @@ to the Docker guide.</em>
 - **Export** of any search result as EML files in a ZIP, as an mbox for
   Thunderbird and Apple Mail, or as one PDF per message
 - **AI access over MCP** with per-area switches, off by default
+- **Restore** to the same account or to a different provider, with a folder
+  mapping proposed from the special use markers. Only ever appends: messages
+  that are already there are skipped by Message-ID
+- **Docker container** with the same web interface, a built-in scheduler and
+  Chromium for PDF export
 - **Live progress** over a websocket, with a log you can actually read
 
 ## Install
@@ -146,8 +151,8 @@ Both x64 and arm64 are built.
 
 ## Docker
 
-> **Planned for stage 5.** The image is not published yet — this section
-> describes how it will work so the plan is on the record.
+> The image is built and tested; publishing to the registry happens with the
+> first release.
 
 The container runs the same engine and the same web interface as the desktop
 app, plus a scheduler. Intended usage on unRAID, Synology or any Docker host:
@@ -191,6 +196,9 @@ services:
 | `MAIL_ARCHIVER_UI_PASSWORD` | Password for the web interface |
 | `MAIL_ARCHIVER_CRON` | Schedule, standard cron expression |
 | `MAIL_ARCHIVER_PORT` | Port inside the container, default 8484 |
+| `MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
+| `PUID` / `PGID` | User and group the volumes belong to, default 1000 |
+| `MAIL_ARCHIVER_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
 | `TZ` | Time zone the schedule follows |
 
 The web interface answers on `http://<host>:8484`. It works behind a reverse
@@ -273,8 +281,8 @@ machine can talk to the API.
 | 1 | Foundation, accounts, folder selection, incremental backup, desktop app | ✅ done |
 | 2 | Attachment export with layouts, filters and de-duplication | ✅ done |
 | 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP, MCP server | ✅ done |
-| 4 | Restore, and migration to a different server | planned |
-| 5 | Docker image, web login, cron schedule, remote mode | planned |
+| 4 | Restore, and migration to a different server | ✅ done |
+| 5 | Docker image, web login, cron schedule | ✅ done · remote mode pending |
 | 6 | Polish: themes, translations, optional archive encryption, Windows and Linux releases | planned |
 
 ## FAQ

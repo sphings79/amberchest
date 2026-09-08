@@ -26,6 +26,17 @@ export type {
   SearchResult,
 };
 
+export interface RestoreTarget {
+  host: string;
+  port: number;
+  security: 'tls' | 'starttls' | 'none';
+  rejectUnauthorized: boolean;
+  username: string;
+  password: string;
+  /** Use the stored password of this account instead of sending one. */
+  useAccountId?: string | undefined;
+}
+
 export interface SearchQuery {
   q: string;
   account?: string | undefined;
@@ -202,6 +213,28 @@ export const api = {
     request<MessageContent>(`/accounts/${accountId}/messages/${messageId}`),
   openMessage: (accountId: string, messageId: number) =>
     request<{ opened: boolean }>(`/accounts/${accountId}/messages/${messageId}/open`, { method: 'POST' }),
+
+  restoreMappings: (body: { accountId: string; target: RestoreTarget }) =>
+    request<{ mappings: Array<{ source: string; target: string }>; targetFolders: string[] }>(
+      '/restore/mappings',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  startRestore: (body: {
+    accountId: string;
+    target: RestoreTarget;
+    mappings: Array<{ source: string; target: string }>;
+    selection: {
+      query: string;
+      folders: string[];
+      dateFrom: string | null;
+      dateTo: string | null;
+      from: string | null;
+      withAttachments: boolean;
+    };
+    skipExisting: boolean;
+    restoreFlags: boolean;
+  }) => request<{ started: boolean }>('/restore', { method: 'POST', body: JSON.stringify(body) }),
+  cancelRestore: () => request<{ cancelled: boolean }>('/restore/cancel', { method: 'POST' }),
 
   exports: () =>
     request<{ pdfAvailable: boolean; bundles: Array<{ bundleId: string; fileName: string; size: number }> }>(

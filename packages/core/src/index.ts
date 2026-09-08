@@ -82,6 +82,24 @@ export {
   type McpPermissions,
   type ToolDefinition,
 } from './mcp/tools.js';
+export {
+  RestoreEngine,
+  RestoreCancelledError,
+  suggestMappings,
+  type FolderMapping,
+  type RestoreProgress,
+  type RestoreStats,
+} from './restore/engine.js';
+export { RestoreManager } from './restore/manager.js';
+export {
+  parseCron,
+  matches as cronMatches,
+  nextRun as cronNextRun,
+  isValidCron,
+  CronParseError,
+  type CronFields,
+} from './schedule/cron.js';
+export { Scheduler } from './schedule/scheduler.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';

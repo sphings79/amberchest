@@ -10,6 +10,7 @@ import {
   Server,
   Square,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,7 @@ import { useApp } from '../state.js';
 import { AccountForm } from './AccountForm.js';
 import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
+import { RestoreDialog } from './RestoreDialog.js';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -98,6 +100,7 @@ function AccountCard({
   onEdit,
   onFolders,
   onAttachments,
+  onRestore,
   onChanged,
 }: {
   overview: AccountOverview;
@@ -105,6 +108,7 @@ function AccountCard({
   onEdit: () => void;
   onFolders: () => void;
   onAttachments: () => void;
+  onRestore: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
@@ -181,6 +185,10 @@ function AccountCard({
               {t('dashboard.backupNow')}
             </Button>
           )}
+          <Button onClick={onRestore} disabled={overview.messageCount === 0}>
+            <Upload size={15} />
+            {t('restore.open')}
+          </Button>
           <Button variant="ghost" onClick={onEdit} aria-label={t('dashboard.edit')}>
             <Pencil size={15} />
           </Button>
@@ -226,6 +234,7 @@ export function Dashboard(): ReactNode {
   const [formFor, setFormFor] = useState<AccountOverview | null | undefined>(undefined);
   const [foldersFor, setFoldersFor] = useState<AccountOverview | null>(null);
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
+  const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -259,6 +268,7 @@ export function Dashboard(): ReactNode {
               onEdit={() => setFormFor(overview)}
               onFolders={() => setFoldersFor(overview)}
               onAttachments={() => setAttachmentsFor(overview)}
+              onRestore={() => setRestoreFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
           ))}
@@ -273,6 +283,8 @@ export function Dashboard(): ReactNode {
           onSaved={() => void refreshAccounts()}
         />
       )}
+
+      {restoreFor && <RestoreDialog overview={restoreFor} onClose={() => setRestoreFor(null)} />}
 
       {attachmentsFor && (
         <AttachmentExport

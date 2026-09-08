@@ -1,17 +1,25 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { MailArchiverApp, logger } from '@mail-archiver/core';
+import { MailArchiverApp, Scheduler, isValidCron, logger } from '@mail-archiver/core';
 import { AuthGuard } from './auth.js';
 import { startServer } from './index.js';
 
 /**
- * Headless entry point.
+ * Headless entry point: the container, and frontend development.
  *
- * Used for frontend development and, from stage 5 on, by the container. The
- * master password comes from the environment so an unattended start can unlock
- * the configuration without a human at the keyboard.
+ * Everything is configured through environment variables, because that is how
+ * a container is configured. The master password unlocks the encrypted
+ * configuration without anyone at the keyboard.
  */
 async function main(): Promise<void> {
+  // In a container the log belongs on stdout, that is what `docker logs` reads.
+  logger.setLevel((process.env.MAIL_ARCHIVER_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') ?? 'info');
+  logger.on('entry', (entry) => {
+    const line = `${entry.ts} [${entry.level}] ${entry.message}`;
+    if (entry.level === 'error' || entry.level === 'warn') process.stderr.write(`${line}\n`);
+    else process.stdout.write(`${line}\n`);
+  });
+
   const app = new MailArchiverApp();
   const auth = AuthGuard.fromEnvironment();
 
@@ -36,10 +44,34 @@ async function main(): Promise<void> {
   });
 
   logger.info(`Mail Archiver listening on ${running.url} (auth: ${auth.mode})`);
-  // eslint-disable-next-line no-console
-  console.log(`Mail Archiver listening on ${running.url} (auth: ${auth.mode})`);
+
+  if (auth.mode === 'none') {
+    logger.warn(
+      'No MAIL_ARCHIVER_UI_PASSWORD is set: anyone who can reach this port can use the interface.',
+    );
+  }
+
+  // ---------------------------------------------------------------- schedule
+  let scheduler: Scheduler | null = null;
+  const expression = process.env.MAIL_ARCHIVER_CRON;
+
+  if (expression) {
+    if (!masterPassword) {
+      logger.error('MAIL_ARCHIVER_CRON needs MAIL_ARCHIVER_MASTER_PASSWORD, otherwise nothing can run unattended.');
+    } else if (!isValidCron(expression)) {
+      logger.error(`MAIL_ARCHIVER_CRON is not a valid cron expression: ${expression}`);
+    } else {
+      scheduler = new Scheduler({
+        app,
+        expression,
+        exportAttachments: process.env.MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS === 'true',
+      });
+      scheduler.start();
+    }
+  }
 
   const shutdown = async (): Promise<void> => {
+    scheduler?.stop();
     await running.close();
     app.close();
     process.exit(0);

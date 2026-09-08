@@ -45,6 +45,42 @@ function fail(reply: FastifyReply, status: number, message: string): FastifyRepl
   return reply.status(status).send({ error: message });
 }
 
+const restoreTargetSchema = z.object({
+  host: z.string().min(1),
+  port: z.number().int().min(1).max(65_535),
+  security: z.enum(['tls', 'starttls', 'none']),
+  rejectUnauthorized: z.boolean().default(true),
+  username: z.string().min(1),
+  password: z.string().default(''),
+  /** Use the stored password of this account instead of sending one. */
+  useAccountId: z.string().optional(),
+});
+
+const restoreSchema = z.object({
+  accountId: z.string().min(1),
+  target: restoreTargetSchema,
+  mappings: z.array(z.object({ source: z.string(), target: z.string() })),
+  selection: z
+    .object({
+      query: z.string().default(''),
+      folders: z.array(z.string()).default([]),
+      dateFrom: z.string().nullable().default(null),
+      dateTo: z.string().nullable().default(null),
+      from: z.string().nullable().default(null),
+      withAttachments: z.boolean().default(false),
+    })
+    .default(() => ({
+      query: '',
+      folders: [],
+      dateFrom: null,
+      dateTo: null,
+      from: null,
+      withAttachments: false,
+    })),
+  skipExisting: z.boolean().default(true),
+  restoreFlags: z.boolean().default(true),
+});
+
 const bundleSchema = z.object({
   format: z.enum(['eml-zip', 'mbox', 'pdf-zip']),
   q: z.string().default(''),
@@ -72,7 +108,13 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   const { app, auth } = options;
 
   /** Every /api route except the public ones needs a valid token. */
-  const PUBLIC_PATHS = new Set(['/api/state', '/api/login', '/api/setup', '/api/unlock']);
+  const PUBLIC_PATHS = new Set([
+    '/api/health',
+    '/api/state',
+    '/api/login',
+    '/api/setup',
+    '/api/unlock',
+  ]);
 
   server.addHook('onRequest', async (request, reply) => {
     if (!request.url.startsWith('/api/')) return;
@@ -87,6 +129,13 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   const requireUnlocked = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     if (!app.isUnlocked) await fail(reply, 423, 'Configuration is locked');
   };
+
+  /** Health probe for Docker and reverse proxies; never needs a token. */
+  server.get('/api/health', async () => ({
+    status: 'ok',
+    initialized: app.isInitialized,
+    unlocked: app.isUnlocked,
+  }));
 
   // ------------------------------------------------------------------ state
 
@@ -395,6 +444,73 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     }
   });
 
+  // ---------------------------------------------------------------- restore
+
+  /** Resolves the password for a restore target from the request or storage. */
+  const resolveTarget = (
+    target: z.infer<typeof restoreTargetSchema>,
+  ): {
+    host: string;
+    port: number;
+    security: 'tls' | 'starttls' | 'none';
+    rejectUnauthorized: boolean;
+    username: string;
+    password: string;
+  } => {
+    const password = target.password || (target.useAccountId
+      ? app.requireAccount(target.useAccountId).password
+      : '');
+    return {
+      host: target.host,
+      port: target.port,
+      security: target.security,
+      rejectUnauthorized: target.rejectUnauthorized,
+      username: target.username,
+      password,
+    };
+  };
+
+  server.post('/api/restore/mappings', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = z
+      .object({ accountId: z.string().min(1), target: restoreTargetSchema })
+      .safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    try {
+      return await app.suggestRestoreMappings(body.data.accountId, resolveTarget(body.data.target));
+    } catch (error) {
+      return fail(reply, 502, describeImapError(error));
+    }
+  });
+
+  server.post('/api/restore', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = restoreSchema.safeParse(request.body);
+    if (!body.success) return fail(reply, 400, body.error.issues[0]?.message ?? 'Invalid request');
+    if (app.restore.isRunning) return fail(reply, 409, 'A restore is already running');
+
+    void app
+      .startRestore({
+        accountId: body.data.accountId,
+        target: resolveTarget(body.data.target),
+        mappings: body.data.mappings,
+        selection: body.data.selection,
+        skipExisting: body.data.skipExisting,
+        restoreFlags: body.data.restoreFlags,
+      })
+      .catch(() => undefined);
+
+    return { started: true };
+  });
+
+  server.post('/api/restore/cancel', { preHandler: requireUnlocked }, async () => ({
+    cancelled: app.cancelRestore(),
+  }));
+
+  server.get('/api/restore', { preHandler: requireUnlocked }, async () => ({
+    running: app.restore.isRunning,
+    progress: app.restore.progress,
+  }));
+
   // -------------------------------------------------------------------- mcp
 
   /**
@@ -517,12 +633,14 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onExportProgress = (progress: ExportProgress): void => send('export-progress', progress);
     const onIndexProgress = (progress: unknown): void => send('index-progress', progress);
     const onBundleProgress = (progress: unknown): void => send('bundle-progress', progress);
+    const onRestoreProgress = (progress: unknown): void => send('restore-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
     app.exports.on('progress', onExportProgress);
     app.index.on('progress', onIndexProgress);
     app.bundles.on('progress', onBundleProgress);
+    app.restore.on('progress', onRestoreProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
@@ -530,6 +648,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.exports.off('progress', onExportProgress);
       app.index.off('progress', onIndexProgress);
       app.bundles.off('progress', onBundleProgress);
+      app.restore.off('progress', onRestoreProgress);
       logger.off('entry', onLog);
     });
   });

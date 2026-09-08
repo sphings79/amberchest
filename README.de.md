@@ -32,9 +32,9 @@ Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt 
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
 
-> **Stand: Etappe 3 von 6.** Sicherung, Anhang-Export, Volltextsuche, Viewer,
-> Export und der MCP-Server laufen. Rückspielen und der Docker-Container
-> folgen — siehe [Fahrplan](#fahrplan).
+> **Stand: Etappe 5 von 6.** Sicherung, Anhang-Export, Suche, Viewer, Export,
+> MCP, Rückspielen und der Container laufen alle. Offen sind die Fernsteuerung
+> in der Desktop-App und der Feinschliff — siehe [Fahrplan](#fahrplan).
 
 ## Bildschirmfotos
 
@@ -114,6 +114,12 @@ zur Docker-Anleitung.</em>
 - **Export** jeder Trefferliste als EML-Dateien im ZIP, als mbox für
   Thunderbird und Apple Mail oder als PDF je Nachricht
 - **KI-Zugriff über MCP** mit Schaltern je Bereich, standardmäßig aus
+- **Rückspielen** auf dasselbe Konto oder zu einem anderen Anbieter, mit einer
+  Ordnerzuordnung, die aus den Sonderordner-Markern vorgeschlagen wird. Es wird
+  ausschließlich hinzugefügt; bereits vorhandene Mails werden über die
+  Message-ID übersprungen
+- **Docker-Container** mit derselben Weboberfläche, eingebautem Zeitplaner und
+  Chromium für den PDF-Export
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
 
 ## Installation
@@ -151,8 +157,8 @@ Es werden x64 und arm64 gebaut.
 
 ## Docker
 
-> **Geplant für Etappe 5.** Das Image ist noch nicht veröffentlicht — dieser
-> Abschnitt hält fest, wie es funktionieren wird.
+> Das Image ist gebaut und getestet; veröffentlicht wird es mit dem ersten
+> Release.
 
 Der Container fährt dieselbe Maschinerie und dieselbe Weboberfläche wie die
 Desktop-App, dazu einen Zeitplaner. Vorgesehene Nutzung auf unRAID, Synology
@@ -197,6 +203,9 @@ services:
 | `MAIL_ARCHIVER_UI_PASSWORD` | Passwort für die Weboberfläche |
 | `MAIL_ARCHIVER_CRON` | Zeitplan als gewöhnlicher Cron-Ausdruck |
 | `MAIL_ARCHIVER_PORT` | Port im Container, Standard 8484 |
+| `MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS` | Nach jedem Lauf auch Anhänge exportieren |
+| `PUID` / `PGID` | Benutzer und Gruppe, denen die Volumes gehören, Standard 1000 |
+| `MAIL_ARCHIVER_LOG_LEVEL` | `debug`, `info`, `warn` oder `error` |
 | `TZ` | Zeitzone, nach der sich der Zeitplan richtet |
 
 Die Weboberfläche antwortet dann auf `http://<host>:8484`. Sie funktioniert
@@ -280,8 +289,8 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 | 1 | Fundament, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
 | 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
 | 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP, MCP-Server | ✅ fertig |
-| 4 | Rückspielen und Umzug auf einen anderen Server | geplant |
-| 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | geplant |
+| 4 | Rückspielen und Umzug auf einen anderen Server | ✅ fertig |
+| 5 | Docker-Image, Web-Login, Cron-Zeitplan | ✅ fertig · Fernsteuerung offen |
 | 6 | Feinschliff: Themes, Übersetzungen, optionale Archivverschlüsselung, Windows- und Linux-Releases | geplant |
 
 ## FAQ

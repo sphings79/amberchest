@@ -28,6 +28,8 @@ import {
 import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
+import { RestoreManager } from './restore/manager.js';
+import { suggestMappings, type FolderMapping, type RestoreProgress } from './restore/engine.js';
 import type { McpPermissions } from './mcp/tools.js';
 import { buildFolderTree } from './sync/folders.js';
 import { SyncManager } from './sync/manager.js';
@@ -77,6 +79,7 @@ export class MailArchiverApp {
   readonly exports: AttachmentExportManager;
   readonly index: SearchIndexManager;
   readonly bundles: BundleManager;
+  readonly restore = new RestoreManager();
   private readonly pdfRenderer: PdfRenderer | undefined;
 
   constructor(
@@ -260,6 +263,60 @@ export class MailArchiverApp {
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
     });
+  }
+
+  // ---------------------------------------------------------------- restore
+
+  /**
+   * Proposes how archived folders line up with the folders on a target server.
+   *
+   * The target may be the account itself (restoring what was lost) or a
+   * completely different server (moving house).
+   */
+  async suggestRestoreMappings(
+    accountId: string,
+    target: ImapConnectionOptions,
+  ): Promise<{ mappings: FolderMapping[]; targetFolders: string[] }> {
+    const source = this.db.listFolders(accountId).map((folder) => ({
+      path: folder.path,
+      specialUse: folder.special_use,
+    }));
+
+    const remote = await withConnection(target, (client) => listRemoteFolders(client));
+    const mappings = suggestMappings({
+      source,
+      target: remote.map((folder) => ({
+        path: folder.path,
+        specialUse: folder.specialUse,
+        delimiter: folder.delimiter,
+      })),
+    });
+
+    return { mappings, targetFolders: remote.filter((f) => !f.noSelect).map((f) => f.path) };
+  }
+
+  startRestore(options: {
+    accountId: string;
+    target: ImapConnectionOptions;
+    mappings: FolderMapping[];
+    selection: Omit<SearchOptions, 'accountId'>;
+    skipExisting: boolean;
+    restoreFlags: boolean;
+  }): Promise<RestoreProgress | null> {
+    return this.restore.start({
+      db: this.db,
+      archiveBaseDir: this.config.getSettings().archivePath,
+      sourceAccount: this.requireAccount(options.accountId),
+      target: options.target,
+      mappings: options.mappings,
+      selection: { ...options.selection, accountId: options.accountId },
+      skipExisting: options.skipExisting,
+      restoreFlags: options.restoreFlags,
+    });
+  }
+
+  cancelRestore(): boolean {
+    return this.restore.cancel();
   }
 
   /** Permissions as configured, all off while MCP is disabled. */

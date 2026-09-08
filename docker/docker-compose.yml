@@ -1,0 +1,24 @@
+# Mail Archiver, ready to run. Adjust the two passwords and the paths.
+services:
+  mail-archiver:
+    image: ghcr.io/sphings79/mail-archiver:latest
+    container_name: mail-archiver
+    ports:
+      - "8484:8484"
+    volumes:
+      # Encrypted configuration and the search index.
+      - ./config:/config
+      # The archive itself: one directory per account.
+      - ./archive:/archive
+    environment:
+      # Unlocks the encrypted configuration on start.
+      MAIL_ARCHIVER_MASTER_PASSWORD: change-me
+      # Password for the web interface. Without it the interface is open to
+      # anyone who can reach the port.
+      MAIL_ARCHIVER_UI_PASSWORD: change-me-too
+      # Backup schedule, standard cron syntax. Leave out to disable.
+      MAIL_ARCHIVER_CRON: "0 3 * * *"
+      # Export attachments after every scheduled backup as well.
+      MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS: "false"
+      TZ: Europe/Berlin
+    restart: unless-stopped
