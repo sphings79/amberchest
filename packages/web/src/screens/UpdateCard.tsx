@@ -1,12 +1,18 @@
-import { APP_VERSION } from '@mail-archiver/core';
 import { DownloadCloud, ExternalLink } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card } from '../components/ui.js';
 import { REPO_URL } from '../constants.js';
 
-/** Version of this build, kept in step with the package version. */
-const CURRENT_VERSION = APP_VERSION;
+/**
+ * Version of this build, kept in step with the package version.
+ *
+ * Deliberately a literal and not imported from the core package: that package
+ * is written for Node, and a value import from it drags `node:os` and friends
+ * into the browser bundle, where the first call brings the whole interface
+ * down. Type imports are fine, they disappear at build time.
+ */
+const CURRENT_VERSION = '1.1.2';
 
 const RELEASES_API = 'https://api.github.com/repos/sphings79/mail-archiver/releases/latest';
 
