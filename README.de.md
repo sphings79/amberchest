@@ -312,6 +312,25 @@ Token wollen, gibt es ein Feld für einen zusätzlichen Header.
 }
 ```
 
+### Postfach leeren, Archiv behalten
+
+Alte Mail vom Server räumen, um dort Platz zu gewinnen, ist ein ganz normaler
+Vorgang — und das Archiv ist genau der Ort, an dem sie das überleben soll. In
+den erweiterten Kontoeinstellungen ein Datum unter **Älteres nie löschen ab**
+eintragen, und alles davor bleibt liegen, egal was auf dem Server passiert und
+egal welche Löschregel eingestellt ist. Alles Neuere folgt weiter der normalen
+Regel.
+
+```
+Server geleert, Löschregel „spiegeln", geschützt vor dem 01.01.2024:
+  2 geschützt, 1 entfernt
+  übrig: die Nachricht von 2019 und die von 2020
+```
+
+Der Abgleich mit dem Server meldet den Ordner danach nicht mehr als abweichend:
+mehr zu haben als der Server ist bei dieser Einstellung der Zweck und kein
+Fehler.
+
 ## Statistik und Register
 
 **Die Statistik** beantwortet, was eigentlich im Archiv liegt: Nachrichten je

@@ -13,6 +13,13 @@ export const accountSettingsSchema = z.object({
   autoSelectNewFolders: z.boolean().default(false),
   /** One file for a message that sits in several folders, as Gmail does. */
   linkDuplicates: z.boolean().default(false),
+  /**
+   * Never remove anything older than this date, whatever the server does.
+   *
+   * For emptying a mailbox to win back space while the archive keeps it: the
+   * old mail is protected, everything newer follows the usual policy.
+   */
+  protectBeforeDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
 });
 
 export const attachmentSettingsSchema = z.object({

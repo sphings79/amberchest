@@ -103,6 +103,9 @@ export const de = {
     noFolders: 'Es sind noch keine Ordner ausgewählt.',
   },
   account: {
+    protectBefore: 'Älteres nie löschen ab',
+    protectBeforeHint:
+      'Nachrichten vor diesem Datum bleiben im Archiv, auch wenn du sie auf dem Server löschst — etwa um dort Platz zu schaffen. Leer lassen schaltet es ab.',
     linkDuplicates: 'Nachricht nur einmal speichern',
     linkDuplicatesHint:
       'Für Gmail: dieselbe Mail liegt dort im Ordner und in „Alle Nachrichten“. Sie wird einmal gespeichert, bleibt aber in beiden Ordnern sichtbar.',

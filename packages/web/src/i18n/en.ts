@@ -105,6 +105,9 @@ export const en: Translations = {
     noFolders: 'No folders selected yet.',
   },
   account: {
+    protectBefore: 'Never delete anything before',
+    protectBeforeHint:
+      'Messages older than this stay in the archive even when you delete them on the server, for instance to win back space there. Leave empty to switch it off.',
     linkDuplicates: 'Store a message only once',
     linkDuplicatesHint:
       'For Gmail: the same mail sits in its folder and in All Mail. It is stored once and still shows in both folders.',

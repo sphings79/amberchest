@@ -36,6 +36,12 @@ export interface AccountSettings {
    * archive holds it twice.
    */
   linkDuplicates: boolean;
+  /**
+   * Never remove anything older than this date, whatever the server does.
+   *
+   * For emptying a mailbox to win back space while the archive keeps it.
+   */
+  protectBeforeDate: string | null;
 }
 
 /** Where exported attachments are laid out inside the target directory. */
@@ -271,6 +277,8 @@ export interface SyncStats {
   messagesNew: number;
   /** Stored once although they sit in several folders; Gmail does this. */
   messagesLinked: number;
+  /** Gone from the server, kept because they are older than the set date. */
+  messagesProtected: number;
   messagesMoved: number;
   messagesDeleted: number;
   messagesRestored: number;

@@ -347,9 +347,12 @@ export class VerifyEngine extends EventEmitter {
       if (there === here) continue;
 
       // An account that keeps what the server deleted is meant to hold more
-      // than the server does. Reporting that every time would train the user
-      // to ignore the report.
-      const expected = there < here && this.account.settings.deletedHandling === 'keep';
+      // than the server does - whether that is the policy or a protected date.
+      // Reporting it every time would train the user to ignore the report.
+      const keepsMore =
+        this.account.settings.deletedHandling === 'keep' ||
+        this.account.settings.protectBeforeDate !== null;
+      const expected = there < here && keepsMore;
       if (expected) continue;
 
       this.stats.foldersDiffering += 1;

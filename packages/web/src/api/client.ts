@@ -139,6 +139,7 @@ export interface AccountSettingsValues {
   deletedRetentionDays: number | null;
   autoSelectNewFolders: boolean;
   linkDuplicates: boolean;
+  protectBeforeDate: string | null;
 }
 
 import {

@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   deletedRetentionDays: null,
   autoSelectNewFolders: false,
   linkDuplicates: false,
+  protectBeforeDate: null,
 };
 
 const PORT_BY_SECURITY: Record<string, number> = { tls: 993, starttls: 143, none: 143 };
@@ -333,6 +334,16 @@ export function AccountForm({
               onChange={(autoSelectNewFolders) => setSettings({ ...settings, autoSelectNewFolders })}
               label={t('account.autoSelectNew')}
             />
+
+            <Field label={t('account.protectBefore')} hint={t('account.protectBeforeHint')}>
+              <Input
+                type="date"
+                value={settings.protectBeforeDate ?? ''}
+                onChange={(event) =>
+                  setSettings({ ...settings, protectBeforeDate: event.target.value || null })
+                }
+              />
+            </Field>
 
             <Toggle
               checked={settings.linkDuplicates}

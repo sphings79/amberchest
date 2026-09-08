@@ -304,6 +304,23 @@ button. An extra header field covers services that want a token.
 }
 ```
 
+### Emptying the mailbox, keeping the archive
+
+Clearing old mail off the server to win back space there is a normal thing to
+do — and the archive is exactly where that mail should survive it. Set
+**Never delete anything before** to a date in the account's advanced settings,
+and everything older than it stays, whatever happens on the server and whatever
+the deletion policy says. Anything newer follows the usual rule.
+
+```
+Server emptied, deletion policy "mirror", protected before 2024-01-01:
+  2 protected, 1 removed
+  files left: the 2019 and the 2020 message
+```
+
+The comparison with the server then stops reporting that folder as differing:
+holding more than the server is the point of the setting, not a fault.
+
 ## Statistics and the register
 
 **Statistics** answers what is actually in the archive: messages per year, the

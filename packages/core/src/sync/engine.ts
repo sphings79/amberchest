@@ -26,6 +26,7 @@ import {
   storeMessage,
 } from '../storage/archive.js';
 import { assertRoom } from '../storage/disk.js';
+import { isBeforeCutoff } from './protect.js';
 import type { Account, RemoteFolder, SyncProgress, SyncStats } from '../types.js';
 import { mapWithConcurrency, sleep } from '../util/concurrency.js';
 import { logger } from '../util/logger.js';
@@ -44,6 +45,7 @@ function emptyStats(): SyncStats {
     foldersDone: 0,
     messagesNew: 0,
     messagesLinked: 0,
+    messagesProtected: 0,
     messagesMoved: 0,
     messagesDeleted: 0,
     messagesRestored: 0,
@@ -234,6 +236,17 @@ export class SyncEngine extends EventEmitter {
         logger.info(`Folder ${local.path} vanished on the server, keeping the local copy`, {
           accountId: this.account.id,
         });
+        continue;
+      }
+
+      const protectedHere = this.db
+        .listActiveMessages(local.id)
+        .some((message) => this.isProtected(message.internal_date));
+      if (protectedHere) {
+        logger.info(
+          `Folder ${local.path} vanished on the server, but holds protected mail - keeping it`,
+          { accountId: this.account.id },
+        );
         continue;
       }
 
@@ -589,6 +602,10 @@ export class SyncEngine extends EventEmitter {
     return true;
   }
 
+  private isProtected(internalDate: string): boolean {
+    return isBeforeCutoff(internalDate, this.account.settings.protectBeforeDate);
+  }
+
   /** Applies the configured policy to messages that are gone from the server. */
   private async handleMissing(plan: FolderPlan): Promise<void> {
     if (plan.missing.length === 0) return;
@@ -606,6 +623,13 @@ export class SyncEngine extends EventEmitter {
 
     for (const row of plan.missing) {
       this.checkCancelled();
+
+      // Older than the protected date: it stays exactly where it is, whatever
+      // the policy says.
+      if (this.isProtected(row.internal_date)) {
+        this.stats.messagesProtected += 1;
+        continue;
+      }
 
       // Another folder may be showing the same message through this file. It
       // has to keep it, otherwise deleting one copy would lose both.
@@ -759,6 +783,8 @@ export class SyncEngine extends EventEmitter {
     for (const row of expired) {
       const folder = folders.get(row.folder_id);
       if (!folder) continue;
+      // Protected mail is never purged, however long it has been in _deleted.
+      if (this.isProtected(row.internal_date)) continue;
       const dir = join(accountDir, '_deleted', folder.local_path);
       await purgeMessageFile(dir, row.file_name);
       this.db.removeMessage(row.id);
