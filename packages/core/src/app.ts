@@ -29,6 +29,8 @@ import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
 import { RestoreManager } from './restore/manager.js';
+import { EncryptionMigrationManager, type MigrationProgress } from './storage/migrate.js';
+import { ArchiveLayout } from './storage/archive.js';
 import { suggestMappings, type FolderMapping, type RestoreProgress } from './restore/engine.js';
 import type { McpPermissions } from './mcp/tools.js';
 import { buildFolderTree } from './sync/folders.js';
@@ -80,6 +82,7 @@ export class MailArchiverApp {
   readonly index: SearchIndexManager;
   readonly bundles: BundleManager;
   readonly restore = new RestoreManager();
+  readonly migration = new EncryptionMigrationManager();
   private readonly pdfRenderer: PdfRenderer | undefined;
 
   constructor(
@@ -212,6 +215,34 @@ export class MailArchiverApp {
     return buildFolderTree({ account, db: this.db, remoteFolders });
   }
 
+  /**
+   * The folders that exist in the archive, for browsing.
+   *
+   * Unlike getFolderTree this never touches the mail server: it reads what was
+   * archived, which is what the browser shows.
+   */
+  localFolders(accountId: string): Array<{
+    path: string;
+    name: string;
+    delimiter: string;
+    specialUse: string | null;
+    messages: number;
+    lastSync: string | null;
+  }> {
+    return this.db.listFolders(accountId).map((folder) => {
+      const delimiter = folder.delimiter || '/';
+      const name = delimiter ? (folder.path.split(delimiter).pop() ?? folder.path) : folder.path;
+      return {
+        path: folder.path,
+        name,
+        delimiter,
+        specialUse: folder.special_use,
+        messages: this.db.countMessages(folder.id),
+        lastSync: folder.last_sync,
+      };
+    });
+  }
+
   async setSelectedFolders(accountId: string, folders: string[]): Promise<void> {
     await this.config.setSelectedFolders(accountId, folders);
     this.db.setSelectedFolders(accountId, folders);
@@ -327,6 +358,35 @@ export class MailArchiverApp {
 
   cancelRestore(): boolean {
     return this.restore.cancel();
+  }
+
+  // ------------------------------------------------------- archive encryption
+
+  /**
+   * Converts the whole archive to or from encrypted storage.
+   *
+   * Changing the setting alone only affects new mail; this brings everything
+   * that is already on disk in line.
+   */
+  startEncryptionMigration(direction: 'encrypt' | 'decrypt'): Promise<MigrationProgress | null> {
+    const key = this.config.archiveKey;
+    if (!key) throw new Error('Configuration is locked');
+
+    const settings = this.config.getSettings();
+    const layout = new ArchiveLayout(settings.archivePath);
+    // The base directory covers most accounts; only those pointed somewhere
+    // else need to be listed separately.
+    const directories = [settings.archivePath];
+    for (const account of this.config.listAccounts()) {
+      const dir = layout.accountDir(account);
+      if (!dir.startsWith(settings.archivePath)) directories.push(dir);
+    }
+
+    return this.migration.start({ directories, key, direction });
+  }
+
+  cancelEncryptionMigration(): boolean {
+    return this.migration.cancel();
   }
 
   /** Permissions as configured, all off while MCP is disabled. */

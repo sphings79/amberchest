@@ -6,7 +6,16 @@
  * instead, which makes any input safe, and a trailing `*` is added so typing
  * "rechn" already finds "Rechnung".
  */
-export function toMatchExpression(input: string): string | null {
+const FIELD_COLUMNS: Record<string, string | null> = {
+  all: null,
+  subject: 'subject',
+  from: 'from_addr',
+  to: 'to_addr',
+  body: 'body',
+  attachments: 'attachment_text',
+};
+
+export function toMatchExpression(input: string, field = 'all'): string | null {
   const trimmed = input.trim();
   if (trimmed === '') return null;
 
@@ -34,5 +43,9 @@ export function toMatchExpression(input: string): string | null {
   }
 
   if (tokens.length === 0) return null;
-  return tokens.join(' AND ');
+  const expression = tokens.join(' AND ');
+
+  // FTS5 restricts a query to one column with {column}: in front of it.
+  const column = FIELD_COLUMNS[field] ?? null;
+  return column ? `{${column}}: (${expression})` : expression;
 }

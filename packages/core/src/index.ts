@@ -34,9 +34,11 @@ export { SearchIndexEngine, IndexCancelledError, type IndexProgress, type IndexS
 export { SearchIndexManager } from './search/manager.js';
 export {
   searchMessages,
+  type SearchField,
   type SearchHit,
   type SearchOptions,
   type SearchResult,
+  type SearchSort,
 } from './search/search.js';
 export { toMatchExpression } from './search/query.js';
 export { foldGerman, foldedVariants, withFoldedVariants } from './search/fold.js';
@@ -100,6 +102,13 @@ export {
   type CronFields,
 } from './schedule/cron.js';
 export { Scheduler } from './schedule/scheduler.js';
+export {
+  EncryptionMigrationEngine,
+  EncryptionMigrationManager,
+  MigrationCancelledError,
+  type MigrationProgress,
+  type MigrationStats,
+} from './storage/migrate.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';

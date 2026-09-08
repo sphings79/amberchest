@@ -7,6 +7,7 @@ import {
   Pencil,
   Play,
   Plus,
+  Search as SearchIcon,
   Server,
   Square,
   Trash2,
@@ -15,7 +16,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
-import { Badge, Button, Card, EmptyState, ProgressBar } from '../components/ui.js';
+import { Badge, Button, Card, EmptyState, Input, ProgressBar } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { AccountForm } from './AccountForm.js';
 import { AttachmentExport } from './AttachmentExport.js';
@@ -178,8 +179,11 @@ function AccountCard({
           ) : (
             <Button
               variant="primary"
-              disabled={account.selectedFolders.length === 0}
-              onClick={() => void api.startSync(account.id)}
+              // With no folders chosen yet, the button opens the picker instead
+              // of sitting there greyed out.
+              onClick={() =>
+                account.selectedFolders.length === 0 ? onFolders() : void api.startSync(account.id)
+              }
             >
               <Play size={15} />
               {t('dashboard.backupNow')}
@@ -218,9 +222,15 @@ function AccountCard({
       </div>
 
       {account.selectedFolders.length === 0 && !running && (
-        <div className="mt-3 rounded-xl px-3 py-2 text-xs" style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}>
+        <button
+          type="button"
+          onClick={onFolders}
+          className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition hover:brightness-110"
+          style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}
+        >
+          <FolderTree size={14} />
           {t('dashboard.noFolders')}
-        </div>
+        </button>
       )}
 
       {progress && <ProgressSection progress={progress} />}
@@ -235,6 +245,18 @@ export function Dashboard(): ReactNode {
   const [foldersFor, setFoldersFor] = useState<AccountOverview | null>(null);
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
+  const [filter, setFilter] = useState('');
+
+  // The filter box only appears once the list is long enough to need it.
+  const showFilter = accounts.length >= 5;
+  const needle = filter.trim().toLowerCase();
+  const visible =
+    showFilter && needle
+      ? accounts.filter((overview) => {
+          const { name, host, username } = overview.account;
+          return [name, host, username].some((value) => value.toLowerCase().includes(needle));
+        })
+      : accounts;
 
   return (
     <div className="flex flex-col gap-5">
@@ -245,6 +267,22 @@ export function Dashboard(): ReactNode {
           {t('nav.addAccount')}
         </Button>
       </div>
+
+      {showFilter && (
+        <div className="relative">
+          <SearchIcon
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: 'var(--text-faint)' }}
+          />
+          <Input
+            value={filter}
+            placeholder={t('dashboard.filterPlaceholder')}
+            onChange={(event) => setFilter(event.target.value)}
+            className="!pl-9"
+          />
+        </div>
+      )}
 
       {accounts.length === 0 ? (
         <EmptyState
@@ -260,7 +298,12 @@ export function Dashboard(): ReactNode {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          {accounts.map((overview) => (
+          {visible.length === 0 && (
+            <Card className="!p-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+              {t('dashboard.filterEmpty', { query: filter })}
+            </Card>
+          )}
+          {visible.map((overview) => (
             <AccountCard
               key={overview.account.id}
               overview={overview}

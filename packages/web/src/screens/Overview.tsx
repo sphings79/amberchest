@@ -148,6 +148,8 @@ export function Overview({ onGoToAccounts }: { onGoToAccounts: () => void }): Re
 
   const backupAll = (): void => {
     for (const entry of accounts) {
+      // Accounts without a folder selection are skipped; their own card links
+      // to the picker.
       if (entry.running || entry.account.selectedFolders.length === 0) continue;
       void api.startSync(entry.account.id);
     }

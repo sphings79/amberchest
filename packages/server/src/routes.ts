@@ -87,9 +87,15 @@ const bundleSchema = z.object({
   account: z.string().optional(),
   folders: z.array(z.string()).default([]),
   from: z.string().optional(),
+  to: z.string().optional(),
+  field: z.enum(['all', 'subject', 'from', 'to', 'body', 'attachments']).default('all'),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   withAttachments: z.boolean().default(false),
+  unreadOnly: z.boolean().default(false),
+  flaggedOnly: z.boolean().default(false),
+  minSize: z.number().int().min(0).optional(),
+  maxSize: z.number().int().min(0).optional(),
 });
 
 const searchQuerySchema = z.object({
@@ -97,9 +103,17 @@ const searchQuerySchema = z.object({
   account: z.string().optional(),
   folders: z.string().optional(),
   from: z.string().optional(),
+  to: z.string().optional(),
+  field: z.enum(['all', 'subject', 'from', 'to', 'body', 'attachments']).default('all'),
+  sort: z.enum(['relevance', 'date-desc', 'date-asc', 'size-desc', 'size-asc']).default('relevance'),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   attachments: z.string().optional(),
+  unread: z.string().optional(),
+  flagged: z.string().optional(),
+  deleted: z.string().optional(),
+  minSize: z.coerce.number().int().min(0).optional(),
+  maxSize: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -272,6 +286,12 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     }
   });
 
+  /** Archived folders, read from the index - no connection to the server. */
+  server.get('/api/accounts/:id/local-folders', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return app.localFolders(id);
+  });
+
   server.put('/api/accounts/:id/folders', { preHandler: requireUnlocked }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = foldersSchema.safeParse(request.body);
@@ -365,9 +385,17 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       accountId: query.account ?? null,
       folders: query.folders ? query.folders.split('\n').filter(Boolean) : [],
       from: query.from ?? null,
+      to: query.to ?? null,
+      field: query.field,
+      sort: query.sort,
       dateFrom: query.dateFrom ?? null,
       dateTo: query.dateTo ?? null,
       withAttachments: query.attachments === '1',
+      unreadOnly: query.unread === '1',
+      flaggedOnly: query.flagged === '1',
+      includeDeleted: query.deleted === '1',
+      minSize: query.minSize ?? null,
+      maxSize: query.maxSize ?? null,
       limit: query.limit,
       offset: query.offset,
     });
@@ -511,6 +539,26 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     progress: app.restore.progress,
   }));
 
+  // ------------------------------------------------------- archive encryption
+
+  server.get('/api/archive/migration', { preHandler: requireUnlocked }, async () => ({
+    running: app.migration.isRunning,
+    progress: app.migration.progress,
+  }));
+
+  server.post('/api/archive/migration', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = z.object({ direction: z.enum(['encrypt', 'decrypt']) }).safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid direction');
+    if (app.migration.isRunning) return fail(reply, 409, 'A migration is already running');
+
+    void app.startEncryptionMigration(body.data.direction).catch(() => undefined);
+    return { started: true };
+  });
+
+  server.post('/api/archive/migration/cancel', { preHandler: requireUnlocked }, async () => ({
+    cancelled: app.cancelEncryptionMigration(),
+  }));
+
   // -------------------------------------------------------------------- mcp
 
   /**
@@ -558,9 +606,15 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       accountId: body.data.account ?? null,
       folders: body.data.folders,
       from: body.data.from ?? null,
+      to: body.data.to ?? null,
+      field: body.data.field,
       dateFrom: body.data.dateFrom ?? null,
       dateTo: body.data.dateTo ?? null,
       withAttachments: body.data.withAttachments,
+      unreadOnly: body.data.unreadOnly,
+      flaggedOnly: body.data.flaggedOnly,
+      minSize: body.data.minSize ?? null,
+      maxSize: body.data.maxSize ?? null,
     });
     return { bundleId };
   });
@@ -634,6 +688,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onIndexProgress = (progress: unknown): void => send('index-progress', progress);
     const onBundleProgress = (progress: unknown): void => send('bundle-progress', progress);
     const onRestoreProgress = (progress: unknown): void => send('restore-progress', progress);
+    const onMigrationProgress = (progress: unknown): void => send('migration-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
@@ -641,6 +696,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     app.index.on('progress', onIndexProgress);
     app.bundles.on('progress', onBundleProgress);
     app.restore.on('progress', onRestoreProgress);
+    app.migration.on('progress', onMigrationProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
@@ -649,6 +705,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.index.off('progress', onIndexProgress);
       app.bundles.off('progress', onBundleProgress);
       app.restore.off('progress', onRestoreProgress);
+      app.migration.off('progress', onMigrationProgress);
       logger.off('entry', onLog);
     });
   });

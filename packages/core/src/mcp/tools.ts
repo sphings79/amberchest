@@ -1,5 +1,6 @@
 import type { MailArchiverApp } from '../app.js';
 import type { BundleFormat } from '../export/bundle.js';
+import type { SearchField, SearchSort } from '../search/search.js';
 import { logger } from '../util/logger.js';
 
 /**
@@ -130,9 +131,23 @@ export const TOOLS: ToolDefinition[] = [
       account_id: STRING,
       folders: { type: 'array', items: STRING },
       from: STRING,
+      to: STRING,
+      field: {
+        ...STRING,
+        description: 'Restrict the query to one field: all, subject, from, to, body, attachments',
+      },
+      sort: {
+        ...STRING,
+        description: 'relevance (default), date-desc, date-asc, size-desc, size-asc',
+      },
       date_from: { ...STRING, description: 'ISO date, inclusive' },
       date_to: { ...STRING, description: 'ISO date, inclusive' },
       with_attachments: BOOLEAN,
+      unread_only: BOOLEAN,
+      flagged_only: BOOLEAN,
+      include_deleted: { ...BOOLEAN, description: 'Also return messages that vanished on the server' },
+      min_size: { ...NUMBER, description: 'Bytes' },
+      max_size: { ...NUMBER, description: 'Bytes' },
       limit: { ...NUMBER, description: 'Default 25, maximum 200' },
       offset: NUMBER,
     }),
@@ -143,9 +158,17 @@ export const TOOLS: ToolDefinition[] = [
         accountId: str(args, 'account_id') ?? null,
         folders,
         from: str(args, 'from') ?? null,
+        to: str(args, 'to') ?? null,
+        field: (str(args, 'field') as SearchField | undefined) ?? 'all',
+        sort: (str(args, 'sort') as SearchSort | undefined) ?? 'relevance',
         dateFrom: str(args, 'date_from') ?? null,
         dateTo: str(args, 'date_to') ?? null,
         withAttachments: bool(args, 'with_attachments') ?? false,
+        unreadOnly: bool(args, 'unread_only') ?? false,
+        flaggedOnly: bool(args, 'flagged_only') ?? false,
+        includeDeleted: bool(args, 'include_deleted') ?? false,
+        minSize: num(args, 'min_size') ?? null,
+        maxSize: num(args, 'max_size') ?? null,
         limit: Math.min(num(args, 'limit') ?? 25, 200),
         offset: num(args, 'offset') ?? 0,
       });

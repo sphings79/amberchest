@@ -8,6 +8,7 @@ import type {
   IndexProgress,
   LogEntry,
   MessageContent,
+  MigrationProgress,
   PublicAccount,
   SearchResult,
 } from '@mail-archiver/core';
@@ -22,6 +23,7 @@ export type {
   IndexProgress,
   LogEntry,
   MessageContent,
+  MigrationProgress,
   PublicAccount,
   SearchResult,
 };
@@ -42,12 +44,24 @@ export interface SearchQuery {
   account?: string | undefined;
   folders?: string[];
   from?: string | undefined;
+  to?: string | undefined;
+  field?: SearchField;
+  sort?: SearchSort;
   dateFrom?: string | undefined;
   dateTo?: string | undefined;
   withAttachments?: boolean;
+  unreadOnly?: boolean;
+  flaggedOnly?: boolean;
+  includeDeleted?: boolean;
+  /** Sizes in bytes. */
+  minSize?: number | undefined;
+  maxSize?: number | undefined;
   limit?: number;
   offset?: number;
 }
+
+export type SearchField = 'all' | 'subject' | 'from' | 'to' | 'body' | 'attachments';
+export type SearchSort = 'relevance' | 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc';
 
 export interface AttachmentState {
   settings: AttachmentSettings;
@@ -221,6 +235,18 @@ export const api = {
     accountId?: string;
   }) => request<ConnectionTestResult>('/accounts/test', { method: 'POST', body: JSON.stringify(values) }),
 
+  localFolders: (id: string) =>
+    request<
+      Array<{
+        path: string;
+        name: string;
+        delimiter: string;
+        specialUse: string | null;
+        messages: number;
+        lastSync: string | null;
+      }>
+    >(`/accounts/${id}/local-folders`),
+
   folders: (id: string, withCounts: boolean) =>
     request<FolderTreeNode[]>(`/accounts/${id}/folders${withCounts ? '?counts=1' : ''}`),
   saveFolders: (id: string, folders: string[]) =>
@@ -237,9 +263,17 @@ export const api = {
     // Folder paths may contain anything, so they are newline separated.
     if (query.folders && query.folders.length > 0) params.set('folders', query.folders.join('\n'));
     if (query.from) params.set('from', query.from);
+    if (query.to) params.set('to', query.to);
+    if (query.field && query.field !== 'all') params.set('field', query.field);
+    if (query.sort) params.set('sort', query.sort);
     if (query.dateFrom) params.set('dateFrom', query.dateFrom);
     if (query.dateTo) params.set('dateTo', query.dateTo);
     if (query.withAttachments) params.set('attachments', '1');
+    if (query.unreadOnly) params.set('unread', '1');
+    if (query.flaggedOnly) params.set('flagged', '1');
+    if (query.includeDeleted) params.set('deleted', '1');
+    if (query.minSize) params.set('minSize', String(query.minSize));
+    if (query.maxSize) params.set('maxSize', String(query.maxSize));
     params.set('limit', String(query.limit ?? 50));
     params.set('offset', String(query.offset ?? 0));
     return request<SearchResult>(`/search?${params.toString()}`);
@@ -271,6 +305,16 @@ export const api = {
   }) => request<{ started: boolean }>('/restore', { method: 'POST', body: JSON.stringify(body) }),
   cancelRestore: () => request<{ cancelled: boolean }>('/restore/cancel', { method: 'POST' }),
 
+  migrationState: () =>
+    request<{ running: boolean; progress: MigrationProgress | null }>('/archive/migration'),
+  startMigration: (direction: 'encrypt' | 'decrypt') =>
+    request<{ started: boolean }>('/archive/migration', {
+      method: 'POST',
+      body: JSON.stringify({ direction }),
+    }),
+  cancelMigration: () =>
+    request<{ cancelled: boolean }>('/archive/migration/cancel', { method: 'POST' }),
+
   exports: () =>
     request<{ pdfAvailable: boolean; bundles: Array<{ bundleId: string; fileName: string; size: number }> }>(
       '/exports',
@@ -281,9 +325,15 @@ export const api = {
     account?: string | undefined;
     folders?: string[];
     from?: string | undefined;
+    to?: string | undefined;
+    field?: SearchField | undefined;
     dateFrom?: string | undefined;
     dateTo?: string | undefined;
     withAttachments?: boolean;
+    unreadOnly?: boolean | undefined;
+    flaggedOnly?: boolean | undefined;
+    minSize?: number | undefined;
+    maxSize?: number | undefined;
   }) => request<{ bundleId: string }>('/exports', { method: 'POST', body: JSON.stringify(body) }),
   cancelExportBundle: (bundleId: string) =>
     request<{ cancelled: boolean }>(`/exports/${bundleId}/cancel`, { method: 'POST' }),

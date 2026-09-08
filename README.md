@@ -392,7 +392,7 @@ If Mail Archiver saves your mailbox one day, two things help a lot:
 ⭐ **[Star the repository](https://github.com/sphings79/mail-archiver)** —
 the cheapest way to help other people find it.
 
-☕ **[Buy me a coffee](https://github.com/sponsors/sphings79)** — development
+☕ **[Buy me a coffee](https://buymeacoffee.com/sphings)** — development
 happens in evenings and weekends.
 
 Bug reports and feature requests are welcome in the

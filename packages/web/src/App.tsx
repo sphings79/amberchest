@@ -1,4 +1,6 @@
 import {
+  Bot,
+  FolderTree,
   Inbox,
   LayoutDashboard,
   Lock,
@@ -10,17 +12,20 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, isDesktop, setToken } from './api/client.js';
 import { ConnectionSwitcher } from './components/ConnectionSwitcher.js';
+import { SupportLinks } from './components/SupportLinks.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Button, cx } from './components/ui.js';
+import { Browser } from './screens/Browser.js';
 import { Dashboard } from './screens/Dashboard.js';
 import { GateScreen } from './screens/GateScreen.js';
 import { Logs } from './screens/Logs.js';
 import { Overview } from './screens/Overview.js';
 import { Search } from './screens/Search.js';
+import { McpScreen } from './screens/McpScreen.js';
 import { Settings } from './screens/Settings.js';
 import { useApp } from './state.js';
 
-type View = 'overview' | 'accounts' | 'search' | 'settings' | 'logs';
+type View = 'overview' | 'accounts' | 'browser' | 'search' | 'settings' | 'mcp' | 'logs';
 
 function Logo(): ReactNode {
   return (
@@ -68,8 +73,10 @@ export function App(): ReactNode {
   const items: Array<{ id: View; label: string; icon: ReactNode; badge?: number }> = [
     { id: 'overview', label: t('nav.overview'), icon: <LayoutDashboard size={16} /> },
     { id: 'accounts', label: t('nav.accounts'), icon: <Inbox size={16} />, badge: accounts.length },
+    { id: 'browser', label: t('nav.browser'), icon: <FolderTree size={16} /> },
     { id: 'search', label: t('nav.search'), icon: <SearchIcon size={16} /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon size={16} /> },
+    { id: 'mcp', label: t('nav.mcp'), icon: <Bot size={16} /> },
     { id: 'logs', label: t('nav.logs'), icon: <ScrollText size={16} /> },
   ];
 
@@ -133,6 +140,7 @@ export function App(): ReactNode {
           </nav>
 
           <div className="flex items-center gap-1 md:mt-auto md:flex-col md:items-stretch">
+            <SupportLinks />
             <ConnectionSwitcher />
             <Button variant="ghost" onClick={() => void lock()} className="w-full justify-start">
               <Lock size={15} />
@@ -142,11 +150,13 @@ export function App(): ReactNode {
         </aside>
 
         <main className="flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8">
-          <div className="mx-auto max-w-5xl">
+          <div className={cx('mx-auto', view === 'browser' ? 'max-w-none' : 'max-w-5xl')}>
             {view === 'overview' && <Overview onGoToAccounts={() => setView('accounts')} />}
             {view === 'accounts' && <Dashboard />}
+            {view === 'browser' && <Browser />}
             {view === 'search' && <Search />}
             {view === 'settings' && <Settings />}
+            {view === 'mcp' && <McpScreen />}
             {view === 'logs' && <Logs />}
           </div>
         </main>

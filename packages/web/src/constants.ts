@@ -3,3 +3,9 @@ export const REPO_URL = 'https://github.com/sphings79/mail-archiver';
 
 /** Deep link to the container setup section of the README. */
 export const DOCKER_DOCS_URL = `${REPO_URL}#docker`;
+
+/** Where the star button points. */
+export const STAR_URL = `${REPO_URL}/stargazers`;
+
+/** Where the coffee button points. */
+export const COFFEE_URL = 'https://buymeacoffee.com/sphings';

@@ -1,4 +1,4 @@
-import type { SearchHit, SearchResult } from '@mail-archiver/core';
+import type { SearchField, SearchHit, SearchResult, SearchSort } from '@mail-archiver/core';
 import {
   Database,
   Download,
@@ -21,20 +21,61 @@ const PAGE_SIZE = 50;
 interface Filters {
   accountId: string;
   from: string;
+  to: string;
+  field: SearchField;
+  sort: SearchSort;
   dateFrom: string;
   dateTo: string;
   withAttachments: boolean;
+  unreadOnly: boolean;
+  flaggedOnly: boolean;
+  includeDeleted: boolean;
+  /** Kept as text so the fields can be empty. */
+  minSizeKb: string;
+  maxSizeKb: string;
   folders: string[];
 }
 
 const EMPTY_FILTERS: Filters = {
   accountId: '',
   from: '',
+  to: '',
+  field: 'all',
+  sort: 'relevance',
   dateFrom: '',
   dateTo: '',
   withAttachments: false,
+  unreadOnly: false,
+  flaggedOnly: false,
+  includeDeleted: false,
+  minSizeKb: '',
+  maxSizeKb: '',
   folders: [],
 };
+
+/** Filters that are not the account picker, for the little badge on the button. */
+function activeFilterCount(filters: Filters): number {
+  let count = 0;
+  if (filters.from) count += 1;
+  if (filters.to) count += 1;
+  if (filters.field !== 'all') count += 1;
+  if (filters.dateFrom) count += 1;
+  if (filters.dateTo) count += 1;
+  if (filters.withAttachments) count += 1;
+  if (filters.unreadOnly) count += 1;
+  if (filters.flaggedOnly) count += 1;
+  if (filters.includeDeleted) count += 1;
+  if (filters.minSizeKb) count += 1;
+  if (filters.maxSizeKb) count += 1;
+  count += filters.folders.length;
+  return count;
+}
+
+/** Kilobytes from an input field into bytes, ignoring anything unusable. */
+function sizeToBytes(value: string): number | undefined {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed * 1024 : undefined;
+}
 
 /** Renders the FTS snippet, which contains <mark> around the matched words. */
 function Snippet({ html }: { html: string }): ReactNode {
@@ -85,9 +126,17 @@ export function Search(): ReactNode {
           account: filters.accountId || undefined,
           folders: filters.folders,
           from: filters.from || undefined,
+          to: filters.to || undefined,
+          field: filters.field,
+          sort: filters.sort,
           dateFrom: filters.dateFrom || undefined,
           dateTo: filters.dateTo || undefined,
           withAttachments: filters.withAttachments,
+          unreadOnly: filters.unreadOnly,
+          flaggedOnly: filters.flaggedOnly,
+          includeDeleted: filters.includeDeleted,
+          minSize: sizeToBytes(filters.minSizeKb),
+          maxSize: sizeToBytes(filters.maxSizeKb),
           limit: PAGE_SIZE,
           offset: nextOffset,
         });
@@ -116,6 +165,8 @@ export function Search(): ReactNode {
   const runningIndex = Object.values(indexProgress).find(
     (progress) => !['done', 'failed', 'cancelled'].includes(progress.phase),
   );
+
+  const filterCount = activeFilterCount(filters);
 
   const folderOptions = accounts
     .filter((entry) => !filters.accountId || entry.account.id === filters.accountId)
@@ -168,6 +219,14 @@ export function Search(): ReactNode {
           <Button onClick={() => setShowFilters((value) => !value)}>
             <SlidersHorizontal size={15} />
             {t('search.filters')}
+            {filterCount > 0 && (
+              <span
+                className="rounded-full px-1.5 text-[10px] font-semibold"
+                style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+              >
+                {filterCount}
+              </span>
+            )}
           </Button>
 
           <Button
@@ -178,9 +237,15 @@ export function Search(): ReactNode {
                 account: filters.accountId || undefined,
                 folders: filters.folders,
                 from: filters.from || undefined,
+                to: filters.to || undefined,
+                field: filters.field,
                 dateFrom: filters.dateFrom || undefined,
                 dateTo: filters.dateTo || undefined,
                 withAttachments: filters.withAttachments,
+                unreadOnly: filters.unreadOnly,
+                flaggedOnly: filters.flaggedOnly,
+                minSize: sizeToBytes(filters.minSizeKb),
+                maxSize: sizeToBytes(filters.maxSizeKb),
                 total: result?.total ?? 0,
               })
             }
@@ -196,6 +261,25 @@ export function Search(): ReactNode {
               <Field label={t('search.from')}>
                 <Input value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} />
               </Field>
+              <Field label={t('search.to')}>
+                <Input value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} />
+              </Field>
+              <Field label={t('search.field')}>
+                <Select
+                  value={filters.field}
+                  onChange={(event) => setFilters({ ...filters, field: event.target.value as SearchField })}
+                >
+                  <option value="all">{t('search.fieldAll')}</option>
+                  <option value="subject">{t('search.fieldSubject')}</option>
+                  <option value="from">{t('search.fieldFrom')}</option>
+                  <option value="to">{t('search.fieldTo')}</option>
+                  <option value="body">{t('search.fieldBody')}</option>
+                  <option value="attachments">{t('search.fieldAttachments')}</option>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Field label={t('search.dateFrom')}>
                 <Input
                   type="date"
@@ -210,13 +294,63 @@ export function Search(): ReactNode {
                   onChange={(event) => setFilters({ ...filters, dateTo: event.target.value })}
                 />
               </Field>
+              <Field label={t('search.sort')}>
+                <Select
+                  value={filters.sort}
+                  onChange={(event) => setFilters({ ...filters, sort: event.target.value as SearchSort })}
+                >
+                  <option value="relevance">{t('search.sortRelevance')}</option>
+                  <option value="date-desc">{t('search.sortDateDesc')}</option>
+                  <option value="date-asc">{t('search.sortDateAsc')}</option>
+                  <option value="size-desc">{t('search.sortSizeDesc')}</option>
+                  <option value="size-asc">{t('search.sortSizeAsc')}</option>
+                </Select>
+              </Field>
             </div>
 
-            <Toggle
-              checked={filters.withAttachments}
-              onChange={(withAttachments) => setFilters({ ...filters, withAttachments })}
-              label={t('search.withAttachments')}
-            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label={t('search.minSize')}>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={filters.minSizeKb}
+                  onChange={(event) => setFilters({ ...filters, minSizeKb: event.target.value })}
+                />
+              </Field>
+              <Field label={t('search.maxSize')}>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={filters.maxSizeKb}
+                  onChange={(event) => setFilters({ ...filters, maxSizeKb: event.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Toggle
+                checked={filters.withAttachments}
+                onChange={(withAttachments) => setFilters({ ...filters, withAttachments })}
+                label={t('search.withAttachments')}
+              />
+              <Toggle
+                checked={filters.unreadOnly}
+                onChange={(unreadOnly) => setFilters({ ...filters, unreadOnly })}
+                label={t('search.unreadOnly')}
+              />
+              <Toggle
+                checked={filters.flaggedOnly}
+                onChange={(flaggedOnly) => setFilters({ ...filters, flaggedOnly })}
+                label={t('search.flaggedOnly')}
+              />
+              <Toggle
+                checked={filters.includeDeleted}
+                onChange={(includeDeleted) => setFilters({ ...filters, includeDeleted })}
+                label={t('search.includeDeleted')}
+              />
+            </div>
 
             {folderOptions.length > 0 && (
               <div className="flex flex-wrap gap-1.5">

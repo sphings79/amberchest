@@ -405,7 +405,7 @@ Wenn Mail Archiver eines Tages dein Postfach rettet, helfen zwei Dinge sehr:
 ⭐ **[Dem Repository einen Stern geben](https://github.com/sphings79/mail-archiver)** —
 die billigste Art, anderen beim Finden zu helfen.
 
-☕ **[Einen Kaffee spendieren](https://github.com/sponsors/sphings79)** —
+☕ **[Einen Kaffee spendieren](https://buymeacoffee.com/sphings)** —
 entwickelt wird an Abenden und Wochenenden.
 
 Fehlermeldungen und Wünsche gern in den

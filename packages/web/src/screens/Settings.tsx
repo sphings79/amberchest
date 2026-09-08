@@ -7,15 +7,15 @@ import {
   DownloadCloud,
   ExternalLink,
   Lock,
+  LockOpen,
   RotateCcw,
   ShieldAlert,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
-import { Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
+import { Button, Card, Field, Input, ProgressBar, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
-import { McpSettings } from './McpSettings.js';
 import { UpdateCard } from './UpdateCard.js';
 import { useApp } from '../state.js';
 
@@ -30,7 +30,7 @@ const ACCENT_SWATCH: Record<string, string> = {
 
 export function Settings(): ReactNode {
   const { t } = useTranslation();
-  const { server, accounts, indexProgress, applySettings } = useApp();
+  const { server, accounts, indexProgress, migrationProgress, applySettings } = useApp();
   const [values, setValues] = useState<AppSettings>(
     server?.settings ?? {
       archivePath: '',
@@ -55,6 +55,9 @@ export function Settings(): ReactNode {
     },
   );
   const [saved, setSaved] = useState(false);
+  const migrationRunning = migrationProgress
+    ? !['done', 'failed', 'cancelled'].includes(migrationProgress.phase)
+    : false;
   const [error, setError] = useState<string | null>(null);
 
   /** Appearance changes apply immediately; the path needs an explicit save. */
@@ -236,24 +239,85 @@ export function Settings(): ReactNode {
         />
 
         {values.encryptArchive && (
-          <>
-            <div
-              className="flex items-start gap-2 rounded-xl px-3 py-2 text-xs"
-              style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}
-            >
-              <ShieldAlert size={14} className="mt-0.5 shrink-0" />
-              {t('settings.encryptWarning')}
-            </div>
-            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
-              {t('settings.encryptMixed')}
-            </p>
-          </>
+          <div
+            className="flex items-start gap-2 rounded-xl px-3 py-2 text-xs"
+            style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}
+          >
+            <ShieldAlert size={14} className="mt-0.5 shrink-0" />
+            {t('settings.encryptWarning')}
+          </div>
         )}
+
+        <div className="flex flex-col gap-2 rounded-2xl border p-4" style={{ background: 'var(--surface-2)' }}>
+          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            {t('settings.migrateTitle')}
+          </span>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {t('settings.migrateHint')}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+            {t('settings.migrateSafe')}
+          </p>
+
+          {migrationProgress && (
+            <div className="flex flex-col gap-1.5 py-1">
+              <ProgressBar
+                value={
+                  migrationProgress.stats.filesTotal > 0
+                    ? migrationProgress.stats.filesDone / migrationProgress.stats.filesTotal
+                    : 0
+                }
+                indeterminate={migrationRunning && migrationProgress.stats.filesTotal === 0}
+              />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {migrationRunning
+                  ? t('settings.migrateRunning', {
+                      done: migrationProgress.stats.filesDone,
+                      total: migrationProgress.stats.filesTotal,
+                    })
+                  : t('settings.migrateDone', {
+                      changed: migrationProgress.stats.filesChanged,
+                      skipped: migrationProgress.stats.filesSkipped,
+                    })}
+              </span>
+              {migrationProgress.stats.filesFailed > 0 && (
+                <span className="text-xs" style={{ color: 'var(--danger)' }}>
+                  {t('settings.migrateFailedFiles', { count: migrationProgress.stats.filesFailed })}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {migrationRunning ? (
+              <Button onClick={() => void api.cancelMigration()}>{t('settings.migrateCancel')}</Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() => {
+                    if (!window.confirm(t('settings.migrateConfirmEncrypt'))) return;
+                    void api.startMigration('encrypt');
+                  }}
+                >
+                  <Lock size={14} />
+                  {t('settings.migrateEncrypt')}
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!window.confirm(t('settings.migrateConfirmDecrypt'))) return;
+                    void api.startMigration('decrypt');
+                  }}
+                >
+                  <LockOpen size={14} />
+                  {t('settings.migrateDecrypt')}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </Card>
 
       <UpdateCard />
-
-      <McpSettings settings={values.mcp} onChange={(mcp) => void update({ mcp }, true)} />
 
       <Card className="flex gap-3">
         <span

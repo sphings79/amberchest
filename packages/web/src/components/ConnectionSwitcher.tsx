@@ -1,4 +1,4 @@
-import { Check, Cloud, Laptop, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Cloud, Laptop, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, getConnection, useConnection } from '../api/client.js';
@@ -96,13 +96,22 @@ export function ConnectionSwitcher(): ReactNode {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs transition hover:bg-[var(--surface-2)]"
-        style={{ color: 'var(--text-muted)' }}
+        title={t('connections.buttonHint')}
+        className="flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition hover:bg-[var(--surface-2)]"
+        style={{ borderColor: 'var(--border)' }}
       >
-        {active.url ? <Cloud size={14} /> : <Laptop size={14} />}
-        <span className="hidden truncate md:inline">
-          {active.url ? active.name : t('connections.local')}
+        <span style={{ color: active.url ? 'var(--accent)' : 'var(--text-muted)' }}>
+          {active.url ? <Cloud size={15} /> : <Laptop size={15} />}
         </span>
+        <span className="hidden min-w-0 flex-1 flex-col md:flex">
+          <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>
+            {t('connections.label')}
+          </span>
+          <span className="truncate text-xs" style={{ color: 'var(--text)' }}>
+            {active.url ? active.name : t('connections.local')}
+          </span>
+        </span>
+        <ChevronsUpDown size={13} className="hidden md:block" style={{ color: 'var(--text-faint)' }} />
       </button>
 
       <Modal open={open} title={t('connections.title')} onClose={() => setOpen(false)}>

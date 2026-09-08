@@ -57,16 +57,40 @@ export function FolderPicker({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** True while the message counts are still being fetched. */
+  const [counting, setCounting] = useState(false);
 
-  const load = async (withCounts = true): Promise<void> => {
+  /**
+   * Loads in two steps.
+   *
+   * The plain folder list is one IMAP command and comes back quickly; the
+   * message counts need a STATUS per folder, which on a real mailbox takes a
+   * while. Showing the tree first and filling in the numbers afterwards beats
+   * staring at an empty dialog.
+   */
+  const load = async (): Promise<void> => {
     setTree(null);
     setError(null);
+    setCounting(false);
+
     try {
-      const nodes = await api.folders(accountId, withCounts);
+      const nodes = await api.folders(accountId, false);
       setTree(nodes);
       setSelected(new Set(flatten(nodes).filter((node) => node.selected).map((node) => node.path)));
     } catch (cause) {
       setError((cause as Error).message);
+      return;
+    }
+
+    setCounting(true);
+    try {
+      const withCounts = await api.folders(accountId, true);
+      // Keep whatever the user ticked while the counts were on their way.
+      setTree(withCounts);
+    } catch {
+      // The tree is already usable; missing counts are not worth an error.
+    } finally {
+      setCounting(false);
     }
   };
 
@@ -207,7 +231,7 @@ export function FolderPicker({
             {t('folders.selectNone')}
           </Button>
           <Button variant="ghost" onClick={() => void load()} aria-label={t('folders.reload')}>
-            <RefreshCw size={14} />
+            <RefreshCw size={14} className={counting ? 'animate-spin' : undefined} />
           </Button>
         </div>
 
@@ -218,8 +242,15 @@ export function FolderPicker({
         )}
 
         {!tree && !error && (
-          <div className="py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            {t('folders.loading')}
+          <div className="flex flex-col items-center gap-3 py-12" style={{ color: 'var(--text-muted)' }}>
+            <div
+              className="h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent"
+              style={{ color: 'var(--accent)' }}
+            />
+            <span className="text-sm">{t('folders.loading')}</span>
+            <span className="text-xs" style={{ color: 'var(--text-faint)' }}>
+              {t('folders.loadingHint')}
+            </span>
           </div>
         )}
 

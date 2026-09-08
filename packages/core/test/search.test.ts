@@ -201,6 +201,73 @@ describe('searchMessages', () => {
     expect(() => searchMessages(db, { query: 're: 50% -rabatt "', accountId })).not.toThrow();
   });
 
+  it('restricts a text query to one field', () => {
+    const { db, accountId } = seed();
+    expect(searchMessages(db, { query: 'rechnung', accountId, field: 'subject' }).total).toBe(1);
+    // "zahlbar" only exists in the attachment text, so the subject search misses it.
+    expect(searchMessages(db, { query: 'zahlbar', accountId, field: 'attachments' }).total).toBe(1);
+    expect(searchMessages(db, { query: 'zahlbar', accountId, field: 'subject' }).total).toBe(0);
+    expect(searchMessages(db, { query: 'handwerk', accountId, field: 'from' }).total).toBe(1);
+  });
+
+  it('filters by recipient and size', () => {
+    const { db, accountId } = seed();
+    expect(searchMessages(db, { query: '', accountId, to: 'me@example.com' }).total).toBe(3);
+    expect(searchMessages(db, { query: '', accountId, to: 'nobody' }).total).toBe(0);
+    // Sizes are 100, 200 and 300 bytes.
+    expect(searchMessages(db, { query: '', accountId, minSize: 250 }).total).toBe(1);
+    expect(searchMessages(db, { query: '', accountId, maxSize: 150 }).total).toBe(1);
+    expect(searchMessages(db, { query: '', accountId, minSize: 150, maxSize: 250 }).total).toBe(1);
+  });
+
+  it('sorts by date and size', () => {
+    const { db, accountId } = seed();
+    expect(searchMessages(db, { query: '', accountId, sort: 'date-asc' }).hits[0]?.subject).toBe(
+      'Rechnung Januar',
+    );
+    expect(searchMessages(db, { query: '', accountId, sort: 'size-desc' }).hits[0]?.size).toBe(300);
+    expect(searchMessages(db, { query: '', accountId, sort: 'size-asc' }).hits[0]?.size).toBe(100);
+  });
+
+  it('filters by read state and flag', () => {
+    const { db, accountId } = seed();
+    // Everything the seed inserts carries \\Seen and nothing else.
+    expect(searchMessages(db, { query: '', accountId, unreadOnly: true }).total).toBe(0);
+    expect(searchMessages(db, { query: '', accountId, flaggedOnly: true }).total).toBe(0);
+
+    const folder = db.upsertFolder(
+      accountId,
+      {
+        path: 'INBOX',
+        name: 'INBOX',
+        delimiter: '/',
+        specialUse: '\\Inbox',
+        noSelect: false,
+        messageCount: null,
+        sizeBytes: null,
+      },
+      'INBOX',
+    );
+    db.insertMessage({
+      accountId,
+      folderId: folder.id,
+      uid: 9,
+      uidvalidity: 1,
+      messageId: '<9@x>',
+      fingerprint: 'fp-9',
+      internalDate: '2024-07-01T10:00:00.000Z',
+      size: 900,
+      subject: 'Ungelesen und markiert',
+      fromAddr: 'neu@example.com',
+      toAddr: 'me@example.com',
+      flags: ['\\Flagged'],
+      fileName: '9.eml',
+    });
+
+    expect(searchMessages(db, { query: '', accountId, unreadOnly: true }).total).toBe(1);
+    expect(searchMessages(db, { query: '', accountId, flaggedOnly: true }).total).toBe(1);
+  });
+
   it('returns a highlighted snippet', () => {
     const { db, accountId } = seed();
     const hit = searchMessages(db, { query: 'euro', accountId }).hits[0];

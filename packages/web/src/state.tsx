@@ -4,6 +4,7 @@ import type {
   ExportProgress,
   IndexProgress,
   LogEntry,
+  MigrationProgress,
   SyncProgress,
 } from '@mail-archiver/core';
 import {
@@ -28,6 +29,7 @@ interface AppState {
   /** Keyed by bundle id; export jobs are not tied to one account. */
   bundleProgress: Record<string, BundleProgress>;
   restoreProgress: RestoreProgress | null;
+  migrationProgress: MigrationProgress | null;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -61,6 +63,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [indexProgress, setIndexProgress] = useState<Record<string, IndexProgress>>({});
   const [bundleProgress, setBundleProgress] = useState<Record<string, BundleProgress>>({});
   const [restoreProgress, setRestoreProgress] = useState<RestoreProgress | null>(null);
+  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +150,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setBundleProgress((current) => ({ ...current, [value.bundleId]: value }));
         } else if (message.type === 'restore-progress') {
           setRestoreProgress(message.payload as RestoreProgress);
+        } else if (message.type === 'migration-progress') {
+          setMigrationProgress(message.payload as MigrationProgress);
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -175,6 +180,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       indexProgress,
       bundleProgress,
       restoreProgress,
+      migrationProgress,
       logs,
       loading,
       error,
@@ -190,6 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       indexProgress,
       bundleProgress,
       restoreProgress,
+      migrationProgress,
       logs,
       loading,
       error,

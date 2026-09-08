@@ -1,4 +1,4 @@
-import type { BundleFormat } from '@mail-archiver/core';
+import type { BundleFormat, SearchField } from '@mail-archiver/core';
 import { Download, FileArchive, FileText, Files } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,9 +15,15 @@ export interface ExportSelection {
   account?: string | undefined;
   folders: string[];
   from?: string | undefined;
+  to?: string | undefined;
+  field?: SearchField | undefined;
   dateFrom?: string | undefined;
   dateTo?: string | undefined;
   withAttachments: boolean;
+  unreadOnly?: boolean | undefined;
+  flaggedOnly?: boolean | undefined;
+  minSize?: number | undefined;
+  maxSize?: number | undefined;
   /** Number of messages the current filters match, for the hint. */
   total: number;
 }
@@ -57,9 +63,15 @@ export function ExportDialog({
         account: selection.account,
         folders: selection.folders,
         from: selection.from,
+        to: selection.to,
+        field: selection.field,
         dateFrom: selection.dateFrom,
         dateTo: selection.dateTo,
         withAttachments: selection.withAttachments,
+        unreadOnly: selection.unreadOnly,
+        flaggedOnly: selection.flaggedOnly,
+        minSize: selection.minSize,
+        maxSize: selection.maxSize,
       });
       setBundleId(result.bundleId);
     } catch (cause) {
