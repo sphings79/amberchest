@@ -1,4 +1,4 @@
-import type { LogEntry, SyncProgress } from '@mail-archiver/core';
+import type { ExportProgress, LogEntry, SyncProgress } from '@mail-archiver/core';
 import {
   createContext,
   useCallback,
@@ -16,6 +16,7 @@ interface AppState {
   server: ServerState | null;
   accounts: AccountOverview[];
   progress: Record<string, SyncProgress>;
+  exportProgress: Record<string, ExportProgress>;
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
@@ -45,6 +46,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [server, setServer] = useState<ServerState | null>(null);
   const [accounts, setAccounts] = useState<AccountOverview[]>([]);
   const [progress, setProgress] = useState<Record<string, SyncProgress>>({});
+  const [exportProgress, setExportProgress] = useState<Record<string, ExportProgress>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +116,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
             void refreshAccounts();
           }
+        } else if (message.type === 'export-progress') {
+          const value = message.payload as ExportProgress;
+          setExportProgress((current) => ({ ...current, [value.accountId]: value }));
+          if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
+            void refreshAccounts();
+          }
         } else if (message.type === 'log') {
           setLogs((current) => [...current.slice(-499), message.payload as LogEntry]);
         }
@@ -138,6 +146,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       server,
       accounts,
       progress,
+      exportProgress,
       logs,
       loading,
       error,
@@ -145,7 +154,18 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       refreshAccounts,
       applySettings,
     }),
-    [server, accounts, progress, logs, loading, error, refreshState, refreshAccounts, applySettings],
+    [
+      server,
+      accounts,
+      progress,
+      exportProgress,
+      logs,
+      loading,
+      error,
+      refreshState,
+      refreshAccounts,
+      applySettings,
+    ],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

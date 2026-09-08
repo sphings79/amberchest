@@ -2,9 +2,11 @@ import {
   accountInputSchema,
   accountSettingsSchema,
   appSettingsSchema,
+  attachmentSettingsSchema,
   describeImapError,
   logger,
   WrongPasswordError,
+  type ExportProgress,
   type LogEntry,
   type MailArchiverApp,
   type SyncProgress,
@@ -220,6 +222,59 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.db.listRuns(id, 25);
   });
 
+  // ------------------------------------------------------------ attachments
+
+  server.get('/api/accounts/:id/attachments', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const stats = app.db.countAttachments(id);
+      return {
+        settings: app.getAttachmentSettings(id),
+        files: stats.files,
+        bytes: stats.bytes,
+        running: app.exports.isRunning(id),
+        progress: app.exports.getProgress(id) ?? null,
+        runs: app.db.listExportRuns(id, 5),
+      };
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.patch('/api/accounts/:id/attachments', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = attachmentSettingsSchema.partial().safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid attachment settings');
+    try {
+      return await app.updateAttachmentSettings(id, body.data);
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.post('/api/accounts/:id/attachments/export', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (app.exports.isRunning(id)) return fail(reply, 409, 'An export is already running');
+    void app.startAttachmentExport(id).catch(() => undefined);
+    return { started: true };
+  });
+
+  server.post(
+    '/api/accounts/:id/attachments/export/cancel',
+    { preHandler: requireUnlocked },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      return { cancelled: app.cancelAttachmentExport(id) };
+    },
+  );
+
+  server.post('/api/accounts/:id/attachments/reset', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (app.exports.isRunning(id)) return fail(reply, 409, 'An export is already running');
+    app.resetAttachmentExport(id);
+    return { ok: true };
+  });
+
   server.get('/api/runs', { preHandler: requireUnlocked }, async (request) => {
     const query = request.query as { limit?: string };
     return app.db.listRecentRuns(Number(query.limit ?? 10));
@@ -243,15 +298,19 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     };
 
     for (const progress of app.sync.allProgress()) send('progress', progress);
+    for (const progress of app.exports.allProgress()) send('export-progress', progress);
 
     const onProgress = (progress: SyncProgress): void => send('progress', progress);
+    const onExportProgress = (progress: ExportProgress): void => send('export-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
 
     app.sync.on('progress', onProgress);
+    app.exports.on('progress', onExportProgress);
     logger.on('entry', onLog);
 
     socket.on('close', () => {
       app.sync.off('progress', onProgress);
+      app.exports.off('progress', onExportProgress);
       logger.off('entry', onLog);
     });
   });

@@ -9,9 +9,18 @@ import {
   type ConnectionTestResult,
   type ImapConnectionOptions,
 } from './imap/client.js';
+import { AttachmentExportManager } from './attachments/manager.js';
 import { buildFolderTree } from './sync/folders.js';
 import { SyncManager } from './sync/manager.js';
-import type { Account, AppSettings, FolderTreeNode, PublicAccount, SyncProgress } from './types.js';
+import type {
+  Account,
+  AppSettings,
+  AttachmentSettings,
+  ExportProgress,
+  FolderTreeNode,
+  PublicAccount,
+  SyncProgress,
+} from './types.js';
 import { logger } from './util/logger.js';
 
 export interface AccountOverview {
@@ -25,6 +34,12 @@ export interface AccountOverview {
   lastRun: Record<string, unknown> | null;
   running: boolean;
   progress: SyncProgress | null;
+  /** Files written by the attachment export, and their size. */
+  attachmentCount: number;
+  attachmentBytes: number;
+  exportRunning: boolean;
+  exportProgress: ExportProgress | null;
+  lastExportRun: Record<string, unknown> | null;
 }
 
 /**
@@ -37,11 +52,16 @@ export class MailArchiverApp {
   readonly config: ConfigStore;
   readonly db: ArchiveDatabase;
   readonly sync: SyncManager;
+  readonly exports: AttachmentExportManager;
 
   constructor(options: { configPath?: string; databasePath?: string } = {}) {
     this.config = new ConfigStore(options.configPath);
     this.db = new ArchiveDatabase(options.databasePath);
     this.sync = new SyncManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+    });
+    this.exports = new AttachmentExportManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
     });
@@ -84,6 +104,8 @@ export class MailArchiverApp {
   overview(): AccountOverview[] {
     return this.config.listAccounts().map((account) => {
       const runs = this.db.listRuns(account.id, 1);
+      const exportRuns = this.db.listExportRuns(account.id, 1);
+      const attachments = this.db.countAttachments(account.id);
       return {
         account: toPublicAccount(account),
         messageCount: this.db.countMessagesByAccount(account.id),
@@ -93,6 +115,11 @@ export class MailArchiverApp {
         lastRun: runs[0] ?? null,
         running: this.sync.isRunning(account.id),
         progress: this.sync.getProgress(account.id) ?? null,
+        attachmentCount: attachments.files,
+        attachmentBytes: attachments.bytes,
+        exportRunning: this.exports.isRunning(account.id),
+        exportProgress: this.exports.getProgress(account.id) ?? null,
+        lastExportRun: exportRuns[0] ?? null,
       };
     });
   }
@@ -132,6 +159,30 @@ export class MailArchiverApp {
   async setSelectedFolders(accountId: string, folders: string[]): Promise<void> {
     await this.config.setSelectedFolders(accountId, folders);
     this.db.setSelectedFolders(accountId, folders);
+  }
+
+  getAttachmentSettings(accountId: string): AttachmentSettings {
+    return { ...this.requireAccount(accountId).attachments };
+  }
+
+  updateAttachmentSettings(
+    accountId: string,
+    patch: Partial<AttachmentSettings>,
+  ): Promise<AttachmentSettings> {
+    return this.config.updateAttachmentSettings(accountId, patch);
+  }
+
+  startAttachmentExport(accountId: string): Promise<ExportProgress | undefined> {
+    return this.exports.start(this.requireAccount(accountId));
+  }
+
+  cancelAttachmentExport(accountId: string): boolean {
+    return this.exports.cancel(accountId);
+  }
+
+  /** Forgets which attachments were exported, so the next run redoes them. */
+  resetAttachmentExport(accountId: string): void {
+    this.db.clearAttachments(accountId);
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

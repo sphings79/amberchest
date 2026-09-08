@@ -31,9 +31,9 @@ read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
 `\Seen` flag.
 
-> **Status: stage 1 of 6.** Accounts, folder selection, incremental backup and
-> the desktop app work. Attachment export, viewer and search, restore and the
-> Docker container follow — see the [roadmap](#roadmap).
+> **Status: stage 2 of 6.** Accounts, folder selection, incremental backup, the
+> desktop app and the attachment export work. Viewer and search, restore and
+> the Docker container follow — see the [roadmap](#roadmap).
 
 ## Screenshots
 
@@ -95,6 +95,10 @@ to the Docker guide.</em>
   from the files alone
 - **Encrypted credentials.** One master password, scrypt + AES-256-GCM
 - **German and English**, light/dark/system theme, five accent colours
+- **Attachment export** as a separate pass over the archive: four layouts
+  (folder tree, flat, year/month, one directory per message), filters for
+  embedded images, minimum size and file type, de-duplication by content, and a
+  CSV/JSON manifest that maps every file back to its message
 - **Live progress** over a websocket, with a log you can actually read
 
 ## Install
@@ -221,7 +225,7 @@ machine can talk to the API.
 | Stage | Content | Status |
 | --- | --- | --- |
 | 1 | Foundation, accounts, folder selection, incremental backup, desktop app | ✅ done |
-| 2 | Attachment export with layouts, filters and de-duplication | planned |
+| 2 | Attachment export with layouts, filters and de-duplication | ✅ done |
 | 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP | planned |
 | 4 | Restore, and migration to a different server | planned |
 | 5 | Docker image, web login, cron schedule, remote mode | planned |
@@ -295,6 +299,7 @@ Account: `127.0.0.1:11143`, no encryption, `test@example.com` / `testpass`.
 ```bash
 node dev/test-sync.mjs        # full run, prints the resulting tree
 node dev/test-behaviour.mjs   # checks peek, incremental, move and delete
+node dev/test-attachments.mjs # checks layouts, filters, de-duplication, manifest
 ```
 
 ### Regenerating the artwork

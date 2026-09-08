@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { Account, AppConfig, AppSettings, PublicAccount } from '../types.js';
+import type { Account, AppConfig, AppSettings, AttachmentSettings, PublicAccount } from '../types.js';
 import {
   decryptJson,
   deriveKey,
@@ -17,6 +17,7 @@ import {
   appConfigSchema,
   defaultAccountSettings,
   defaultAppConfig,
+  defaultAttachmentSettings,
   type AccountInput,
 } from './schema.js';
 
@@ -130,6 +131,7 @@ export class ConfigStore {
       archivePath: parsed.archivePath,
       selectedFolders: [],
       settings: { ...defaultAccountSettings(), ...(parsed.settings ?? {}) },
+      attachments: defaultAttachmentSettings(),
       createdAt: now,
       updatedAt: now,
     };
@@ -159,6 +161,19 @@ export class ConfigStore {
 
     await this.persist();
     return { ...account };
+  }
+
+  async updateAttachmentSettings(
+    id: string,
+    patch: Partial<AttachmentSettings>,
+  ): Promise<AttachmentSettings> {
+    const config = this.require();
+    const account = config.accounts.find((candidate) => candidate.id === id);
+    if (!account) throw new Error(`Unknown account ${id}`);
+    account.attachments = { ...defaultAttachmentSettings(), ...account.attachments, ...patch };
+    account.updatedAt = new Date().toISOString();
+    await this.persist();
+    return { ...account.attachments };
   }
 
   async setSelectedFolders(id: string, folders: string[]): Promise<void> {

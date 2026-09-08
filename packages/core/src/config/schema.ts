@@ -13,6 +13,18 @@ export const accountSettingsSchema = z.object({
   autoSelectNewFolders: z.boolean().default(false),
 });
 
+export const attachmentSettingsSchema = z.object({
+  targetPath: z.string().nullable().default(null),
+  layout: z.enum(['folder-tree', 'flat', 'year-month', 'per-message']).default('folder-tree'),
+  includeInline: z.boolean().default(false),
+  minSizeBytes: z.number().int().min(0).max(1_000_000_000).default(0),
+  extensionMode: z.enum(['all', 'include', 'exclude']).default('all'),
+  extensions: z.array(z.string()).default([]),
+  deduplicate: z.boolean().default(true),
+  writeManifest: z.boolean().default(true),
+  folders: z.array(z.string()).default([]),
+});
+
 export const accountSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -26,6 +38,7 @@ export const accountSchema = z.object({
   archivePath: z.string().nullable().default(null),
   selectedFolders: z.array(z.string()).default([]),
   settings: accountSettingsSchema,
+  attachments: attachmentSettingsSchema.default(() => attachmentSettingsSchema.parse({})),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -62,6 +75,10 @@ export type AccountInput = z.infer<typeof accountInputSchema>;
 
 export function defaultAccountSettings() {
   return accountSettingsSchema.parse({});
+}
+
+export function defaultAttachmentSettings() {
+  return attachmentSettingsSchema.parse({});
 }
 
 export function defaultAppConfig() {

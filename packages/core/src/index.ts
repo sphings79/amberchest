@@ -6,11 +6,18 @@ export {
   accountInputSchema,
   accountSettingsSchema,
   appSettingsSchema,
+  attachmentSettingsSchema,
   defaultAccountSettings,
+  defaultAttachmentSettings,
   type AccountInput,
 } from './config/schema.js';
 export { configDir, configFilePath, databaseFilePath, defaultArchiveDir } from './config/locations.js';
-export { ArchiveDatabase, type FolderRow, type MessageRow } from './db/database.js';
+export {
+  ArchiveDatabase,
+  type AttachmentRow,
+  type FolderRow,
+  type MessageRow,
+} from './db/database.js';
 export {
   connectionOptionsFromAccount,
   describeImapError,
@@ -18,6 +25,9 @@ export {
   type ConnectionTestResult,
   type ImapConnectionOptions,
 } from './imap/client.js';
+export { AttachmentExportEngine, ExportCancelledError } from './attachments/engine.js';
+export { AttachmentExportManager } from './attachments/manager.js';
+export { extractAttachments, extensionOf, type ExtractedAttachment } from './attachments/extract.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';

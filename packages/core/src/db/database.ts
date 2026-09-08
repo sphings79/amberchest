@@ -41,6 +41,32 @@ export interface MessageRow {
   created_at: string;
 }
 
+export interface AttachmentRow {
+  id: number;
+  account_id: string;
+  message_id: number;
+  original_name: string;
+  content_type: string | null;
+  size: number;
+  sha256: string;
+  inline: number;
+  export_path: string;
+  deduplicated: number;
+  exported_at: string;
+}
+
+export interface NewAttachment {
+  accountId: string;
+  messageId: number;
+  originalName: string;
+  contentType: string | null;
+  size: number;
+  sha256: string;
+  inline: boolean;
+  exportPath: string;
+  deduplicated: boolean;
+}
+
 export interface NewMessage {
   accountId: string;
   folderId: number;
@@ -284,6 +310,106 @@ export class ArchiveDatabase {
       .all(accountId) as MessageRow[];
   }
 
+  // ------------------------------------------------------------ attachments
+
+  /** Every message of an account that is still present locally. */
+  listMessagesForExport(accountId: string, folderIds?: number[]): MessageRow[] {
+    if (folderIds && folderIds.length > 0) {
+      const placeholders = folderIds.map(() => '?').join(',');
+      return this.db
+        .prepare(
+          `SELECT * FROM messages
+            WHERE account_id = ? AND state = 'active' AND folder_id IN (${placeholders})
+            ORDER BY folder_id, uid`,
+        )
+        .all(accountId, ...folderIds) as MessageRow[];
+    }
+    return this.db
+      .prepare("SELECT * FROM messages WHERE account_id = ? AND state = 'active' ORDER BY folder_id, uid")
+      .all(accountId) as MessageRow[];
+  }
+
+  /** Attachments already exported for one message, keyed by name and hash. */
+  listAttachmentsForMessage(messageId: number): AttachmentRow[] {
+    return this.db
+      .prepare('SELECT * FROM attachments WHERE message_id = ?')
+      .all(messageId) as AttachmentRow[];
+  }
+
+  /** Looks up an identical file that was exported before (de-duplication). */
+  findAttachmentByHash(accountId: string, sha256: string): AttachmentRow | undefined {
+    return this.db
+      .prepare('SELECT * FROM attachments WHERE account_id = ? AND sha256 = ? LIMIT 1')
+      .get(accountId, sha256) as AttachmentRow | undefined;
+  }
+
+  insertAttachment(attachment: NewAttachment): number {
+    const result = this.db
+      .prepare(
+        `INSERT OR REPLACE INTO attachments (
+           account_id, message_id, original_name, content_type, size, sha256,
+           inline, export_path, deduplicated, exported_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        attachment.accountId,
+        attachment.messageId,
+        attachment.originalName,
+        attachment.contentType,
+        attachment.size,
+        attachment.sha256,
+        attachment.inline ? 1 : 0,
+        attachment.exportPath,
+        attachment.deduplicated ? 1 : 0,
+        new Date().toISOString(),
+      );
+    return Number(result.lastInsertRowid);
+  }
+
+  listAttachments(accountId: string): AttachmentRow[] {
+    return this.db
+      .prepare('SELECT * FROM attachments WHERE account_id = ? ORDER BY exported_at')
+      .all(accountId) as AttachmentRow[];
+  }
+
+  countAttachments(accountId: string): { files: number; bytes: number } {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS files, COALESCE(SUM(CASE WHEN deduplicated = 0 THEN size ELSE 0 END), 0) AS bytes
+           FROM attachments WHERE account_id = ?`,
+      )
+      .get(accountId) as { files: number; bytes: number };
+    return row;
+  }
+
+  /** Drops the export bookkeeping so the next run starts from scratch. */
+  clearAttachments(accountId: string): void {
+    this.db.prepare('DELETE FROM attachments WHERE account_id = ?').run(accountId);
+  }
+
+  startExportRun(runId: string, accountId: string): void {
+    this.db
+      .prepare("INSERT INTO export_runs (id, account_id, started_at, status) VALUES (?, ?, ?, 'running')")
+      .run(runId, accountId, new Date().toISOString());
+  }
+
+  finishExportRun(
+    runId: string,
+    status: 'done' | 'cancelled' | 'failed',
+    stats: unknown,
+    error?: string,
+  ): void {
+    this.db
+      .prepare('UPDATE export_runs SET finished_at = ?, status = ?, stats = ?, error = ? WHERE id = ?')
+      .run(new Date().toISOString(), status, JSON.stringify(stats), error ?? null, runId);
+  }
+
+  listExportRuns(accountId: string, limit = 10): Array<Record<string, unknown>> {
+    return this.db
+      .prepare('SELECT * FROM export_runs WHERE account_id = ? ORDER BY started_at DESC LIMIT ?')
+      .all(accountId, limit) as Array<Record<string, unknown>>;
+  }
+
   // -------------------------------------------------------------- sync runs
 
   startRun(runId: string, accountId: string): void {
@@ -314,6 +440,8 @@ export class ArchiveDatabase {
   /** Drops every trace of an account from the index. */
   deleteAccountData(accountId: string): void {
     this.transaction(() => {
+      this.db.prepare('DELETE FROM attachments WHERE account_id = ?').run(accountId);
+      this.db.prepare('DELETE FROM export_runs WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM messages WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM folders WHERE account_id = ?').run(accountId);
       this.db.prepare('DELETE FROM sync_runs WHERE account_id = ?').run(accountId);

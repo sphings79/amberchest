@@ -3,6 +3,7 @@ import {
   CalendarClock,
   FolderTree,
   Mail,
+  Paperclip,
   Pencil,
   Play,
   Plus,
@@ -16,6 +17,7 @@ import { api } from '../api/client.js';
 import { Badge, Button, Card, EmptyState, ProgressBar } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { AccountForm } from './AccountForm.js';
+import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
 
 function formatBytes(bytes: number): string {
@@ -95,12 +97,14 @@ function AccountCard({
   progress,
   onEdit,
   onFolders,
+  onAttachments,
   onChanged,
 }: {
   overview: AccountOverview;
   progress: SyncProgress | undefined;
   onEdit: () => void;
   onFolders: () => void;
+  onAttachments: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
@@ -152,6 +156,15 @@ function AccountCard({
           <Button onClick={onFolders}>
             <FolderTree size={15} />
             {t('dashboard.selectFolders')}
+          </Button>
+          <Button onClick={onAttachments} disabled={overview.messageCount === 0}>
+            <Paperclip size={15} />
+            {t('attachments.open')}
+            {overview.attachmentCount > 0 && (
+              <span className="tabular-nums" style={{ color: 'var(--text-faint)' }}>
+                {overview.attachmentCount}
+              </span>
+            )}
           </Button>
           {running ? (
             <Button onClick={() => void api.cancelSync(account.id)}>
@@ -212,6 +225,7 @@ export function Dashboard(): ReactNode {
   const { accounts, progress, refreshAccounts } = useApp();
   const [formFor, setFormFor] = useState<AccountOverview | null | undefined>(undefined);
   const [foldersFor, setFoldersFor] = useState<AccountOverview | null>(null);
+  const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -244,6 +258,7 @@ export function Dashboard(): ReactNode {
               progress={progress[overview.account.id]}
               onEdit={() => setFormFor(overview)}
               onFolders={() => setFoldersFor(overview)}
+              onAttachments={() => setAttachmentsFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
           ))}
@@ -256,6 +271,18 @@ export function Dashboard(): ReactNode {
           existing={formFor}
           onClose={() => setFormFor(undefined)}
           onSaved={() => void refreshAccounts()}
+        />
+      )}
+
+      {attachmentsFor && (
+        <AttachmentExport
+          accountId={attachmentsFor.account.id}
+          accountName={attachmentsFor.account.name}
+          selectedFolders={attachmentsFor.account.selectedFolders}
+          onClose={() => {
+            setAttachmentsFor(null);
+            void refreshAccounts();
+          }}
         />
       )}
 

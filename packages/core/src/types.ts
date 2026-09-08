@@ -31,6 +31,38 @@ export interface AccountSettings {
   autoSelectNewFolders: boolean;
 }
 
+/** Where exported attachments are laid out inside the target directory. */
+export type AttachmentLayout =
+  /** Mirrors the mail folder tree. */
+  | 'folder-tree'
+  /** Everything in one directory. */
+  | 'flat'
+  /** Sorted into <year>/<month> by message date. */
+  | 'year-month'
+  /** One directory per message, named after date and UID. */
+  | 'per-message';
+
+export type ExtensionFilterMode = 'all' | 'include' | 'exclude';
+
+export interface AttachmentSettings {
+  /** Absolute target directory; null puts them next to the account archive. */
+  targetPath: string | null;
+  layout: AttachmentLayout;
+  /** Export images and other parts embedded in the message body as well. */
+  includeInline: boolean;
+  /** Parts smaller than this are skipped; 0 disables the filter. */
+  minSizeBytes: number;
+  extensionMode: ExtensionFilterMode;
+  /** Extensions without the dot, lower case. */
+  extensions: string[];
+  /** Write identical files only once and point the manifest at the first copy. */
+  deduplicate: boolean;
+  /** Write attachments.csv and attachments.json into the target directory. */
+  writeManifest: boolean;
+  /** IMAP paths to export from; empty means every archived folder. */
+  folders: string[];
+}
+
 export interface Account {
   id: string;
   /** Display name shown in the UI. */
@@ -49,6 +81,7 @@ export interface Account {
   /** IMAP paths (server notation) selected for archiving. */
   selectedFolders: string[];
   settings: AccountSettings;
+  attachments: AttachmentSettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +168,30 @@ export interface SyncProgress {
   folderMessagesTotal: number;
   stats: SyncStats;
   startedAt: string;
+  error?: string;
+}
+
+export interface ExportStats {
+  messagesTotal: number;
+  messagesDone: number;
+  attachmentsFound: number;
+  attachmentsWritten: number;
+  attachmentsFiltered: number;
+  attachmentsDeduplicated: number;
+  attachmentsSkipped: number;
+  bytesWritten: number;
+}
+
+export type ExportPhase = 'scanning' | 'exporting' | 'manifest' | 'done' | 'cancelled' | 'failed';
+
+export interface ExportProgress {
+  runId: string;
+  accountId: string;
+  phase: ExportPhase;
+  currentFolder: string | null;
+  stats: ExportStats;
+  startedAt: string;
+  targetPath: string;
   error?: string;
 }
 

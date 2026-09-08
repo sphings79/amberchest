@@ -66,6 +66,43 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX idx_sync_runs_account ON sync_runs (account_id, started_at DESC);
   `,
+
+  // 2 - attachment export
+  `
+  CREATE TABLE attachments (
+    id            INTEGER PRIMARY KEY,
+    account_id    TEXT    NOT NULL,
+    message_id    INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    original_name TEXT    NOT NULL,
+    content_type  TEXT,
+    size          INTEGER NOT NULL DEFAULT 0,
+    sha256        TEXT    NOT NULL,
+    inline        INTEGER NOT NULL DEFAULT 0,
+    /* Path of the written file, relative to the export target directory. */
+    export_path   TEXT    NOT NULL,
+    /* Set when this attachment reused an identical file that already existed. */
+    deduplicated  INTEGER NOT NULL DEFAULT 0,
+    exported_at   TEXT    NOT NULL
+  );
+
+  CREATE INDEX idx_attachments_account ON attachments (account_id);
+  CREATE INDEX idx_attachments_message ON attachments (message_id);
+  CREATE INDEX idx_attachments_sha ON attachments (account_id, sha256);
+  CREATE UNIQUE INDEX idx_attachments_unique
+    ON attachments (account_id, message_id, original_name, sha256);
+
+  CREATE TABLE export_runs (
+    id          TEXT PRIMARY KEY,
+    account_id  TEXT NOT NULL,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT,
+    status      TEXT NOT NULL,
+    stats       TEXT NOT NULL DEFAULT '{}',
+    error       TEXT
+  );
+
+  CREATE INDEX idx_export_runs_account ON export_runs (account_id, started_at DESC);
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

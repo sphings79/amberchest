@@ -82,7 +82,19 @@ const MESSAGES = [
     body: 'Zweite Rechnung.',
     attachment: { name: 'rechnung.txt', type: 'text/plain', content: 'Betrag: 99,00 EUR' },
   },
-  { folder: 'Projekte/Angebote & Verträge', subject: 'Angebot für Kunde Müller', body: 'Anbei.' },
+  {
+    folder: 'Projekte/Angebote & Verträge',
+    subject: 'Angebot für Kunde Müller',
+    body: 'Anbei.',
+    attachment: { name: 'angebot.txt', type: 'text/plain', content: 'Angebot: 1.234,00 EUR' },
+  },
+  {
+    folder: 'Projekte',
+    subject: 'Weiterleitung des Angebots',
+    body: 'Zur Info.',
+    // Byte identical to the attachment above - exercises de-duplication.
+    attachment: { name: 'angebot.txt', type: 'text/plain', content: 'Angebot: 1.234,00 EUR' },
+  },
   { folder: 'Archiv/2024', subject: 'Altes Dokument', body: 'Aus dem Archiv.' },
   { folder: 'Sent', subject: 'Antwort auf Anfrage', body: 'Gesendete Nachricht.' },
   { folder: 'Drafts', subject: 'Entwurf', body: 'Noch nicht fertig.' },

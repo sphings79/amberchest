@@ -32,9 +32,9 @@ Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt 
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
 
-> **Stand: Etappe 1 von 6.** Konten, Ordnerauswahl, inkrementelle Sicherung und
-> die Desktop-App laufen. Anhang-Export, Viewer mit Suche, Rückspielen und der
-> Docker-Container folgen — siehe [Fahrplan](#fahrplan).
+> **Stand: Etappe 2 von 6.** Konten, Ordnerauswahl, inkrementelle Sicherung,
+> die Desktop-App und der Anhang-Export laufen. Viewer mit Suche, Rückspielen
+> und der Docker-Container folgen — siehe [Fahrplan](#fahrplan).
 
 ## Bildschirmfotos
 
@@ -99,6 +99,10 @@ zur Docker-Anleitung.</em>
   allein aus den Dateien wieder aufzubauen
 - **Verschlüsselte Zugangsdaten.** Ein Master-Passwort, scrypt + AES-256-GCM
 - **Deutsch und Englisch**, hell/dunkel/System, fünf Akzentfarben
+- **Anhang-Export** als eigener Durchlauf über das Archiv: vier Ablagen
+  (Ordnerbaum, flach, Jahr/Monat, ein Ordner pro Mail), Filter für eingebettete
+  Bilder, Mindestgröße und Dateityp, Doppelerkennung über den Inhalt und eine
+  CSV/JSON-Zuordnungsdatei, die jede Datei ihrer Mail zuordnet
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
 
 ## Installation
@@ -228,7 +232,7 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 | Etappe | Inhalt | Stand |
 | --- | --- | --- |
 | 1 | Fundament, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
-| 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | geplant |
+| 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
 | 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP | geplant |
 | 4 | Rückspielen und Umzug auf einen anderen Server | geplant |
 | 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | geplant |
@@ -306,6 +310,7 @@ Zugang: `127.0.0.1:11143`, keine Verschlüsselung, `test@example.com` /
 ```bash
 node dev/test-sync.mjs        # kompletter Lauf, gibt den entstandenen Baum aus
 node dev/test-behaviour.mjs   # prüft Peek, Inkrementell, Verschieben, Löschen
+node dev/test-attachments.mjs # prüft Ablagen, Filter, Doppelerkennung, Manifest
 ```
 
 ### Grafiken neu erzeugen

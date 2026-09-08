@@ -1,13 +1,33 @@
 import type {
   AccountOverview,
   AppSettings,
+  AttachmentSettings,
   ConnectionTestResult,
+  ExportProgress,
   FolderTreeNode,
   LogEntry,
   PublicAccount,
 } from '@mail-archiver/core';
 
-export type { AccountOverview, AppSettings, ConnectionTestResult, FolderTreeNode, LogEntry, PublicAccount };
+export type {
+  AccountOverview,
+  AppSettings,
+  AttachmentSettings,
+  ConnectionTestResult,
+  ExportProgress,
+  FolderTreeNode,
+  LogEntry,
+  PublicAccount,
+};
+
+export interface AttachmentState {
+  settings: AttachmentSettings;
+  files: number;
+  bytes: number;
+  running: boolean;
+  progress: ExportProgress | null;
+  runs: Array<Record<string, unknown>>;
+}
 
 export interface ServerState {
   initialized: boolean;
@@ -145,6 +165,19 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  attachments: (id: string) => request<AttachmentState>(`/accounts/${id}/attachments`),
+  updateAttachments: (id: string, patch: Partial<AttachmentSettings>) =>
+    request<AttachmentSettings>(`/accounts/${id}/attachments`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  startExport: (id: string) =>
+    request<{ started: boolean }>(`/accounts/${id}/attachments/export`, { method: 'POST' }),
+  cancelExport: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/attachments/export/cancel`, { method: 'POST' }),
+  resetExport: (id: string) =>
+    request<{ ok: true }>(`/accounts/${id}/attachments/reset`, { method: 'POST' }),
 
   recentRuns: (limit = 10) => request<Array<Record<string, unknown>>>(`/runs?limit=${limit}`),
 
