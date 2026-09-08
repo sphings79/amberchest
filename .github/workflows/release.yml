@@ -100,6 +100,9 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
+          # Only our own uploads: the build step for the container image adds a
+          # .dockerbuild artifact that this job cannot download.
+          pattern: mail-archiver-*
           path: artifacts
           merge-multiple: true
 

@@ -86,6 +86,7 @@ export class MailArchiverApp {
   readonly migration = new EncryptionMigrationManager();
   readonly mqtt: MqttBridge;
   private readonly pdfRenderer: PdfRenderer | undefined;
+  private schedule: { expression: string; nextRun: () => Date | null } | null = null;
 
   constructor(
     options: {
@@ -180,9 +181,18 @@ export class MailArchiverApp {
     return this.mqtt.status;
   }
 
-  /** Reports the next scheduled run over MQTT; only the container has one. */
-  setScheduleProvider(nextRun: () => Date | null): void {
+  /** The container hands in its schedule; the desktop app has none. */
+  setSchedule(expression: string, nextRun: () => Date | null): void {
+    this.schedule = { expression, nextRun };
     this.mqtt.setNextRunProvider(nextRun);
+  }
+
+  scheduleInfo(): { expression: string | null; nextRun: string | null } {
+    if (!this.schedule) return { expression: null, nextRun: null };
+    return {
+      expression: this.schedule.expression,
+      nextRun: this.schedule.nextRun()?.toISOString() ?? null,
+    };
   }
 
   listAccounts(): PublicAccount[] {

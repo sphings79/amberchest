@@ -213,6 +213,10 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.updateSettings(body.data);
   });
 
+  // --------------------------------------------------------------- schedule
+
+  server.get('/api/schedule', { preHandler: requireUnlocked }, async () => app.scheduleInfo());
+
   // ------------------------------------------------------------------- mqtt
 
   server.get('/api/mqtt', { preHandler: requireUnlocked }, async () => app.mqttStatus());
