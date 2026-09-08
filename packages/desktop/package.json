@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-or-later",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"require('node:fs').copyFileSync('src/preload.cjs','dist/preload.cjs')\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "npm run build && electron .",
     "dist": "electron-builder --mac --arm64"

@@ -13,7 +13,7 @@ schreibgeschützt, inkrementell, mit dem Ordnerbaum deines Postfachs.
 [![Mit TypeScript gebaut](https://img.shields.io/badge/gebaut%20mit-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Sterne](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [OAuth](#oauth-für-gmail-und-microsoft-365) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 </div>
 
@@ -274,6 +274,52 @@ Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
 **Über HTTP** (für den Container oder entfernte Clients): in den Einstellungen
 einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
 `Authorization: Bearer <token>` zeigen lassen.
+
+## OAuth für Gmail und Microsoft 365
+
+Google und Microsoft nehmen für IMAP kein Passwort mehr an. Mail Archiver meldet
+sich stattdessen mit einem Token an und erneuert es selbst — die nächtliche
+Sicherung läuft also weiter, ohne dass jemand am Rechner sitzt.
+
+Einen gemeinsamen Client gibt es nicht: Postfach-Zugriff ist mit die
+weitreichendste Berechtigung, die es gibt, und keiner der beiden Anbieter gibt
+sie einer nicht verifizierten Anwendung. Jeder legt deshalb einmal seinen
+eigenen Client an, unter **Einstellungen → OAuth-Zugänge**.
+
+### Microsoft 365 und Outlook.com
+
+1. Entra-Portal → **App-Registrierungen** → **Neue Registrierung**
+2. Unter **Authentifizierung** die Plattform **Mobile Geräte und
+   Desktopanwendungen** hinzufügen und öffentliche Clientflows erlauben
+3. Die **Anwendungs-ID (Client)** in die Einstellungen kopieren, Secret leer
+   lassen
+4. Im Konto **OAuth** wählen und auf **Code anfordern** klicken: Mail Archiver
+   zeigt einen kurzen Code, den du auf einem beliebigen Gerät eingibst
+
+Microsoft unterstützt den Device-Flow — es muss also nichts von außen
+erreichbar sein. Das ist der bequeme Weg für einen Container.
+
+### Gmail
+
+Googles Device-Flow ist ausschließlich für Anmeldung, Drive und YouTube
+freigegeben, Gmail muss deshalb einmal durch den Browser:
+
+1. Google Cloud Console → neues Projekt → **Gmail-API** aktivieren
+2. **Anmeldedaten** → **OAuth-Client-ID** → Anwendungstyp **Desktop**
+3. Client-ID und Secret in die Einstellungen kopieren
+4. Im Konto **OAuth** wählen und **Im Browser anmelden**
+
+Wo der Browser danach landet, hängt von der gewählten Rückleitung ab:
+
+| Rückleitung | Braucht | Wie es sich anfühlt |
+| --- | --- | --- |
+| Loopback, Desktop-App | nichts | vollautomatisch, die App fängt die Rückleitung selbst auf |
+| Loopback, Container | nichts | der Browser landet auf einer Seite, die nicht lädt — diese Adresse zurück in Mail Archiver kopieren |
+| Eigene Adresse | erreichbare HTTPS-Adresse, als **Web**-Client registriert | der Anbieter leitet direkt in die Oberfläche zurück |
+
+Solange das Google-Projekt im Testmodus ist, verfällt der Refresh-Token nach
+sieben Tagen und du musst neu verbinden. Das Veröffentlichen des Projekts —
+weiterhin als dein eigener, privater Client — hebt die Grenze auf.
 
 ## Home Assistant
 

@@ -39,14 +39,9 @@ export function toPublicAccount(account: Account): PublicAccount {
     oauth: oauth
       ? {
           provider: oauth.provider,
-          clientId: oauth.clientId,
           scope: oauth.scope,
           expiresAt: oauth.expiresAt,
           connected: oauth.refreshToken.length > 0,
-          authorizationEndpoint: oauth.authorizationEndpoint,
-          tokenEndpoint: oauth.tokenEndpoint,
-          deviceEndpoint: oauth.deviceEndpoint,
-          scopes: oauth.scopes,
         }
       : null,
   };

@@ -2,6 +2,7 @@ import type { AccountOverview } from '@mail-archiver/core';
 import { CheckCircle2, ChevronDown, PlugZap, XCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { OAuthConnect } from './OAuthConnect.js';
 import { api, type AccountFormValues, type AccountSettingsValues } from '../api/client.js';
 import { Button, Field, Input, Modal, Select, Toggle } from '../components/ui.js';
 
@@ -46,6 +47,7 @@ export function AccountForm({
     ...DEFAULT_SETTINGS,
     ...(account?.settings ?? {}),
   });
+  const [authType, setAuthType] = useState<'password' | 'oauth'>(account?.authType ?? 'password');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -89,7 +91,7 @@ export function AccountForm({
     setBusy(true);
     setError(null);
     try {
-      const payload: AccountFormValues = { ...values, settings };
+      const payload: AccountFormValues = { ...values, settings, authType };
       if (!payload.password) delete payload.password;
       if (account) await api.updateAccount(account.id, payload);
       else await api.createAccount(payload);
@@ -176,15 +178,39 @@ export function AccountForm({
           <Field label={t('account.username')}>
             <Input value={values.username} onChange={(event) => patch({ username: event.target.value })} />
           </Field>
-          <Field label={t('account.password')} hint={account ? t('account.passwordKeep') : undefined}>
-            <Input
-              type="password"
-              autoComplete="new-password"
-              value={values.password ?? ''}
-              onChange={(event) => patch({ password: event.target.value })}
-            />
-          </Field>
+          {authType === 'password' && (
+            <Field label={t('account.password')} hint={account ? t('account.passwordKeep') : undefined}>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                value={values.password ?? ''}
+                onChange={(event) => patch({ password: event.target.value })}
+              />
+            </Field>
+          )}
         </div>
+
+        <Field label={t('account.authType')} hint={t('account.authTypeHint')}>
+          <Select
+            value={authType}
+            onChange={(event) => setAuthType(event.target.value as 'password' | 'oauth')}
+          >
+            <option value="password">{t('account.authPassword')}</option>
+            <option value="oauth">{t('account.authOauth')}</option>
+          </Select>
+        </Field>
+
+        {authType === 'oauth' && (
+          <OAuthConnect
+            accountId={account?.id ?? null}
+            connected={Boolean(account?.oauth?.connected)}
+            onConnected={onSaved}
+            onProviderPicked={(provider) => {
+              // A fresh account gets the provider's server filled in.
+              if (!account && !values.host) patch({ host: provider.imapHost, port: provider.imapPort });
+            }}
+          />
+        )}
 
         <Toggle
           checked={values.rejectUnauthorized}

@@ -25,22 +25,45 @@ export const attachmentSettingsSchema = z.object({
   folders: z.array(z.string()).default([]),
 });
 
-/** What an account needs to speak OAuth instead of a password. */
+/** The tokens one mailbox holds; the client belongs to the instance. */
 export const oauthSchema = z.object({
   provider: z.enum(['google', 'microsoft', 'custom']).default('microsoft'),
-  /** Every user registers their own client; there is no shared one. */
-  clientId: z.string().default(''),
-  clientSecret: z.string().default(''),
   refreshToken: z.string().default(''),
   accessToken: z.string().default(''),
   /** Epoch milliseconds, zero when nothing was fetched yet. */
   expiresAt: z.number().int().default(0),
   scope: z.string().default(''),
+});
+
+/**
+ * One registered client per provider.
+ *
+ * Neither Google nor Microsoft hands a mailbox scope to an unverified client,
+ * so everyone registers their own. Three Gmail accounts share one client, which
+ * is why this sits in the settings and not on the account.
+ */
+export const oauthClientSchema = z.object({
+  clientId: z.string().default(''),
+  clientSecret: z.string().default(''),
   /** Only for the custom provider. */
   authorizationEndpoint: z.string().default(''),
   tokenEndpoint: z.string().default(''),
   deviceEndpoint: z.string().default(''),
   scopes: z.array(z.string()).default([]),
+  imapHost: z.string().default(''),
+});
+
+export const oauthSettingsSchema = z.object({
+  google: oauthClientSchema.default(() => oauthClientSchema.parse({})),
+  microsoft: oauthClientSchema.default(() => oauthClientSchema.parse({})),
+  custom: oauthClientSchema.default(() => oauthClientSchema.parse({})),
+  /**
+   * Where the browser is sent back to. Loopback works everywhere and needs a
+   * desktop client registration; a public URL needs a web client and a
+   * reachable address.
+   */
+  redirectMode: z.enum(['loopback', 'public']).default('loopback'),
+  publicRedirectUri: z.string().default(''),
 });
 
 export const accountSchema = z.object({
@@ -122,6 +145,7 @@ export const appSettingsSchema = z.object({
   search: searchSettingsSchema.default(() => searchSettingsSchema.parse({})),
   mcp: mcpSettingsSchema.default(() => mcpSettingsSchema.parse({})),
   mqtt: mqttSettingsSchema.default(() => mqttSettingsSchema.parse({})),
+  oauth: oauthSettingsSchema.default(() => oauthSettingsSchema.parse({})),
   encryptArchive: z.boolean().default(false),
 });
 
@@ -156,6 +180,10 @@ export function defaultAccountSettings() {
 
 export function defaultOAuth() {
   return oauthSchema.parse({});
+}
+
+export function defaultOAuthClient() {
+  return oauthClientSchema.parse({});
 }
 
 export function defaultAttachmentSettings() {

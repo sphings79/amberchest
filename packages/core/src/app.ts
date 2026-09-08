@@ -29,6 +29,7 @@ import { SearchIndexManager } from './search/manager.js';
 import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
 import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
+import { OAuthManager } from './oauth/manager.js';
 import { RestoreManager } from './restore/manager.js';
 import { EncryptionMigrationManager, type MigrationProgress } from './storage/migrate.js';
 import { ArchiveLayout } from './storage/archive.js';
@@ -85,6 +86,7 @@ export class MailArchiverApp {
   readonly restore = new RestoreManager();
   readonly migration = new EncryptionMigrationManager();
   readonly mqtt: MqttBridge;
+  readonly oauth: OAuthManager;
   private readonly pdfRenderer: PdfRenderer | undefined;
   private schedule: { expression: string; nextRun: () => Date | null } | null = null;
 
@@ -105,6 +107,7 @@ export class MailArchiverApp {
       // Only set when the user asked for an encrypted archive; reading works
       // either way, because each file says what it is.
       encryptionKey: () => (this.config.getSettings().encryptArchive ? this.config.archiveKey : null),
+      connectionFor: (account) => this.connectionFor(account),
     });
     this.exports = new AttachmentExportManager({
       db: this.db,
@@ -125,6 +128,7 @@ export class MailArchiverApp {
       // container renders PDFs.
       pdfRenderer: options.pdfRenderer ?? chromiumPdfRenderer,
     });
+    this.oauth = new OAuthManager(this.config);
     this.mqtt = new MqttBridge({
       settings: () => this.config.getSettings().mqtt,
       overview: () => this.overview(),
@@ -237,6 +241,18 @@ export class MailArchiverApp {
     this.db.deleteAccountData(id);
   }
 
+  /**
+   * Connection options for an account, with a fresh token when it needs one.
+   *
+   * Every path to the server goes through here, so a token that expired
+   * overnight is renewed before the nightly backup rather than failing it.
+   */
+  async connectionFor(account: Account): Promise<ImapConnectionOptions> {
+    const options = connectionOptionsFromAccount(account);
+    if (account.authType !== 'oauth') return options;
+    return { ...options, accessToken: await this.oauth.accessToken(account) };
+  }
+
   requireAccount(id: string): Account {
     const account = this.config.getAccount(id);
     if (!account) throw new Error(`Unknown account ${id}`);
@@ -250,7 +266,7 @@ export class MailArchiverApp {
   /** Connects, lists the folders and merges them with the local state. */
   async getFolderTree(accountId: string, withCounts = false): Promise<FolderTreeNode[]> {
     const account = this.requireAccount(accountId);
-    const remoteFolders = await withConnection(connectionOptionsFromAccount(account), (client) =>
+    const remoteFolders = await withConnection(await this.connectionFor(account), (client) =>
       listRemoteFolders(client, { withCounts }),
     );
     return buildFolderTree({ account, db: this.db, remoteFolders });

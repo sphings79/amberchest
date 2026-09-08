@@ -5,9 +5,49 @@ import { fileURLToPath } from 'node:url';
 import { MailArchiverApp, logger } from '@mail-archiver/core';
 import { AuthGuard, startServer, type RunningServer } from '@mail-archiver/server';
 import { tmpdir } from 'node:os';
-import { BrowserWindow, Menu, app, dialog, shell } from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, shell } from 'electron';
+import { createServer } from 'node:http';
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Catches an OAuth redirect on a loopback address.
+ *
+ * Google has no device flow for mailboxes, so the sign-in has to happen in a
+ * browser. On the desktop the redirect can be caught here, which spares the
+ * user copying an address back by hand.
+ */
+async function catchLoopbackRedirect(url: string, port: number): Promise<string> {
+  if (!/^https:\/\//i.test(url)) throw new Error('The sign-in address has to be https');
+  if (!Number.isInteger(port) || port < 1024 || port > 65_535) throw new Error('Bad port');
+
+  return new Promise<string>((resolve, reject) => {
+    const server = createServer((request, response) => {
+      const landed = `http://127.0.0.1:${port}${request.url ?? '/'}`;
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end(
+        '<!doctype html><meta charset="utf-8"><title>Mail Archiver</title>' +
+          '<style>body{font-family:system-ui,sans-serif;background:#0d0f14;color:#e8eaf0;' +
+          'display:grid;place-items:center;height:100vh;margin:0}</style>' +
+          '<p>You can close this tab and go back to Mail Archiver.</p>',
+      );
+      server.close();
+      resolve(landed);
+    });
+
+    // Ten minutes is longer than any provider keeps a code alive.
+    const timer = setTimeout(() => {
+      server.close();
+      reject(new Error('Nobody came back from the sign-in page'));
+    }, 600_000);
+    server.on('close', () => clearTimeout(timer));
+    server.on('error', (error) => reject(error));
+
+    server.listen(port, '127.0.0.1', () => {
+      void shell.openExternal(url);
+    });
+  });
+}
 
 let mainWindow: BrowserWindow | null = null;
 let running: RunningServer | null = null;
@@ -40,11 +80,22 @@ async function createWindow(url: string): Promise<void> {
     show: false,
     webPreferences: {
       // The UI talks to the local HTTP server only; it needs no Node access.
+      // The preload adds one thing a browser cannot do: catch an OAuth
+      // redirect on a loopback address.
+      preload: join(here, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
   });
+
+  ipcMain.removeHandler('oauth:loopback');
+  ipcMain.handle('oauth:loopback', (_event, url: string, port: number) =>
+    catchLoopbackRedirect(url, port),
+  );
+  ipcMain.removeHandler('oauth:port');
+  // The ephemeral range, so it does not collide with a real service.
+  ipcMain.handle('oauth:port', () => 49_152 + Math.floor(Math.random() * 10_000));
 
   mainWindow.once('ready-to-show', () => mainWindow?.show());
 

@@ -65,31 +65,40 @@ export interface AttachmentSettings {
 
 export interface AccountOAuth {
   provider: 'google' | 'microsoft' | 'custom';
-  clientId: string;
-  clientSecret: string;
   refreshToken: string;
   accessToken: string;
   /** Epoch milliseconds. */
   expiresAt: number;
   scope: string;
+}
+
+/** One registered client per provider, shared by every mailbox that uses it. */
+export interface OAuthClient {
+  clientId: string;
+  clientSecret: string;
   authorizationEndpoint: string;
   tokenEndpoint: string;
   deviceEndpoint: string;
   scopes: string[];
+  imapHost: string;
+}
+
+export interface OAuthSettings {
+  google: OAuthClient;
+  microsoft: OAuthClient;
+  custom: OAuthClient;
+  /** Loopback works without a reachable address; public needs one. */
+  redirectMode: 'loopback' | 'public';
+  publicRedirectUri: string;
 }
 
 /** What the interface may see of an OAuth connection: no secrets. */
 export interface PublicAccountOAuth {
   provider: 'google' | 'microsoft' | 'custom';
-  clientId: string;
   scope: string;
   expiresAt: number;
   /** True once a refresh token is stored, so backups can run unattended. */
   connected: boolean;
-  authorizationEndpoint: string;
-  tokenEndpoint: string;
-  deviceEndpoint: string;
-  scopes: string[];
 }
 
 export interface Account {
@@ -183,6 +192,7 @@ export interface AppSettings {
   search: SearchSettings;
   mcp: McpSettings;
   mqtt: MqttSettings;
+  oauth: OAuthSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can
    * no longer be opened by a mail client directly.

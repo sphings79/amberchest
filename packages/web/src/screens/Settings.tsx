@@ -16,8 +16,19 @@ import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
 import { Button, Card, Field, Input, ProgressBar, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
+import { OAuthSettings } from './OAuthSettings.js';
 import { UpdateCard } from './UpdateCard.js';
 import { useApp } from '../state.js';
+
+const EMPTY_OAUTH_CLIENT = {
+  clientId: '',
+  clientSecret: '',
+  authorizationEndpoint: '',
+  tokenEndpoint: '',
+  deviceEndpoint: '',
+  scopes: [],
+  imapHost: '',
+};
 
 const ACCENTS = ['violet', 'blue', 'emerald', 'amber', 'rose'] as const;
 const ACCENT_SWATCH: Record<string, string> = {
@@ -65,6 +76,13 @@ export function Settings(): ReactNode {
         allowCommands: true,
         publishIntervalSeconds: 60,
         rejectUnauthorized: true,
+      },
+      oauth: {
+        google: EMPTY_OAUTH_CLIENT,
+        microsoft: EMPTY_OAUTH_CLIENT,
+        custom: EMPTY_OAUTH_CLIENT,
+        redirectMode: 'loopback',
+        publicRedirectUri: '',
       },
     },
   );
@@ -330,6 +348,12 @@ export function Settings(): ReactNode {
           </div>
         </div>
       </Card>
+
+      <OAuthSettings
+        settings={values.oauth}
+        callbackUrl={`${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/api/oauth/callback`}
+        onChange={(oauth) => void update({ oauth }, true)}
+      />
 
       <UpdateCard />
 

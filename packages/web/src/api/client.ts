@@ -9,6 +9,7 @@ import type {
   LogEntry,
   MessageContent,
   MigrationProgress,
+  DeviceCode,
   MqttStatus,
   PublicAccount,
   SearchResult,
@@ -25,6 +26,7 @@ export type {
   LogEntry,
   MessageContent,
   MigrationProgress,
+  DeviceCode,
   MqttStatus,
   PublicAccount,
   SearchResult,
@@ -83,6 +85,7 @@ export interface ServerState {
 }
 
 export interface AccountFormValues {
+  authType?: 'password' | 'oauth';
   name: string;
   email: string;
   host: string;
@@ -257,6 +260,42 @@ export const api = {
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
+
+  oauthProviders: () =>
+    request<{
+      redirectMode: 'loopback' | 'public';
+      publicRedirectUri: string;
+      callbackPath: string;
+      providers: Array<{
+        id: 'google' | 'microsoft' | 'custom';
+        name: string;
+        deviceFlow: boolean;
+        scopes: string[];
+        imapHost: string;
+        imapPort: number;
+        configured: boolean;
+        clientSecretUsed: boolean;
+      }>;
+    }>('/oauth/providers'),
+  oauthStartDevice: (accountId: string, provider: string) =>
+    request<DeviceCode>(`/accounts/${accountId}/oauth/device`, {
+      method: 'POST',
+      body: JSON.stringify({ provider }),
+    }),
+  oauthDeviceStatus: (accountId: string) =>
+    request<{ code: DeviceCode | null; connected: boolean; error: string | null }>(
+      `/accounts/${accountId}/oauth/device`,
+    ),
+  oauthAuthorize: (accountId: string, body: { provider: string; mode?: string; loopbackPort?: number }) =>
+    request<{ url: string; state: string; redirectUri: string }>(
+      `/accounts/${accountId}/oauth/authorize`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  oauthComplete: (input: string, state?: string) =>
+    request<{ accountId: string }>('/oauth/complete', {
+      method: 'POST',
+      body: JSON.stringify({ input, ...(state ? { state } : {}) }),
+    }),
 
   mqttStatus: () => request<MqttStatus>('/mqtt'),
   mqttReconnect: () => request<MqttStatus>('/mqtt/reconnect', { method: 'POST' }),

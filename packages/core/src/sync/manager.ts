@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import type { ArchiveDatabase } from '../db/database.js';
+import type { ImapConnectionOptions } from '../imap/client.js';
 import type { Account, SyncProgress } from '../types.js';
 import { SyncEngine } from './engine.js';
 
@@ -9,6 +10,8 @@ export interface SyncManagerOptions {
   archiveBaseDir: () => string;
   /** Resolves the archive key at the time a run starts. */
   encryptionKey?: () => Buffer | null;
+  /** Builds the connection, refreshing an OAuth token when it is due. */
+  connectionFor?: (account: Account) => Promise<ImapConnectionOptions>;
 }
 
 /**
@@ -52,6 +55,7 @@ export class SyncManager extends EventEmitter {
       db: this.options.db,
       archiveBaseDir: this.options.archiveBaseDir(),
       encryptionKey: this.options.encryptionKey?.() ?? null,
+      connection: await this.options.connectionFor?.(account),
     });
 
     engine.on('progress', (progress: SyncProgress) => {

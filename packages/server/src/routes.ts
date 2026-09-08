@@ -11,6 +11,7 @@ import {
   type LogEntry,
   type MailArchiverApp,
   type SyncProgress,
+  type ImapConnectionOptions,
 } from '@mail-archiver/core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { WebSocket } from 'ws';
@@ -124,6 +125,8 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   /** Every /api route except the public ones needs a valid token. */
   const PUBLIC_PATHS = new Set([
     '/api/health',
+    // Carries an unguessable state instead of a token; see the route.
+    '/api/oauth/callback',
     '/api/state',
     '/api/login',
     '/api/setup',
@@ -213,6 +216,117 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return app.updateSettings(body.data);
   });
 
+  // ------------------------------------------------------------------ oauth
+
+  const oauthProviderSchema = z.enum(['google', 'microsoft', 'custom']);
+
+  server.get('/api/oauth/providers', { preHandler: requireUnlocked }, async () => {
+    const settings = app.getSettings().oauth;
+    return {
+      redirectMode: settings.redirectMode,
+      publicRedirectUri: settings.publicRedirectUri,
+      // The callback route of this instance, so the settings screen can show
+      // what has to be registered with the provider.
+      callbackPath: '/api/oauth/callback',
+      providers: (['google', 'microsoft', 'custom'] as const).map((id) => {
+        const provider = app.oauth.provider(id);
+        return {
+          id,
+          name: provider.name,
+          deviceFlow: Boolean(provider.deviceEndpoint),
+          scopes: provider.scopes,
+          imapHost: provider.imapHost,
+          imapPort: provider.imapPort,
+          configured: settings[id].clientId.length > 0,
+          clientSecretUsed: provider.clientSecretUsed,
+        };
+      }),
+    };
+  });
+
+  server.post('/api/accounts/:id/oauth/device', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z.object({ provider: oauthProviderSchema }).safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid provider');
+
+    try {
+      return await app.oauth.startDevice(id, body.data.provider);
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  server.get('/api/accounts/:id/oauth/device', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return app.oauth.pollDevice(id);
+  });
+
+  server.post('/api/accounts/:id/oauth/authorize', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z
+      .object({
+        provider: oauthProviderSchema,
+        mode: z.enum(['loopback', 'public']).optional(),
+        loopbackPort: z.number().int().min(1).max(65_535).optional(),
+      })
+      .safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    try {
+      return app.oauth.startAuthorization(id, body.data.provider, {
+        ...(body.data.mode ? { mode: body.data.mode } : {}),
+        ...(body.data.loopbackPort ? { loopbackPort: body.data.loopbackPort } : {}),
+      });
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  /** Takes the code, or the whole address the browser ended up on. */
+  server.post('/api/oauth/complete', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = z.object({ input: z.string().min(1), state: z.string().optional() }).safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Nothing to read a code from');
+
+    try {
+      const accountId = await app.oauth.completeAuthorization(
+        body.data.input,
+        body.data.state,
+      );
+      return { accountId };
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  /**
+   * Where the provider sends the browser back to, for the public redirect.
+   *
+   * No bearer token can travel through a redirect, so this route is open - the
+   * unguessable state is what protects it, and an unknown one is refused.
+   */
+  server.get('/api/oauth/callback', async (request, reply) => {
+    const query = request.query as { code?: string; state?: string; error?: string };
+    const done = (title: string, message: string): void => {
+      void reply.type('text/html').send(
+        `<!doctype html><meta charset="utf-8"><title>${title}</title>` +
+          '<style>body{font-family:system-ui,sans-serif;background:#0d0f14;color:#e8eaf0;' +
+          'display:grid;place-items:center;height:100vh;margin:0}div{max-width:32rem;text-align:center}' +
+          'h1{font-size:1.25rem}p{color:#9aa2b5}</style>' +
+          `<div><h1>${title}</h1><p>${message}</p></div>`,
+      );
+    };
+
+    if (query.error) return done('Not connected', `The provider answered: ${query.error}`);
+    if (!query.code || !query.state) return done('Not connected', 'The address carried no code.');
+
+    try {
+      await app.oauth.completeAuthorization(query.code, query.state);
+      return done('Connected', 'You can close this tab and go back to Mail Archiver.');
+    } catch (error) {
+      return done('Not connected', (error as Error).message);
+    }
+  });
+
   // --------------------------------------------------------------- schedule
 
   server.get('/api/schedule', { preHandler: requireUnlocked }, async () => app.scheduleInfo());
@@ -275,11 +389,20 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     if (!body.success) return fail(reply, 400, 'Incomplete connection details');
 
     let password = body.data.password;
-    if (!password && body.data.accountId) {
+    let accessToken: string | undefined;
+
+    if (body.data.accountId) {
       try {
-        password = app.requireAccount(body.data.accountId).password;
-      } catch {
-        return fail(reply, 404, 'Unknown account');
+        const account = app.requireAccount(body.data.accountId);
+        // An account that authenticates with a token has no password to fall
+        // back on, so the test needs a fresh one.
+        if (account.authType === 'oauth') {
+          accessToken = (await app.connectionFor(account)).accessToken;
+        } else if (!password) {
+          password = account.password;
+        }
+      } catch (error) {
+        return fail(reply, 400, (error as Error).message);
       }
     }
 
@@ -290,6 +413,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       rejectUnauthorized: body.data.rejectUnauthorized,
       username: body.data.username,
       password,
+      ...(accessToken ? { accessToken } : {}),
     });
   });
 
@@ -493,28 +617,35 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
   // ---------------------------------------------------------------- restore
 
-  /** Resolves the password for a restore target from the request or storage. */
-  const resolveTarget = (
+  /**
+   * Resolves the credentials for a restore target.
+   *
+   * "Use the stored account" also covers an account that authenticates with a
+   * token, which is why this goes through the application rather than reading
+   * the password out of the configuration.
+   */
+  const resolveTarget = async (
     target: z.infer<typeof restoreTargetSchema>,
-  ): {
-    host: string;
-    port: number;
-    security: 'tls' | 'starttls' | 'none';
-    rejectUnauthorized: boolean;
-    username: string;
-    password: string;
-  } => {
-    const password = target.password || (target.useAccountId
-      ? app.requireAccount(target.useAccountId).password
-      : '');
-    return {
+  ): Promise<ImapConnectionOptions> => {
+    const base = {
       host: target.host,
       port: target.port,
       security: target.security,
       rejectUnauthorized: target.rejectUnauthorized,
       username: target.username,
-      password,
     };
+
+    if (target.useAccountId) {
+      const account = app.requireAccount(target.useAccountId);
+      const connection = await app.connectionFor(account);
+      return {
+        ...base,
+        password: target.password || connection.password,
+        ...(connection.accessToken ? { accessToken: connection.accessToken } : {}),
+      };
+    }
+
+    return { ...base, password: target.password };
   };
 
   server.post('/api/restore/mappings', { preHandler: requireUnlocked }, async (request, reply) => {
@@ -524,7 +655,10 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     if (!body.success) return fail(reply, 400, 'Invalid request');
 
     try {
-      return await app.suggestRestoreMappings(body.data.accountId, resolveTarget(body.data.target));
+      return await app.suggestRestoreMappings(
+        body.data.accountId,
+        await resolveTarget(body.data.target),
+      );
     } catch (error) {
       return fail(reply, 502, describeImapError(error));
     }
@@ -538,7 +672,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     void app
       .startRestore({
         accountId: body.data.accountId,
-        target: resolveTarget(body.data.target),
+        target: await resolveTarget(body.data.target),
         mappings: body.data.mappings,
         selection: body.data.selection,
         skipExisting: body.data.skipExisting,

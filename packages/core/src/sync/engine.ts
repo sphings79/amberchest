@@ -5,6 +5,7 @@ import type { ImapFlow } from 'imapflow';
 import type { ArchiveDatabase, FolderRow, MessageRow } from '../db/database.js';
 import {
   connectionOptionsFromAccount,
+  type ImapConnectionOptions,
   describeImapError,
   fetchSources,
   listRemoteFolders,
@@ -65,6 +66,8 @@ export interface SyncEngineOptions {
   archiveBaseDir: string;
   /** When set, message files are written encrypted. */
   encryptionKey?: Buffer | null;
+  /** Prepared connection; an OAuth account arrives with a fresh token. */
+  connection?: ImapConnectionOptions | undefined;
 }
 
 /**
@@ -128,7 +131,8 @@ export class SyncEngine extends EventEmitter {
     this.emitProgress('connecting');
 
     try {
-      const stats = await withConnection(connectionOptionsFromAccount(this.account), async (client) => {
+      const connection = this.options.connection ?? connectionOptionsFromAccount(this.account);
+      const stats = await withConnection(connection, async (client) => {
         return this.execute(client);
       });
       this.db.finishRun(this.runId, 'done', stats);

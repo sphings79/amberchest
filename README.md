@@ -13,7 +13,7 @@ with a folder tree that mirrors your mailbox.
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 </div>
 
@@ -267,6 +267,51 @@ Passwords are never readable through MCP — they can only be set.
 **Over HTTP** (for the container or a remote client): switch it on in the
 settings, copy the generated token and point the client at `POST /mcp` with
 `Authorization: Bearer <token>`.
+
+## OAuth for Gmail and Microsoft 365
+
+Google and Microsoft no longer accept a password for IMAP. Mail Archiver can
+sign in with a token instead, and it refreshes that token by itself, so a
+nightly backup keeps running without anybody at the keyboard.
+
+There is no shared client: a mailbox scope is as sensitive as a permission
+gets, and neither provider hands one to an unverified application. Everyone
+registers their own client once, under **Settings → OAuth clients**.
+
+### Microsoft 365 and Outlook.com
+
+1. Entra portal → **App registrations** → **New registration**
+2. Under **Authentication**, add the platform **Mobile and desktop
+   applications** and allow public client flows
+3. Copy the **Application (client) ID** into the settings; leave the secret
+   empty
+4. In the account, pick **OAuth**, then **Get a code**: Mail Archiver shows a
+   short code that you type in on any device
+
+Microsoft supports the device flow, so nothing has to be reachable from
+outside — this is the comfortable path for a container.
+
+### Gmail
+
+Google's device flow is documented for sign-in, Drive and YouTube only, so
+Gmail has to go through a browser once:
+
+1. Google Cloud console → new project → enable the **Gmail API**
+2. **Credentials** → **OAuth client ID** → application type **Desktop**
+3. Copy the client ID and secret into the settings
+4. In the account, pick **OAuth** and **Sign in with a browser**
+
+Where the browser lands afterwards depends on the redirect you choose:
+
+| Redirect | Needs | How it feels |
+| --- | --- | --- |
+| Loopback, desktop app | nothing | fully automatic; the app catches the redirect |
+| Loopback, container | nothing | the browser lands on a page that does not load — copy that address back into Mail Archiver |
+| Public address | a reachable HTTPS address, registered as a **Web** client | the provider redirects straight back into the interface |
+
+While the project is in testing mode, Google expires the refresh token after
+seven days and you have to connect again. Publishing the project (still as
+your own private client) removes that limit.
 
 ## Home Assistant
 
