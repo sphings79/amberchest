@@ -26,7 +26,7 @@ export function buildAuthorization(
   provider: OAuthProvider,
   clientId: string,
   redirectUri: string,
-  extraScopes: string[] = [],
+  options: { extraScopes?: string[]; loginHint?: string } = {},
 ): PendingAuthorization {
   const verifier = base64url(randomBytes(64));
   const challenge = base64url(createHash('sha256').update(verifier).digest());
@@ -36,7 +36,7 @@ export function buildAuthorization(
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', [...provider.scopes, ...extraScopes].join(' '));
+  url.searchParams.set('scope', [...provider.scopes, ...(options.extraScopes ?? [])].join(' '));
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge', challenge);
   url.searchParams.set('code_challenge_method', 'S256');
@@ -44,6 +44,10 @@ export function buildAuthorization(
   // only, and the second account of the same person would never get one.
   url.searchParams.set('access_type', 'offline');
   url.searchParams.set('prompt', 'consent');
+  // Preselects the right mailbox for someone signed into several accounts at
+  // once - otherwise it is easy to consent with the wrong one, and the token
+  // then belongs to a mailbox nobody wanted to archive.
+  if (options.loginHint) url.searchParams.set('login_hint', options.loginHint);
 
   return { state, verifier, redirectUri, url: url.toString() };
 }

@@ -177,7 +177,11 @@ export class OAuthManager {
       redirectUri = `http://127.0.0.1:${options.loopbackPort ?? 0}`;
     }
 
-    const pending = buildAuthorization(this.provider(providerId), client.clientId, redirectUri);
+    // The mailbox this is meant for, so the provider preselects it.
+    const account = this.config.getAccount(accountId);
+    const pending = buildAuthorization(this.provider(providerId), client.clientId, redirectUri, {
+      ...(account ? { loginHint: account.username || account.email } : {}),
+    });
     this.sessions.set(pending.state, {
       ...pending,
       accountId,

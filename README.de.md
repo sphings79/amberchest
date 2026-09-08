@@ -321,6 +321,25 @@ Solange das Google-Projekt im Testmodus ist, verfällt der Refresh-Token nach
 sieben Tagen und du musst neu verbinden. Das Veröffentlichen des Projekts —
 weiterhin als dein eigener, privater Client — hebt die Grenze auf.
 
+### Mehrere Konten beim selben Anbieter
+
+Ein registrierter Client deckt beliebig viele Postfächer ab — er identifiziert
+die Anwendung, nicht die Person. Jedes Konto stimmt einzeln zu und bekommt
+seinen eigenen Refresh-Token. Zwei Dinge sind dabei zu beachten:
+
+- Solange das Google-Projekt im Testmodus läuft, muss **jedes** Google-Konto
+  einzeln unter *Testnutzer* eingetragen sein.
+- Wer in mehreren Konten gleichzeitig angemeldet ist, wird auf dem
+  Zustimmungsbildschirm gefragt, welches es sein soll. Mail Archiver wählt die
+  Adresse des Kontos vor, um das es geht, und meldet sich direkt danach einmal
+  an — ein Token, der zum falschen Postfach gehört, fällt damit sofort auf und
+  nicht erst nachts um drei.
+
+Ein Postfach, das wirklich einen eigenen Client braucht — etwa ein
+Workspace-Tenant mit eigener App-Registrierung —, kann den Anbieter-Platz
+**Anderer** mit eigenen Endpunkten benutzen.
+
+
 ## Home Assistant
 
 Mail Archiver veröffentlicht den Zustand jedes Kontos auf einem MQTT-Broker.

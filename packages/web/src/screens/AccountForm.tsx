@@ -204,7 +204,12 @@ export function AccountForm({
           <OAuthConnect
             accountId={account?.id ?? null}
             connected={Boolean(account?.oauth?.connected)}
-            onConnected={onSaved}
+            onConnected={() => {
+              onSaved();
+              // Log in once straight away: a token that belongs to another
+              // mailbox is refused here and not at three in the morning.
+              void runTest();
+            }}
             onProviderPicked={(provider) => {
               // A fresh account gets the provider's server filled in.
               if (!account && !values.host) patch({ host: provider.imapHost, port: provider.imapPort });

@@ -26,6 +26,13 @@ describe('buildAuthorization', () => {
     expect(pending.url).not.toContain(pending.verifier);
   });
 
+  it('preselects the mailbox it is meant for', () => {
+    const pending = buildAuthorization(PROVIDERS.google, 'client-1', 'http://127.0.0.1:1', {
+      loginHint: 'zweites.konto@gmail.com',
+    });
+    expect(new URL(pending.url).searchParams.get('login_hint')).toBe('zweites.konto@gmail.com');
+  });
+
   it('gives every attempt its own state and verifier', () => {
     const first = buildAuthorization(PROVIDERS.google, 'c', 'http://127.0.0.1:1');
     const second = buildAuthorization(PROVIDERS.google, 'c', 'http://127.0.0.1:1');

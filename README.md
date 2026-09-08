@@ -313,6 +313,24 @@ While the project is in testing mode, Google expires the refresh token after
 seven days and you have to connect again. Publishing the project (still as
 your own private client) removes that limit.
 
+### More than one account at the same provider
+
+One registered client covers as many mailboxes as you like — the client
+identifies the application, not the person, and every account consents
+separately and gets its own refresh token. Two things to watch:
+
+- While the Google project is in testing mode, **every** Google account has to
+  be listed under *Test users*, one by one.
+- If you are signed into several accounts in the same browser, the consent
+  screen asks which one. Mail Archiver preselects the address of the account
+  you are connecting and logs in once right afterwards, so a token that ended
+  up belonging to the wrong mailbox is caught immediately.
+
+A mailbox that genuinely needs a client of its own — a Workspace tenant with
+its own app registration, say — can use the **Other** provider slot with its
+own endpoints.
+
+
 ## Home Assistant
 
 Mail Archiver publishes the state of every account to an MQTT broker, so Home
