@@ -23,6 +23,22 @@ export const en: Translations = {
     mismatch: 'The passwords do not match.',
     tooShort: 'At least 8 characters.',
   },
+  connections: {
+    title: 'Connections',
+    hint:
+      'This interface can also operate a Mail Archiver on another machine - the container on your server, for example.',
+    local: 'This machine',
+    use: 'Switch',
+    remove: 'Remove',
+    addServer: 'Add server',
+    add: 'Add and switch',
+    name: 'Name',
+    url: 'Address',
+    urlHint: 'For example http://192.168.1.10:8484',
+    password: 'Web interface password',
+    passwordHint: 'The password from MAIL_ARCHIVER_UI_PASSWORD. Remembered for this session only.',
+    wrongPassword: 'Password rejected.',
+  },
   nav: {
     overview: 'Overview',
     accounts: 'Accounts',
@@ -321,6 +337,22 @@ export const en: Translations = {
     indexStatus: '{{done}} of {{total}} messages indexed',
     rebuildIndex: 'Rebuild index',
     rebuildConfirm: 'The index is discarded and built again from scratch. Continue?',
+    encryptTitle: 'Encrypt the archive',
+    encryptHint:
+      'Archived messages are written to disk encrypted with your master password.',
+    encryptWarning:
+      'Encrypted files can no longer be opened with Thunderbird or Apple Mail - only through Mail Archiver. Without the master password they are lost.',
+    encryptToggle: 'Store new messages encrypted',
+    encryptMixed:
+      'Messages archived so far stay unencrypted. Both kinds sit side by side without trouble.',
+    updateTitle: 'Updates',
+    updateCurrent: 'Installed version: {{version}}',
+    updateCheck: 'Check for updates',
+    updateChecking: 'Checking …',
+    updateAvailable: 'Version {{version}} is available.',
+    updateCurrentIsLatest: 'You have the latest version.',
+    updateFailed: 'Could not check.',
+    updateOpen: 'Go to the download page',
     scheduleTitle: 'Scheduled backups',
     scheduleHint:
       'The desktop app backs up on demand. For regular, automatic backups use the Docker container - the schedule is set there with a cron expression.',

@@ -2,7 +2,7 @@ import type { MessageContent } from '@mail-archiver/core';
 import { Download, ExternalLink, Eye, FileText, Paperclip, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, getToken, isDesktop } from '../api/client.js';
+import { api, downloadUrl, isDesktop } from '../api/client.js';
 import { Badge, Button, Modal, cx } from '../components/ui.js';
 import { formatBytes } from './Overview.js';
 
@@ -88,12 +88,6 @@ export function MessageView({
     } catch (cause) {
       setError((cause as Error).message);
     }
-  };
-
-  /** Downloads go through a plain link so the browser handles the file. */
-  const downloadUrl = (path: string): string => {
-    const token = getToken();
-    return `api${path}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   };
 
   return (

@@ -19,9 +19,16 @@ extraResources:
 
 # Workspace packages are symlinked into the root node_modules, so the builder
 # has to look there for production dependencies.
+# better-sqlite3 is the only native module and ships prebuilt binaries for
+# every platform we target, picked at runtime. Rebuilding would only break
+# cross-compilation - a Linux build made on macOS cannot run node-gyp.
 nodeGypRebuild: false
-npmRebuild: true
+npmRebuild: false
 buildDependenciesFromSource: false
+
+# The prebuilt binaries have to stay outside the asar so they can be loaded.
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
 
 mac:
   category: public.app-category.utilities
@@ -78,6 +85,15 @@ nsis:
   shortcutName: Mail Archiver
 
 linux:
+  # The package name is scoped, which Linux cannot use as a binary name.
+  executableName: mail-archiver
+  # Debian derives the package name from this, so it must not be scoped either.
+  artifactName: mail-archiver_${version}_${arch}.${ext}
+  maintainer: sphings79 <43515272+sphings79@users.noreply.github.com>
+  desktop:
+    entry:
+      Name: Mail Archiver
+      Comment: Back up IMAP mailboxes to plain .eml files
   category: Utility
   synopsis: Archive IMAP mailboxes to local .eml files
   target:

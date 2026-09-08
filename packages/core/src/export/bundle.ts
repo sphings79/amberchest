@@ -56,6 +56,8 @@ export interface BundleEngineOptions {
   archiveBaseDir: string;
   /** Directory the finished files are written to. */
   outputDir: string;
+  /** Needed when the archive is encrypted. */
+  encryptionKey?: Buffer | null;
   /** Resolves an account by id; a bundle may span several of them. */
   resolveAccount: (accountId: string) => Account;
   /** Only needed for the PDF format. */
@@ -166,6 +168,7 @@ export class BundleEngine extends EventEmitter {
       const loaded = await loadMessageSource(account, hit.messageId, {
         db: this.options.db,
         archiveBaseDir: this.options.archiveBaseDir,
+        encryptionKey: this.options.encryptionKey ?? null,
       });
       return loaded.source;
     } catch {
@@ -228,6 +231,7 @@ export class BundleEngine extends EventEmitter {
       const loaded = await loadMessageSource(account, hit.messageId, {
         db: this.options.db,
         archiveBaseDir: this.options.archiveBaseDir,
+        encryptionKey: this.options.encryptionKey ?? null,
       });
       return { source: loaded.source, fileName: loaded.fileName };
     } catch {
@@ -253,6 +257,7 @@ export class BundleEngine extends EventEmitter {
         const message = await loadMessage(account, hit.messageId, {
           db: this.options.db,
           archiveBaseDir: this.options.archiveBaseDir,
+          encryptionKey: this.options.encryptionKey ?? null,
         });
         const pdf = await renderer(messageToPrintableHtml(message));
 

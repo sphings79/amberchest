@@ -63,6 +63,8 @@ interface FolderPlan {
 export interface SyncEngineOptions {
   db: ArchiveDatabase;
   archiveBaseDir: string;
+  /** When set, message files are written encrypted. */
+  encryptionKey?: Buffer | null;
 }
 
 /**
@@ -541,6 +543,7 @@ export class SyncEngine extends EventEmitter {
             flags: flags.length > 0 ? flags : meta.flags,
           },
           meta.internalDate,
+          this.options.encryptionKey ?? null,
         );
 
         this.db.insertMessage({

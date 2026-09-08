@@ -2,7 +2,7 @@ import type { BundleFormat } from '@mail-archiver/core';
 import { Download, FileArchive, FileText, Files } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, getToken } from '../api/client.js';
+import { api, downloadUrl } from '../api/client.js';
 import { Button, Modal, ProgressBar, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { formatBytes } from './Overview.js';
@@ -73,11 +73,6 @@ export function ExportDialog({
     { id: 'pdf-zip', label: t('export.formatPdfZip'), hint: t('export.formatPdfZipHint'), icon: <FileText size={16} /> },
   ];
 
-  const downloadUrl = (): string => {
-    const token = getToken();
-    return `api/exports/${bundleId}/download${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-  };
-
   return (
     <Modal
       open
@@ -85,7 +80,7 @@ export function ExportDialog({
       onClose={onClose}
       footer={
         progress?.phase === 'done' ? (
-          <a href={downloadUrl()} download>
+          <a href={downloadUrl(`/exports/${bundleId}/download`)} download>
             <Button variant="primary">
               <Download size={15} />
               {t('export.download')}

@@ -80,6 +80,7 @@ export const appSettingsSchema = z.object({
   accentColor: z.string().default('violet'),
   search: searchSettingsSchema.default(() => searchSettingsSchema.parse({})),
   mcp: mcpSettingsSchema.default(() => mcpSettingsSchema.parse({})),
+  encryptArchive: z.boolean().default(false),
 });
 
 export const appConfigSchema = z.object({

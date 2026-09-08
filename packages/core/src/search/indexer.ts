@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { simpleParser } from 'mailparser';
 import { extractAttachments } from '../attachments/extract.js';
 import type { ArchiveDatabase, FolderRow, MessageRow } from '../db/database.js';
-import { ArchiveLayout } from '../storage/archive.js';
+import { ArchiveLayout, readArchiveFile } from '../storage/archive.js';
 import type { Account } from '../types.js';
 import { logger } from '../util/logger.js';
 import { withFoldedVariants } from './fold.js';
@@ -45,6 +44,8 @@ export interface IndexEngineOptions {
   indexAttachments: boolean;
   /** Attachments larger than this are not opened; 0 disables the limit. */
   maxAttachmentBytes: number;
+  /** Needed when the archive is encrypted. */
+  encryptionKey?: Buffer | null;
 }
 
 /**
@@ -142,7 +143,7 @@ export class SearchIndexEngine extends EventEmitter {
 
     let source: Buffer;
     try {
-      source = await readFile(path);
+      source = await readArchiveFile(path, this.options.encryptionKey ?? null);
     } catch {
       this.stats.messagesFailed += 1;
       return;

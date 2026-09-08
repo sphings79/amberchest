@@ -1,10 +1,22 @@
-import { BookOpen, Check, Clock, Container, Database, ExternalLink, RotateCcw } from 'lucide-react';
+import {
+  BookOpen,
+  Check,
+  Clock,
+  Container,
+  Database,
+  DownloadCloud,
+  ExternalLink,
+  Lock,
+  RotateCcw,
+  ShieldAlert,
+} from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type AppSettings } from '../api/client.js';
 import { Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
 import { McpSettings } from './McpSettings.js';
+import { UpdateCard } from './UpdateCard.js';
 import { useApp } from '../state.js';
 
 const ACCENTS = ['violet', 'blue', 'emerald', 'amber', 'rose'] as const;
@@ -26,6 +38,7 @@ export function Settings(): ReactNode {
       theme: 'system',
       accentColor: 'violet',
       search: { indexAttachments: true, maxAttachmentBytes: 25 * 1024 * 1024, autoIndex: true },
+      encryptArchive: false,
       mcp: {
         enabled: false,
         httpEnabled: false,
@@ -206,6 +219,39 @@ export function Settings(): ReactNode {
           </Button>
         </div>
       </Card>
+
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Lock size={16} />
+          {t('settings.encryptTitle')}
+        </div>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {t('settings.encryptHint')}
+        </p>
+
+        <Toggle
+          checked={values.encryptArchive}
+          onChange={(encryptArchive) => void update({ encryptArchive }, true)}
+          label={t('settings.encryptToggle')}
+        />
+
+        {values.encryptArchive && (
+          <>
+            <div
+              className="flex items-start gap-2 rounded-xl px-3 py-2 text-xs"
+              style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}
+            >
+              <ShieldAlert size={14} className="mt-0.5 shrink-0" />
+              {t('settings.encryptWarning')}
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+              {t('settings.encryptMixed')}
+            </p>
+          </>
+        )}
+      </Card>
+
+      <UpdateCard />
 
       <McpSettings settings={values.mcp} onChange={(mcp) => void update({ mcp }, true)} />
 

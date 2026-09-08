@@ -1,8 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { simpleParser, type AddressObject } from 'mailparser';
 import type { ArchiveDatabase } from '../db/database.js';
-import { ArchiveLayout } from '../storage/archive.js';
+import { ArchiveLayout, readArchiveFile } from '../storage/archive.js';
 import type { Account } from '../types.js';
 
 export interface MessageAttachmentInfo {
@@ -66,6 +65,8 @@ const REMOTE_PATTERN = /(?:src|background)\s*=\s*["']?https?:\/\//i;
 export interface MessageLoaderOptions {
   db: ArchiveDatabase;
   archiveBaseDir: string;
+  /** Needed when the archive is encrypted; ignored for plain files. */
+  encryptionKey?: Buffer | null;
 }
 
 /** Locates the .eml file of a message and parses it for the viewer. */
@@ -86,7 +87,7 @@ export async function loadMessage(
     : join(layout.accountDir(account), folder.local_path);
   const filePath = join(base, row.file_name);
 
-  const source = await readFile(filePath);
+  const source = await readArchiveFile(filePath, options.encryptionKey ?? null);
   const parsed = await simpleParser(source, { skipTextLinks: true });
 
   const attachments = parsed.attachments.map((attachment, index) => ({
@@ -172,5 +173,9 @@ export async function loadMessageSource(
     : join(layout.accountDir(account), folder.local_path);
   const filePath = join(base, row.file_name);
 
-  return { source: await readFile(filePath), filePath, fileName: row.file_name };
+  return {
+    source: await readArchiveFile(filePath, options.encryptionKey ?? null),
+    filePath,
+    fileName: row.file_name,
+  };
 }

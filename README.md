@@ -31,9 +31,8 @@ read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
 `\Seen` flag.
 
-> **Status: stage 5 of 6.** Backup, attachment export, search, viewer, exports,
-> MCP, restore and the container all work. What is left is the remote mode in
-> the desktop app and the final polish — see the [roadmap](#roadmap).
+> **All six stages are done.** Backup, attachment export, search, viewer,
+> exports, MCP, restore, the container and the remote mode all work.
 
 ## Screenshots
 
@@ -114,6 +113,10 @@ to the Docker guide.</em>
   that are already there are skipped by Message-ID
 - **Docker container** with the same web interface, a built-in scheduler and
   Chromium for PDF export
+- **Remote mode**: the desktop app can operate a container elsewhere, so the
+  scheduled backups run on your server while you look at them from your desk
+- **Optional archive encryption** with the master password, for an archive on
+  a disk you do not fully control
 - **Live progress** over a websocket, with a log you can actually read
 
 ## Install
@@ -282,7 +285,7 @@ machine can talk to the API.
 | 2 | Attachment export with layouts, filters and de-duplication | ✅ done |
 | 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP, MCP server | ✅ done |
 | 4 | Restore, and migration to a different server | ✅ done |
-| 5 | Docker image, web login, cron schedule | ✅ done · remote mode pending |
+| 5 | Docker image, web login, cron schedule, remote mode | ✅ done |
 | 6 | Polish: themes, translations, optional archive encryption, Windows and Linux releases | planned |
 
 ## FAQ

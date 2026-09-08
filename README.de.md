@@ -32,9 +32,8 @@ Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt 
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
 
-> **Stand: Etappe 5 von 6.** Sicherung, Anhang-Export, Suche, Viewer, Export,
-> MCP, Rückspielen und der Container laufen alle. Offen sind die Fernsteuerung
-> in der Desktop-App und der Feinschliff — siehe [Fahrplan](#fahrplan).
+> **Alle sechs Etappen sind fertig.** Sicherung, Anhang-Export, Suche, Viewer,
+> Export, MCP, Rückspielen, der Container und die Fernsteuerung laufen.
 
 ## Bildschirmfotos
 
@@ -120,6 +119,11 @@ zur Docker-Anleitung.</em>
   Message-ID übersprungen
 - **Docker-Container** mit derselben Weboberfläche, eingebautem Zeitplaner und
   Chromium für den PDF-Export
+- **Fernsteuerung**: Die Desktop-App kann einen Container woanders bedienen —
+  die geplanten Sicherungen laufen auf dem Server, angeschaut wird vom
+  Schreibtisch aus
+- **Optionale Archivverschlüsselung** mit dem Master-Passwort, für ein Archiv
+  auf einer Platte, die dir nicht allein gehört
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
 
 ## Installation
@@ -290,8 +294,8 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 | 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
 | 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP, MCP-Server | ✅ fertig |
 | 4 | Rückspielen und Umzug auf einen anderen Server | ✅ fertig |
-| 5 | Docker-Image, Web-Login, Cron-Zeitplan | ✅ fertig · Fernsteuerung offen |
-| 6 | Feinschliff: Themes, Übersetzungen, optionale Archivverschlüsselung, Windows- und Linux-Releases | geplant |
+| 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | ✅ fertig |
+| 6 | Feinschliff: optionale Archivverschlüsselung, Update-Hinweis, Windows- und Linux-Builds | ✅ fertig |
 
 ## FAQ
 

@@ -54,6 +54,8 @@ export interface FolderMapping {
 export interface RestoreOptions {
   db: ArchiveDatabase;
   archiveBaseDir: string;
+  /** Needed when the archive is encrypted. */
+  encryptionKey?: Buffer | null;
   /** Account the messages are read from. */
   sourceAccount: Account;
   /** Where to upload; may be a different server entirely. */
@@ -249,6 +251,7 @@ export class RestoreEngine extends EventEmitter {
       const loaded = await loadMessageSource(this.options.sourceAccount, hit.messageId, {
         db: this.options.db,
         archiveBaseDir: this.options.archiveBaseDir,
+        encryptionKey: this.options.encryptionKey ?? null,
       });
       source = loaded.source;
     } catch {

@@ -89,6 +89,15 @@ export interface AccountSettingsValues {
   autoSelectNewFolders: boolean;
 }
 
+import {
+  LOCAL_CONNECTION,
+  getActiveConnection,
+  getConnectionToken,
+  setActiveConnectionId,
+  setConnectionToken,
+  type Connection,
+} from './connections.js';
+
 const TOKEN_KEY = 'mail-archiver-token';
 
 /**
@@ -111,16 +120,42 @@ function readInitialToken(): string | null {
 /** True when the UI is hosted by the Electron shell (window controls overlap). */
 export const isDesktop = new URLSearchParams(window.location.search).has('desktop');
 
-let token: string | null = readInitialToken();
+let connection: Connection = getActiveConnection();
+let token: string | null =
+  connection.id === LOCAL_CONNECTION.id ? readInitialToken() : getConnectionToken(connection.id);
+
+/** The connection every request currently goes to. */
+export function getConnection(): Connection {
+  return connection;
+}
+
+/** Switches the target; the caller reloads the state afterwards. */
+export function useConnection(next: Connection): void {
+  connection = next;
+  setActiveConnectionId(next.id);
+  token =
+    next.id === LOCAL_CONNECTION.id
+      ? sessionStorage.getItem(TOKEN_KEY)
+      : getConnectionToken(next.id);
+}
 
 export function setToken(value: string | null): void {
   token = value;
-  if (value) sessionStorage.setItem(TOKEN_KEY, value);
-  else sessionStorage.removeItem(TOKEN_KEY);
+  if (connection.id === LOCAL_CONNECTION.id) {
+    if (value) sessionStorage.setItem(TOKEN_KEY, value);
+    else sessionStorage.removeItem(TOKEN_KEY);
+  } else {
+    setConnectionToken(connection.id, value);
+  }
 }
 
 export function getToken(): string | null {
   return token;
+}
+
+/** Absolute or relative base, depending on where we are pointed. */
+export function apiBase(): string {
+  return connection.url ? `${connection.url}/api` : 'api';
 }
 
 export class ApiError extends Error {
@@ -140,7 +175,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (init.body !== undefined) headers.set('content-type', 'application/json');
   if (token) headers.set('authorization', `Bearer ${token}`);
 
-  const response = await fetch(`api${path}`, { ...init, headers });
+  const response = await fetch(`${apiBase()}${path}`, { ...init, headers });
   const text = await response.text();
   const payload = text ? (JSON.parse(text) as unknown) : null;
 
@@ -276,10 +311,19 @@ export const api = {
   logs: (limit = 300) => request<LogEntry[]>(`/logs?limit=${limit}`),
 };
 
-/** Websocket URL for the live event stream, relative to the current page. */
+/** Websocket URL for the live event stream of the active connection. */
 export function eventsUrl(): string {
-  const url = new URL('api/events', window.location.href);
+  const url = connection.url
+    ? new URL('/api/events', connection.url)
+    : new URL('api/events', window.location.href);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   if (token) url.searchParams.set('token', token);
   return url.toString();
+}
+
+/** Builds a download link that carries the token, for plain <a download>. */
+export function downloadUrl(path: string): string {
+  const base = apiBase();
+  const separator = path.includes('?') ? '&' : '?';
+  return token ? `${base}${path}${separator}token=${encodeURIComponent(token)}` : `${base}${path}`;
 }

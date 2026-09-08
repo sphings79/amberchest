@@ -9,6 +9,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, isDesktop, setToken } from './api/client.js';
+import { ConnectionSwitcher } from './components/ConnectionSwitcher.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Button, cx } from './components/ui.js';
 import { Dashboard } from './screens/Dashboard.js';
@@ -131,7 +132,8 @@ export function App(): ReactNode {
             ))}
           </nav>
 
-          <div className="md:mt-auto">
+          <div className="flex items-center gap-1 md:mt-auto md:flex-col md:items-stretch">
+            <ConnectionSwitcher />
             <Button variant="ghost" onClick={() => void lock()} className="w-full justify-start">
               <Lock size={15} />
               <span className="hidden md:inline">{t('nav.lock')}</span>

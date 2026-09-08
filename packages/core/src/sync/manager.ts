@@ -7,6 +7,8 @@ export interface SyncManagerOptions {
   db: ArchiveDatabase;
   /** Resolves the base archive directory at the time a run starts. */
   archiveBaseDir: () => string;
+  /** Resolves the archive key at the time a run starts. */
+  encryptionKey?: () => Buffer | null;
 }
 
 /**
@@ -49,6 +51,7 @@ export class SyncManager extends EventEmitter {
     const engine = new SyncEngine(account, {
       db: this.options.db,
       archiveBaseDir: this.options.archiveBaseDir(),
+      encryptionKey: this.options.encryptionKey?.() ?? null,
     });
 
     engine.on('progress', (progress: SyncProgress) => {

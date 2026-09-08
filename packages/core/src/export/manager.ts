@@ -10,6 +10,8 @@ import type { PdfRenderer } from './pdf.js';
 export interface BundleManagerOptions {
   db: ArchiveDatabase;
   archiveBaseDir: () => string;
+  /** Resolves the archive key at the time a run starts. */
+  encryptionKey?: () => Buffer | null;
   resolveAccount: (accountId: string) => Account;
   pdfRenderer?: PdfRenderer | undefined;
   outputDir?: string;
@@ -58,6 +60,7 @@ export class BundleManager extends EventEmitter {
     const engine = new BundleEngine(format, selection, {
       db: this.options.db,
       archiveBaseDir: this.options.archiveBaseDir(),
+      encryptionKey: this.options.encryptionKey?.() ?? null,
       outputDir: this.outputDir,
       resolveAccount: this.options.resolveAccount,
       pdfRenderer: this.options.pdfRenderer,

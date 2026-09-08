@@ -85,6 +85,16 @@ export class ConfigStore {
     this.config = null;
   }
 
+  /**
+   * The key derived from the master password.
+   *
+   * Used for the optional archive encryption, so message files are protected
+   * by the same secret as the credentials. Null while locked.
+   */
+  get archiveKey(): Buffer | null {
+    return this.key;
+  }
+
   private require(): AppConfig {
     if (!this.config) throw new ConfigLockedError();
     return this.config;

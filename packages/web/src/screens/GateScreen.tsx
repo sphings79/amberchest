@@ -2,6 +2,7 @@ import { KeyRound, Lock, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, setToken } from '../api/client.js';
+import { ConnectionSwitcher } from '../components/ConnectionSwitcher.js';
 import { Button, Card, Field, Input } from '../components/ui.js';
 import { useApp } from '../state.js';
 
@@ -145,6 +146,10 @@ export function GateScreen(): ReactNode {
             </Button>
           </form>
         </Card>
+
+        <div className="mt-4 flex justify-center">
+          <ConnectionSwitcher />
+        </div>
       </div>
     </div>
   );

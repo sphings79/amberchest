@@ -96,18 +96,24 @@ export class MailArchiverApp {
     this.sync = new SyncManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
+      // Only set when the user asked for an encrypted archive; reading works
+      // either way, because each file says what it is.
+      encryptionKey: () => (this.config.getSettings().encryptArchive ? this.config.archiveKey : null),
     });
     this.exports = new AttachmentExportManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
     });
     this.index = new SearchIndexManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
     });
     this.bundles = new BundleManager({
       db: this.db,
       archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
       resolveAccount: (accountId) => this.requireAccount(accountId),
       // Falls back to a Chromium found on the system, which is how the
       // container renders PDFs.
@@ -245,6 +251,7 @@ export class MailArchiverApp {
     return loadMessage(this.requireAccount(accountId), messageId, {
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
+      encryptionKey: this.config.archiveKey,
     });
   }
 
@@ -252,6 +259,7 @@ export class MailArchiverApp {
     return loadAttachment(this.requireAccount(accountId), messageId, index, {
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
+      encryptionKey: this.config.archiveKey,
     });
   }
 
@@ -262,6 +270,7 @@ export class MailArchiverApp {
     return loadMessageSource(this.requireAccount(accountId), messageId, {
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
+      encryptionKey: this.config.archiveKey,
     });
   }
 
@@ -306,6 +315,7 @@ export class MailArchiverApp {
     return this.restore.start({
       db: this.db,
       archiveBaseDir: this.config.getSettings().archivePath,
+      encryptionKey: this.config.archiveKey,
       sourceAccount: this.requireAccount(options.accountId),
       target: options.target,
       mappings: options.mappings,

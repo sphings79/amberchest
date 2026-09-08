@@ -6,6 +6,8 @@ import { SearchIndexEngine, type IndexProgress } from './indexer.js';
 export interface IndexManagerOptions {
   db: ArchiveDatabase;
   archiveBaseDir: () => string;
+  /** Resolves the archive key at the time a run starts. */
+  encryptionKey?: () => Buffer | null;
 }
 
 export interface IndexOptions {
@@ -41,6 +43,7 @@ export class SearchIndexManager extends EventEmitter {
     const engine = new SearchIndexEngine(account, {
       db: this.options.db,
       archiveBaseDir: this.options.archiveBaseDir(),
+      encryptionKey: this.options.encryptionKey?.() ?? null,
       indexAttachments: options.indexAttachments,
       maxAttachmentBytes: options.maxAttachmentBytes,
     });

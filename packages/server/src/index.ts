@@ -33,6 +33,33 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
     bodyLimit: 5 * 1024 * 1024,
   });
 
+  /*
+   * Cross origin access for the remote mode.
+   *
+   * Authentication is a bearer token, never a cookie, so a foreign page cannot
+   * ride along on an existing session - which is what CORS with credentials
+   * would risk. Allowing any origin is therefore safe here: without the token
+   * every request is rejected anyway.
+   */
+  server.addHook('onRequest', async (request, reply) => {
+    const origin = request.headers.origin;
+    if (!origin) return;
+
+    reply.header('access-control-allow-origin', origin);
+    reply.header('vary', 'Origin');
+    reply.header('access-control-allow-headers', 'authorization, content-type');
+    reply.header('access-control-allow-methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+    reply.header('access-control-max-age', '600');
+
+    if (request.method === 'OPTIONS') {
+      await reply.status(204).send();
+    }
+  });
+
+  // Fastify answers unknown routes with 404 before the hook can reply, so the
+  // preflight needs a route of its own.
+  server.options('/*', async (_request, reply) => reply.status(204).send());
+
   await server.register(websocket);
   await registerRoutes(server, {
     app: options.app,

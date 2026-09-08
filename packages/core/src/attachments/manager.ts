@@ -6,6 +6,8 @@ import { AttachmentExportEngine } from './engine.js';
 export interface ExportManagerOptions {
   db: ArchiveDatabase;
   archiveBaseDir: () => string;
+  /** Resolves the archive key at the time a run starts. */
+  encryptionKey?: () => Buffer | null;
 }
 
 /**
@@ -41,6 +43,7 @@ export class AttachmentExportManager extends EventEmitter {
     const engine = new AttachmentExportEngine(account, {
       db: this.options.db,
       archiveBaseDir: this.options.archiveBaseDir(),
+      encryptionKey: this.options.encryptionKey?.() ?? null,
     });
 
     engine.on('progress', (progress: ExportProgress) => {

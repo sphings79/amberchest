@@ -125,6 +125,11 @@ export interface AppSettings {
   accentColor: string;
   search: SearchSettings;
   mcp: McpSettings;
+  /**
+   * Encrypt the .eml files in the archive. Off by default: encrypted files can
+   * no longer be opened by a mail client directly.
+   */
+  encryptArchive: boolean;
 }
 
 export interface AppConfig {

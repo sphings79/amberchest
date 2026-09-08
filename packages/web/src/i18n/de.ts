@@ -21,6 +21,22 @@ export const de = {
     mismatch: 'Die Passwörter stimmen nicht überein.',
     tooShort: 'Mindestens 8 Zeichen.',
   },
+  connections: {
+    title: 'Verbindungen',
+    hint:
+      'Diese Oberfläche kann auch einen Mail Archiver auf einem anderen Rechner bedienen - zum Beispiel den Container auf dem Server.',
+    local: 'Dieser Rechner',
+    use: 'Wechseln',
+    remove: 'Entfernen',
+    addServer: 'Server hinzufügen',
+    add: 'Hinzufügen und wechseln',
+    name: 'Name',
+    url: 'Adresse',
+    urlHint: 'Zum Beispiel http://192.168.1.10:8484',
+    password: 'Passwort der Weboberfläche',
+    passwordHint: 'Das Passwort aus MAIL_ARCHIVER_UI_PASSWORD. Wird nur für diese Sitzung gemerkt.',
+    wrongPassword: 'Passwort abgelehnt.',
+  },
   nav: {
     overview: 'Übersicht',
     accounts: 'Konten',
@@ -319,6 +335,22 @@ export const de = {
     indexStatus: '{{done}} von {{total}} Nachrichten indiziert',
     rebuildIndex: 'Index neu aufbauen',
     rebuildConfirm: 'Der Index wird verworfen und komplett neu erstellt. Fortfahren?',
+    encryptTitle: 'Archiv verschlüsseln',
+    encryptHint:
+      'Die gesicherten Nachrichten werden mit deinem Master-Passwort verschlüsselt auf die Platte geschrieben.',
+    encryptWarning:
+      'Verschlüsselte Dateien lassen sich nicht mehr mit Thunderbird oder Apple Mail öffnen - nur noch über Mail Archiver. Ohne Master-Passwort sind sie verloren.',
+    encryptToggle: 'Neue Nachrichten verschlüsselt speichern',
+    encryptMixed:
+      'Bereits gesicherte Nachrichten bleiben unverschlüsselt. Beide Arten liegen problemlos nebeneinander.',
+    updateTitle: 'Aktualisierung',
+    updateCurrent: 'Installierte Version: {{version}}',
+    updateCheck: 'Nach Aktualisierung sehen',
+    updateChecking: 'Suche …',
+    updateAvailable: 'Version {{version}} ist verfügbar.',
+    updateCurrentIsLatest: 'Du hast die neueste Version.',
+    updateFailed: 'Konnte nicht nachsehen.',
+    updateOpen: 'Zur Downloadseite',
     scheduleTitle: 'Zeitgesteuerte Sicherung',
     scheduleHint:
       'Die Desktop-App sichert auf Knopfdruck. Für regelmäßige, automatische Sicherungen gibt es den Docker-Container - dort wird der Zeitplan per Cron-Ausdruck gesetzt.',

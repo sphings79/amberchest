@@ -103,7 +103,15 @@ export { Scheduler } from './schedule/scheduler.js';
 export { SyncEngine, SyncCancelledError } from './sync/engine.js';
 export { SyncManager } from './sync/manager.js';
 export { buildFolderTree, collectSelected, suggestSelection } from './sync/folders.js';
-export { ArchiveLayout } from './storage/archive.js';
+export { ArchiveLayout, readArchiveFile } from './storage/archive.js';
+export {
+  encryptFile,
+  decryptFile,
+  isEncrypted,
+  openMessageFile,
+  sealMessageFile,
+  ArchiveDecryptError,
+} from './storage/encryption.js';
 export { readJournal, type JournalRecord } from './storage/journal.js';
 export { logger, Logger } from './util/logger.js';
 export {

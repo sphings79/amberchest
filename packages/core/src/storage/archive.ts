@@ -1,7 +1,8 @@
-import { mkdir, readdir, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 import type { Account } from '../types.js';
 import { DELETED_DIR, folderPathSegments, sanitizeSegment } from '../util/paths.js';
+import { openMessageFile, sealMessageFile } from './encryption.js';
 import { appendJournal, type JournalRecord } from './journal.js';
 
 /**
@@ -34,6 +35,16 @@ export class ArchiveLayout {
   }
 }
 
+/**
+ * Reads one archived message.
+ *
+ * Every reader goes through here, so encrypted and plain files can sit side by
+ * side: the file itself says which it is.
+ */
+export async function readArchiveFile(path: string, encryptionKey: Buffer | null): Promise<Buffer> {
+  return openMessageFile(await readFile(path), encryptionKey);
+}
+
 /** Lists the .eml file names present in a folder. */
 export async function listMessageFiles(folderDir: string): Promise<Set<string>> {
   try {
@@ -64,11 +75,13 @@ export async function storeMessage(
   source: Buffer,
   meta: Omit<Extract<JournalRecord, { op: 'add' }>, 'op' | 'ts' | 'file'>,
   internalDate: Date,
+  /** When set, the file is written encrypted. */
+  encryptionKey: Buffer | null = null,
 ): Promise<StoredMessage> {
   await mkdir(folderDir, { recursive: true });
   const target = join(folderDir, fileName);
   const tmp = `${target}.part`;
-  await writeFile(tmp, source);
+  await writeFile(tmp, sealMessageFile(source, encryptionKey));
   await rename(tmp, target);
 
   if (!Number.isNaN(internalDate.getTime())) {
