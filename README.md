@@ -229,13 +229,24 @@ Builds for all three desktop platforms come from the same source.
 Download the DMG from the [releases](https://github.com/sphings79/mail-archiver/releases)
 page, open it and drag the app into `Applications`.
 
-The app is **not notarised** — there is no paid Apple developer account behind
-this project. On first launch macOS refuses to open it. Right-click the app and
-choose *Open*, then confirm. Alternatively:
+The app is signed, but **not notarised** — there is no paid Apple developer
+account behind this project. macOS therefore refuses the first launch with
+*"Apple could not verify Mail Archiver is free of malware"*.
+
+Since macOS 15 the right-click *Open* trick is gone. Try to open the app once,
+let it fail, then go to **System Settings → Privacy & Security**, scroll to the
+bottom and press **Open Anyway**. Once allowed, it starts normally forever
+after.
+
+The same thing from a terminal, if you prefer:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Mail Archiver.app"
 ```
+
+> If macOS says the app is **damaged** instead, you have version 1.2.0 or
+> older. Those builds were not signed at all, which an Apple Silicon Mac reads
+> as a corrupt bundle. Download 1.2.1 or newer.
 
 ### Windows
 
@@ -248,7 +259,7 @@ install anything. The build is unsigned, so SmartScreen shows a warning:
 Use the AppImage (make it executable and run it) or install the `.deb`:
 
 ```bash
-sudo dpkg -i mail-archiver_1.0.0_amd64.deb
+sudo dpkg -i mail-archiver_1.2.1_amd64.deb
 ```
 
 Both x64 and arm64 are built.

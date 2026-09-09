@@ -238,13 +238,24 @@ Alle drei Desktop-Plattformen entstehen aus derselben Quelle.
 Das DMG von der [Releases-Seite](https://github.com/sphings79/mail-archiver/releases)
 laden, öffnen und die App nach `Programme` ziehen.
 
-Die App ist **nicht notarisiert** — hinter diesem Projekt steht kein bezahltes
-Apple-Entwicklerkonto. Beim ersten Start verweigert macOS das Öffnen.
-Rechtsklick auf die App → *Öffnen* → bestätigen. Alternativ:
+Die App ist signiert, aber **nicht notarisiert** — hinter diesem Projekt steht
+kein bezahltes Apple-Entwicklerkonto. macOS verweigert deshalb den ersten Start
+mit *„Apple kann die App nicht auf Schadsoftware überprüfen"*.
+
+Seit macOS 15 gibt es den Rechtsklick-Trick nicht mehr. Einmal versuchen zu
+öffnen, scheitern lassen, dann **Systemeinstellungen → Datenschutz &
+Sicherheit** öffnen, ganz nach unten scrollen und **Dennoch öffnen** drücken.
+Einmal erlaubt, startet sie danach immer normal.
+
+Dasselbe im Terminal, wer das lieber mag:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Mail Archiver.app"
 ```
+
+> Sagt macOS stattdessen, die App sei **beschädigt**, hast du Version 1.2.0
+> oder älter. Diese Pakete waren gar nicht signiert, was ein Apple-Silicon-Mac
+> als kaputtes Bundle liest. Nimm 1.2.1 oder neuer.
 
 ### Windows
 
@@ -257,7 +268,7 @@ eine Warnung: *Weitere Informationen* → *Trotzdem ausführen*.
 AppImage ausführbar machen und starten, oder das `.deb` installieren:
 
 ```bash
-sudo dpkg -i mail-archiver_1.0.0_amd64.deb
+sudo dpkg -i mail-archiver_1.2.1_amd64.deb
 ```
 
 Es werden x64 und arm64 gebaut.

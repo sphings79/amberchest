@@ -38,9 +38,17 @@ mac:
     - target: dmg
       arch:
         - arm64
-  # No paid developer account: the app is signed ad-hoc, which means macOS
-  # shows the "unidentified developer" prompt on first launch.
-  identity: null
+  # No paid developer account, so the app cannot be notarized. It must still
+  # carry a valid signature: electron-builder renames the Electron binary and
+  # replaces the bundle's resources, which invalidates the signature Electron
+  # itself shipped with. An arm64 Mac refuses such a bundle outright - "is
+  # damaged and cannot be opened" - so it is signed ad-hoc here.
+  # "-" means ad-hoc; identity: null would skip signing altogether.
+  identity: '-'
+  # Ad-hoc signing plus the hardened runtime means library validation refuses
+  # better-sqlite3's prebuilt .node, which is not signed by us. The hardened
+  # runtime only matters for notarization, which is out of reach anyway.
+  hardenedRuntime: false
   gatekeeperAssess: false
 
 dmg:
