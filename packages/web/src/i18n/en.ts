@@ -40,7 +40,7 @@ export const en: Translations = {
   connections: {
     title: 'Connections',
     hint:
-      'This interface can also operate a AmberChest on another machine - the container on your server, for example.',
+      'This interface can also operate an AmberChest on another machine - the container on your server, for example.',
     label: 'Connection',
     buttonHint: 'Switch between this machine and a server, or add one',
     local: 'This machine',
