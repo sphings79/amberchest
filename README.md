@@ -244,9 +244,9 @@ The same thing from a terminal, if you prefer:
 xattr -dr com.apple.quarantine "/Applications/AmberChest.app"
 ```
 
-> If macOS says the app is **damaged** instead, you have version 1.2.0 or
-> older. Those builds were not signed at all, which an Apple Silicon Mac reads
-> as a corrupt bundle. Download 1.2.1 or newer.
+> If macOS says the app is **damaged** instead, you have a build from before
+> 1.2.1, released back when this was called Mail Archiver. Those were not
+> signed at all, which an Apple Silicon Mac reads as a corrupt bundle.
 
 ### Windows
 
@@ -259,7 +259,7 @@ install anything. The build is unsigned, so SmartScreen shows a warning:
 Use the AppImage (make it executable and run it) or install the `.deb`:
 
 ```bash
-sudo dpkg -i amberchest_1.2.1_amd64.deb
+sudo dpkg -i amberchest_2.0.0_amd64.deb
 ```
 
 Both x64 and arm64 are built.

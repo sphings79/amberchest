@@ -253,9 +253,9 @@ Dasselbe im Terminal, wer das lieber mag:
 xattr -dr com.apple.quarantine "/Applications/AmberChest.app"
 ```
 
-> Sagt macOS stattdessen, die App sei **beschädigt**, hast du Version 1.2.0
-> oder älter. Diese Pakete waren gar nicht signiert, was ein Apple-Silicon-Mac
-> als kaputtes Bundle liest. Nimm 1.2.1 oder neuer.
+> Sagt macOS stattdessen, die App sei **beschädigt**, hast du ein Paket von vor
+> 1.2.1, veröffentlicht noch unter dem Namen Mail Archiver. Die waren gar nicht
+> signiert, was ein Apple-Silicon-Mac als kaputtes Bundle liest.
 
 ### Windows
 
@@ -268,7 +268,7 @@ eine Warnung: *Weitere Informationen* → *Trotzdem ausführen*.
 AppImage ausführbar machen und starten, oder das `.deb` installieren:
 
 ```bash
-sudo dpkg -i amberchest_1.2.1_amd64.deb
+sudo dpkg -i amberchest_2.0.0_amd64.deb
 ```
 
 Es werden x64 und arm64 gebaut.
