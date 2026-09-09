@@ -1,6 +1,6 @@
 {
   "name": "mail-archiver",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Mail Archiver - The Mail Backup Solution",
   "license": "AGPL-3.0-or-later",
