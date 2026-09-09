@@ -21,6 +21,19 @@ export interface FolderRow {
   last_sync: string | null;
 }
 
+/** A row of the "largest messages" lists on the statistics screen. */
+export interface LargestMessage {
+  id: number;
+  accountId: string;
+  folderPath: string;
+  subject: string | null;
+  from: string | null;
+  date: string;
+  size: number;
+  attachmentBytes: number;
+  attachmentCount: number;
+}
+
 export interface MessageRow {
   id: number;
   account_id: string;
@@ -417,6 +430,56 @@ export class ArchiveDatabase {
   }
 
   /**
+   * The biggest messages, by the message itself or by what it carries.
+   *
+   * Two different questions: a long thread is a large message with no
+   * attachment at all, while one photograph makes a small message a large
+   * file. The folder comes along because "which one is it" is the first
+   * thing anybody asks of such a list.
+   */
+  largestMessages(
+    accountId: string | null,
+    by: 'size' | 'attachments',
+    limit: number,
+    offset: number,
+  ): LargestMessage[] {
+    const where = accountId ? 'AND m.account_id = @accountId' : '';
+    const params = { accountId, limit, offset };
+
+    if (by === 'attachments') {
+      return this.db
+        .prepare(
+          `SELECT m.id AS id, m.account_id AS accountId, f.path AS folderPath, m.subject AS subject,
+                  m.from_addr AS "from", m.internal_date AS date, m.size AS size,
+                  COALESCE(SUM(a.size), 0) AS attachmentBytes, COUNT(a.id) AS attachmentCount
+             FROM messages m
+             JOIN folders f ON f.id = m.folder_id
+             JOIN attachments a ON a.message_id = m.id
+            WHERE m.state = 'active' ${where}
+            GROUP BY m.id
+            ORDER BY attachmentBytes DESC
+            LIMIT @limit OFFSET @offset`,
+        )
+        .all(params) as LargestMessage[];
+    }
+
+    return this.db
+      .prepare(
+        `SELECT m.id AS id, m.account_id AS accountId, f.path AS folderPath, m.subject AS subject,
+                m.from_addr AS "from", m.internal_date AS date, m.size AS size,
+                (SELECT COALESCE(SUM(a.size), 0) FROM attachments a WHERE a.message_id = m.id)
+                  AS attachmentBytes,
+                (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachmentCount
+           FROM messages m
+           JOIN folders f ON f.id = m.folder_id
+          WHERE m.state = 'active' ${where}
+          ORDER BY m.size DESC
+          LIMIT @limit OFFSET @offset`,
+      )
+      .all(params) as LargestMessage[];
+  }
+
+  /**
    * Numbers for the statistics screen.
    *
    * All of it comes out of the index, so nothing has to be read from disk and
@@ -426,7 +489,7 @@ export class ArchiveDatabase {
     perYear: Array<{ year: string; messages: number; bytes: number }>;
     perFolder: Array<{ path: string; messages: number; bytes: number }>;
     topSenders: Array<{ address: string; messages: number; bytes: number }>;
-    largest: Array<{ id: number; accountId: string; subject: string | null; from: string | null; date: string; size: number }>;
+    largest: LargestMessage[];
     attachments: { files: number; bytes: number; byType: Array<{ type: string; files: number; bytes: number }> };
     totals: { messages: number; bytes: number; deleted: number; linked: number; withAttachments: number };
     range: { first: string | null; last: string | null };
@@ -462,21 +525,7 @@ export class ArchiveDatabase {
       )
       .all(params) as Array<{ address: string; messages: number; bytes: number }>;
 
-    const largest = this.db
-      .prepare(
-        `SELECT m.id AS id, m.account_id AS accountId, m.subject AS subject,
-                m.from_addr AS "from", m.internal_date AS date, m.size AS size
-           ${active}
-          ORDER BY m.size DESC LIMIT 10`,
-      )
-      .all(params) as Array<{
-      id: number;
-      accountId: string;
-      subject: string | null;
-      from: string | null;
-      date: string;
-      size: number;
-    }>;
+    const largest = this.largestMessages(accountId, 'size', 10, 0);
 
     const attachmentWhere = accountId ? 'WHERE a.account_id = @accountId' : '';
     const attachmentTotals = this.db
@@ -619,20 +668,31 @@ export class ArchiveDatabase {
   // ------------------------------------------------------------ attachments
 
   /** Every message of an account that is still present locally. */
-  listMessagesForExport(accountId: string, folderIds?: number[]): MessageRow[] {
+  listMessagesForExport(
+    accountId: string,
+    folderIds?: number[],
+    range?: { from?: string | null; to?: string | null },
+  ): MessageRow[] {
+    const where = ["account_id = ?", "state = 'active'"];
+    const params: unknown[] = [accountId];
+
     if (folderIds && folderIds.length > 0) {
-      const placeholders = folderIds.map(() => '?').join(',');
-      return this.db
-        .prepare(
-          `SELECT * FROM messages
-            WHERE account_id = ? AND state = 'active' AND folder_id IN (${placeholders})
-            ORDER BY folder_id, uid`,
-        )
-        .all(accountId, ...folderIds) as MessageRow[];
+      where.push(`folder_id IN (${folderIds.map(() => '?').join(',')})`);
+      params.push(...folderIds);
     }
+    if (range?.from) {
+      where.push('internal_date >= ?');
+      params.push(range.from);
+    }
+    if (range?.to) {
+      // Inclusive end of day, as everywhere else a date is entered without a time.
+      where.push('internal_date <= ?');
+      params.push(`${range.to}T23:59:59.999Z`);
+    }
+
     return this.db
-      .prepare("SELECT * FROM messages WHERE account_id = ? AND state = 'active' ORDER BY folder_id, uid")
-      .all(accountId) as MessageRow[];
+      .prepare(`SELECT * FROM messages WHERE ${where.join(' AND ')} ORDER BY folder_id, uid`)
+      .all(...params) as MessageRow[];
   }
 
   /** Attachments already exported for one message, keyed by name and hash. */

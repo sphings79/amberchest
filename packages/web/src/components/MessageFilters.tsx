@@ -22,6 +22,8 @@ export interface MessageFilterValues {
   unreadOnly: boolean;
   flaggedOnly: boolean;
   includeDeleted: boolean;
+  /** Only what one of my own addresses sent to one of my own addresses. */
+  sentToSelf: boolean;
   /** Kept as text so the fields can be empty. */
   minSizeKb: string;
   maxSizeKb: string;
@@ -40,6 +42,7 @@ export const EMPTY_MESSAGE_FILTERS: MessageFilterValues = {
   unreadOnly: false,
   flaggedOnly: false,
   includeDeleted: false,
+  sentToSelf: false,
   minSizeKb: '',
   maxSizeKb: '',
   folders: [],
@@ -57,6 +60,7 @@ export function activeFilterCount(filters: MessageFilterValues, countFolders = t
   if (filters.unreadOnly) count += 1;
   if (filters.flaggedOnly) count += 1;
   if (filters.includeDeleted) count += 1;
+  if (filters.sentToSelf) count += 1;
   if (filters.minSizeKb) count += 1;
   if (filters.maxSizeKb) count += 1;
   if (countFolders) count += filters.folders.length;
@@ -81,6 +85,7 @@ export function toSearchOptions(filters: MessageFilterValues): {
   unreadOnly: boolean;
   flaggedOnly: boolean;
   includeDeleted: boolean;
+  toSelf: boolean;
   minSize?: number;
   maxSize?: number;
 } {
@@ -95,6 +100,7 @@ export function toSearchOptions(filters: MessageFilterValues): {
     unreadOnly: filters.unreadOnly,
     flaggedOnly: filters.flaggedOnly,
     includeDeleted: filters.includeDeleted,
+    toSelf: filters.sentToSelf,
     minSize: sizeToBytes(filters.minSizeKb),
     maxSize: sizeToBytes(filters.maxSizeKb),
   };
@@ -215,6 +221,12 @@ export function MessageFilters({
           checked={filters.includeDeleted}
           onChange={(includeDeleted) => set({ includeDeleted })}
           label={t('search.includeDeleted')}
+        />
+        <Toggle
+          checked={filters.sentToSelf}
+          onChange={(sentToSelf) => set({ sentToSelf })}
+          label={t('search.sentToSelf')}
+          hint={t('search.sentToSelfHint')}
         />
       </div>
 

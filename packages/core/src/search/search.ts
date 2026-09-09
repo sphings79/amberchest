@@ -31,6 +31,14 @@ export interface SearchOptions {
   maxSize?: number | null;
   /** Include messages that were removed on the server. */
   includeDeleted?: boolean;
+  /**
+   * Only messages this person sent to themselves.
+   *
+   * Both ends have to be one of the given addresses. Substring matching, the
+   * same as the sender and recipient filters: a header carries a display name
+   * around the address, and "Dennis <d@example.com>" has to match d@example.com.
+   */
+  sentToSelf?: string[];
   sort?: SearchSort;
   /** Only messages that have at least one exported attachment. */
   withAttachments?: boolean;
@@ -134,6 +142,13 @@ export function searchMessages(db: ArchiveDatabase, options: SearchOptions): Sea
   }
   if (options.withAttachments) {
     where.push('EXISTS (SELECT 1 FROM attachments a WHERE a.message_id = m.id)');
+  }
+  if (options.sentToSelf && options.sentToSelf.length > 0) {
+    const senders = options.sentToSelf.map(() => 'm.from_addr LIKE ?').join(' OR ');
+    const recipients = options.sentToSelf.map(() => 'm.to_addr LIKE ?').join(' OR ');
+    where.push(`(${senders}) AND (${recipients})`);
+    for (const address of options.sentToSelf) params.push(`%${address}%`);
+    for (const address of options.sentToSelf) params.push(`%${address}%`);
   }
 
   const handle = db.handle;

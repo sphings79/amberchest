@@ -29,6 +29,8 @@ export interface AccountSettings {
   deletedRetentionDays: number | null;
   /** Newly appeared server folders are selected automatically when true. */
   autoSelectNewFolders: boolean;
+  /** Aliases beside the account address, for "sent to myself". */
+  ownAddresses: string[];
   /**
    * Store a message once when it sits in several folders.
    *
@@ -74,6 +76,14 @@ export interface AttachmentSettings {
   writeManifest: boolean;
   /** IMAP paths to export from; empty means every archived folder. */
   folders: string[];
+  /**
+   * Only messages in this range, by the date the server has for them.
+   *
+   * Either end may stand alone: "everything since the move" needs no upper
+   * bound, "everything before the old job" needs no lower one.
+   */
+  dateFrom: string | null;
+  dateTo: string | null;
 }
 
 export interface AccountOAuth {

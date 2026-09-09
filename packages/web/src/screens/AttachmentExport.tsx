@@ -312,6 +312,23 @@ export function AttachmentExport({
             />
           </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('attachments.dateFrom')} hint={t('attachments.dateHint')}>
+              <Input
+                type="date"
+                value={settings.dateFrom ?? ''}
+                onChange={(event) => patch({ dateFrom: event.target.value || null })}
+              />
+            </Field>
+            <Field label={t('attachments.dateTo')}>
+              <Input
+                type="date"
+                value={settings.dateTo ?? ''}
+                onChange={(event) => patch({ dateTo: event.target.value || null })}
+              />
+            </Field>
+          </div>
+
           <div className="flex flex-col gap-2">
             <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
               {t('attachments.folders')}

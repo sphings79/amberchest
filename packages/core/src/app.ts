@@ -1,7 +1,7 @@
 import { ConfigStore, toPublicAccount } from './config/store.js';
 import { discardFolder, type DiscardResult } from './storage/discard.js';
 import type { AccountInput } from './config/schema.js';
-import { ArchiveDatabase } from './db/database.js';
+import { ArchiveDatabase, type LargestMessage } from './db/database.js';
 import {
   connectionOptionsFromAccount,
   listRemoteFolders,
@@ -369,6 +369,34 @@ export class AmberChestApp {
       }
     }
     return { ...result, deselected };
+  }
+
+  /**
+   * Every address that counts as this person.
+   *
+   * The account address plus the aliases kept with it. Without an account it
+   * is the union over all of them, which is what a search across accounts
+   * needs.
+   */
+  ownAddresses(accountId: string | null): string[] {
+    const accounts = accountId ? [this.requireAccount(accountId)] : this.config.listAccounts();
+    const addresses = new Set<string>();
+    for (const account of accounts) {
+      if (account.email) addresses.add(account.email);
+      for (const alias of account.settings.ownAddresses) {
+        if (alias.trim()) addresses.add(alias.trim());
+      }
+    }
+    return [...addresses];
+  }
+
+  largestMessages(
+    accountId: string | null,
+    by: 'size' | 'attachments',
+    limit: number,
+    offset: number,
+  ): LargestMessage[] {
+    return this.db.largestMessages(accountId, by, limit, offset);
   }
 
   getAttachmentSettings(accountId: string): AttachmentSettings {

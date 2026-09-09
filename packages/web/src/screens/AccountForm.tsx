@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   deletedHandling: 'move-to-deleted',
   deletedRetentionDays: null,
   autoSelectNewFolders: false,
+  ownAddresses: [],
   linkDuplicates: false,
   protectBeforeDate: null,
 };
@@ -334,6 +335,22 @@ export function AccountForm({
               onChange={(autoSelectNewFolders) => setSettings({ ...settings, autoSelectNewFolders })}
               label={t('account.autoSelectNew')}
             />
+
+            <Field label={t('account.ownAddresses')} hint={t('account.ownAddressesHint')}>
+              <Input
+                value={settings.ownAddresses.join(', ')}
+                placeholder="alias@example.com, alt@example.com"
+                onChange={(event) =>
+                  setSettings({
+                    ...settings,
+                    ownAddresses: event.target.value
+                      .split(',')
+                      .map((entry) => entry.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
+            </Field>
 
             <Field label={t('account.protectBefore')} hint={t('account.protectBeforeHint')}>
               <Input

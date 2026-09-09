@@ -1,6 +1,7 @@
 import { BarChart3, Link2, Mail, Paperclip, Trash2 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LargestMessages } from './LargestMessages.js';
 import { api, type Statistics } from '../api/client.js';
 import { Card, EmptyState, Select } from '../components/ui.js';
 import { useApp } from '../state.js';
@@ -218,30 +219,7 @@ export function Statistics(): ReactNode {
               </Card>
             )}
 
-            {data.largest.length > 0 && (
-              <Card className="flex flex-col gap-3">
-                <span className="text-sm font-medium">{t('stats.largest')}</span>
-                <div className="flex flex-col">
-                  {data.largest.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-baseline gap-3 border-t py-2 text-xs first:border-t-0"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <span className="min-w-0 flex-1 truncate" style={{ color: 'var(--text)' }}>
-                        {entry.subject ?? t('stats.noSubject')}
-                      </span>
-                      <span className="hidden truncate sm:block sm:w-48" style={{ color: 'var(--text-faint)' }}>
-                        {entry.from ?? ''}
-                      </span>
-                      <span className="shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                        {formatBytes(entry.size)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+            <LargestMessages accountId={accountId || undefined} />
           </>
         )
       )}

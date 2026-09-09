@@ -32,6 +32,7 @@ export {
   ArchiveDatabase,
   type AttachmentRow,
   type FolderRow,
+  type LargestMessage,
   type MessageRow,
 } from './db/database.js';
 export {

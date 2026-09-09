@@ -115,6 +115,8 @@ const searchQuerySchema = z.object({
   unread: z.string().optional(),
   flagged: z.string().optional(),
   deleted: z.string().optional(),
+  /** Only what this person sent to themselves; the addresses come from the account. */
+  toSelf: z.string().optional(),
   minSize: z.coerce.number().int().min(0).optional(),
   maxSize: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(50),
@@ -348,6 +350,22 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   });
 
   // ------------------------------------------------------------- statistics
+
+  server.get('/api/statistics/largest', { preHandler: requireUnlocked }, async (request, reply) => {
+    const parsed = z
+      .object({
+        account: z.string().optional(),
+        by: z.enum(['size', 'attachments']).default('size'),
+        limit: z.coerce.number().int().min(1).max(500).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
+      })
+      .safeParse(request.query);
+    if (!parsed.success) return fail(reply, 400, 'Invalid parameters');
+    const { account, by, limit, offset } = parsed.data;
+    return {
+      rows: app.largestMessages(account ?? null, by, limit, offset),
+    };
+  });
 
   server.get('/api/statistics', { preHandler: requireUnlocked }, async (request, reply) => {
     const query = request.query as { account?: string };
@@ -743,6 +761,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       query: query.q,
       accountId: query.account ?? null,
       folders: query.folders ? query.folders.split('\n').filter(Boolean) : [],
+      sentToSelf: query.toSelf === '1' ? app.ownAddresses(query.account ?? null) : undefined,
       from: query.from ?? null,
       to: query.to ?? null,
       field: query.field,

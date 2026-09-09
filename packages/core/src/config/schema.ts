@@ -11,6 +11,13 @@ export const accountSettingsSchema = z.object({
   deletedHandling: z.enum(['keep', 'move-to-deleted', 'mirror']).default('move-to-deleted'),
   deletedRetentionDays: z.number().int().min(1).max(3650).nullable().default(null),
   autoSelectNewFolders: z.boolean().default(false),
+  /**
+   * Further addresses that count as this person, beside the account address.
+   *
+   * Aliases, the old provider, the address at work: without them "mail I sent
+   * to myself" only finds what went to exactly one of them.
+   */
+  ownAddresses: z.array(z.string()).default([]),
   /** One file for a message that sits in several folders, as Gmail does. */
   linkDuplicates: z.boolean().default(false),
   /**
@@ -32,6 +39,8 @@ export const attachmentSettingsSchema = z.object({
   deduplicate: z.boolean().default(true),
   writeManifest: z.boolean().default(true),
   folders: z.array(z.string()).default([]),
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
 });
 
 /** The tokens one mailbox holds; the client belongs to the instance. */

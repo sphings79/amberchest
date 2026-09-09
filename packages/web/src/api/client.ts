@@ -38,19 +38,25 @@ export type {
   VerifyProgress,
 };
 
+/** A row of the two "largest messages" lists. */
+export interface LargestMessage {
+  id: number;
+  accountId: string;
+  folderPath: string;
+  subject: string | null;
+  from: string | null;
+  date: string;
+  size: number;
+  attachmentBytes: number;
+  attachmentCount: number;
+}
+
 /** What the statistics screen shows; all of it comes out of the index. */
 export interface Statistics {
   perYear: Array<{ year: string; messages: number; bytes: number }>;
   perFolder: Array<{ path: string; messages: number; bytes: number }>;
   topSenders: Array<{ address: string; messages: number; bytes: number }>;
-  largest: Array<{
-    id: number;
-    accountId: string;
-    subject: string | null;
-    from: string | null;
-    date: string;
-    size: number;
-  }>;
+  largest: LargestMessage[];
   attachments: {
     files: number;
     bytes: number;
@@ -91,6 +97,8 @@ export interface SearchQuery {
   unreadOnly?: boolean;
   flaggedOnly?: boolean;
   includeDeleted?: boolean;
+  /** Only what one of my own addresses sent to one of my own addresses. */
+  toSelf?: boolean;
   /** Sizes in bytes. */
   minSize?: number | undefined;
   maxSize?: number | undefined;
@@ -142,6 +150,8 @@ export interface AccountSettingsValues {
   autoSelectNewFolders: boolean;
   linkDuplicates: boolean;
   protectBeforeDate: string | null;
+  /** Aliases beside the account address, for "sent to myself". */
+  ownAddresses: string[];
 }
 
 import {
@@ -332,6 +342,22 @@ export const api = {
   statistics: (accountId?: string) =>
     request<Statistics>(`/statistics${accountId ? `?account=${encodeURIComponent(accountId)}` : ''}`),
 
+  /** The longer list behind "more", by message size or by what it carries. */
+  largestMessages: (options: {
+    accountId?: string;
+    by: 'size' | 'attachments';
+    limit: number;
+    offset: number;
+  }) => {
+    const query = new URLSearchParams({
+      by: options.by,
+      limit: String(options.limit),
+      offset: String(options.offset),
+    });
+    if (options.accountId) query.set('account', options.accountId);
+    return request<{ rows: LargestMessage[] }>(`/statistics/largest?${query.toString()}`);
+  },
+
   storage: () =>
     request<{
       space: { free: number; total: number; path: string } | null;
@@ -408,6 +434,7 @@ export const api = {
     if (query.unreadOnly) params.set('unread', '1');
     if (query.flaggedOnly) params.set('flagged', '1');
     if (query.includeDeleted) params.set('deleted', '1');
+    if (query.toSelf) params.set('toSelf', '1');
     if (query.minSize) params.set('minSize', String(query.minSize));
     if (query.maxSize) params.set('maxSize', String(query.maxSize));
     params.set('limit', String(query.limit ?? 50));
