@@ -489,6 +489,8 @@ genau diese Adresse will **Umziehen**, zusammen mit dem Oberflächen-Passwort.
 Den Port ohne das Passwort freizugeben ändert nichts: das Add-on weist weiter
 ab und schreibt das ins Protokoll.
 
+**[→ Das Ganze Schritt für Schritt, mit Bildern](https://github.com/sphings79/mail-archiver-ha-app/blob/main/docs/remote-access.de.md)**
+
 Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
 Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
 Index-Datenbank wieder aufgebaut.

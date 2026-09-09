@@ -469,6 +469,8 @@ is the address **Move** wants, together with the interface password. Mapping the
 port without setting the password changes nothing: the add-on keeps refusing,
 and says so in its log.
 
+**[→ The whole thing step by step, with pictures](https://github.com/sphings79/mail-archiver-ha-app/blob/main/docs/remote-access.md)**
+
 The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
 over an archive directory that is already in place — which is how an index
 database is rebuilt after it was lost.
