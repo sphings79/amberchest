@@ -600,6 +600,123 @@ def transfer() -> str:
     return "".join(out)
 
 
+def oauth() -> str:
+    out = [
+        head(H, "Mail Archiver connecting a mailbox with OAuth using a device code",
+             "Mail Archiver — OAuth",
+             "Connecting an account with OAuth: a provider is picked, a device code is shown and the archiver waits for the confirmation."),
+        titlebar(),
+        sidebar("Konten"),
+        text(268, 96, "Konten", TEXT, 20, "600"),
+        f'    <rect y="44" width="{W}" height="{H - 44}" fill="#0d0f14" opacity="0.6"/>\n',
+    ]
+
+    out.append(card(280, 108, 640, 560, r=16))
+    out.append(text(310, 152, "Konto bearbeiten — Arbeit", TEXT, 16, "600"))
+
+    out.append(field(310, 184, 290, "SERVER", "outlook.office365.com"))
+    out.append(field(628, 184, 262, "PORT", "993"))
+    out.append(field(310, 244, 290, "BENUTZER", "dennis@example.com"))
+    out.append(field(628, 244, 262, "ANMELDUNG", "OAuth 2.0"))
+
+    # the connect box, as it looks while a device code is pending
+    out.append(card(310, 310, 580, 268, "#11141b", "none", 12))
+    out.append(f'    <g stroke="{ACCENT}" stroke-width="1.6" fill="none"><circle cx="335" cy="337" r="5"/><path d="M339 341l10 10M345 347l-3 3M349 351l-3 3" stroke-linecap="round"/></g>\n')
+    out.append(text(356, 342, "Mit dem Anbieter verbinden", TEXT, 12.5, "600"))
+
+    out.append(field(330, 378, 540, "ANBIETER", "Microsoft"))
+
+    out.append(text(330, 450, "Diesen Code auf der Seite eingeben — Handy oder anderer Rechner geht auch.", MUTED, 11.5))
+
+    out.append(card(330, 464, 178, 42, PANEL, BORDER, 10))
+    out.append(text(419, 492, "K7F4-9QLD", TEXT, 18, "600", anchor="middle", family=MONO, spacing="2"))
+    out.append(card(520, 464, 42, 42, "#181c26", BORDER, 10))
+    out.append(f'    <g stroke="{MUTED}" stroke-width="1.5" fill="none"><rect x="533" y="476" width="11" height="13" rx="2"/><path d="M537 474h11v13"/></g>\n')
+    out.append(f'    <g stroke="{ACCENT}" stroke-width="1.5" fill="none"><path d="M580 480h9v9h-9z"/><path d="M586 477h5v5" stroke-linecap="round"/></g>\n')
+    out.append(text(600, 490, "microsoft.com/devicelogin", ACCENT, 11.5))
+
+    out.append(f'    <g stroke="{FAINT}" stroke-width="1.6" fill="none"><path d="M336 546a7 7 0 1 1 5-2" stroke-linecap="round"/></g>\n')
+    out.append(text(352, 550, "Warte auf die Bestätigung …", FAINT, 11))
+
+    out.append(text(310, 604, "Der Token wird vor jeder Verbindung erneuert — geplante Sicherungen laufen weiter.", FAINT, 11))
+
+    out.append(button(628, 618, 118, "Abbrechen"))
+    out.append(button(758, 618, 132, "Speichern", True))
+
+    out.append(tail())
+    return "".join(out)
+
+
+def notifications() -> str:
+    out = [
+        head(H, "Mail Archiver settings for notifications and the disk space guard",
+             "Mail Archiver — Benachrichtigungen",
+             "The notification settings: a webhook address, the format, which events are sent, and the two disk space thresholds."),
+        titlebar(),
+        sidebar("Einstellungen"),
+        text(268, 96, "Einstellungen", TEXT, 20, "600"),
+    ]
+
+    # notifications
+    out.append(card(268, 126, 560, 540))
+    out.append(f'    <g stroke="{ACCENT}" stroke-width="1.6" fill="none"><path d="M292 168v-6a8 8 0 0 1 16 0v6l3 5h-22z" stroke-linejoin="round"/><path d="M297 173a3 3 0 0 0 6 0" stroke-linecap="round"/></g>\n')
+    out.append(text(320, 166, "Benachrichtigungen", TEXT, 13.5, "600"))
+
+    out.append(text(292, 196, "Schickt eine Nachricht an alles, was einen POST annimmt — ntfy, Gotify,", FAINT, 11.5))
+    out.append(text(292, 214, "Discord, Apprise. Eine nachts fehlgeschlagene Sicherung nützt nur,", FAINT, 11.5))
+    out.append(text(292, 232, "wenn sie jemand mitbekommt.", FAINT, 11.5))
+
+    out.append(toggle(292, 252, True, "Benachrichtigungen aktivieren"))
+
+    out.append(field(292, 294, 512, "ADRESSE", "https://ntfy.sh/mein-postfach"))
+    out.append(field(292, 354, 246, "FORMAT", "ntfy"))
+    out.append(field(558, 354, 246, "ZUSÄTZLICHER HEADER", "—"))
+
+    out.append(text(292, 434, "WANN GESENDET WIRD", FAINT, 9.5, spacing="0.6"))
+    events = [
+        (True, "Wenn eine Sicherung fehlschlägt"),
+        (True, "Wenn eine Archivprüfung etwas findet"),
+        (True, "Wenn der Speicherplatz knapp wird"),
+        (False, "Nach jeder erfolgreichen Sicherung"),
+    ]
+    y = 448
+    for on, label in events:
+        out.append(toggle(292, y, on, label))
+        y += 34
+
+    out.append(button(292, 596, 190, "Testnachricht senden"))
+    out.append(f'    <rect x="496" y="601" width="92" height="24" rx="12" fill="#12291f"/>\n')
+    out.append(text(542, 617, "Angekommen.", OK, 10.5, "500", anchor="middle"))
+
+    # disk space
+    out.append(card(848, 126, 318, 540))
+    out.append(f'    <g stroke="{ACCENT}" stroke-width="1.6" fill="none"><rect x="872" y="156" width="20" height="16" rx="3"/><path d="M876 172v4h12v-4"/><circle cx="882" cy="164" r="3"/></g>\n')
+    out.append(text(902, 168, "Speicherplatz", TEXT, 13.5, "600"))
+
+    out.append(card(872, 194, 270, 96, "#11141b", "none", 12))
+    out.append(text(892, 224, "182 GB", TEXT, 20, "600"))
+    out.append(text(892, 244, "frei von 465 GB", FAINT, 11))
+    out.append(f'    <rect x="892" y="260" width="230" height="8" rx="4" fill="{PANEL}"/>\n')
+    out.append(f'    <rect x="892" y="260" width="140" height="8" rx="4" fill="{ACCENT}"/>\n')
+
+    out.append(field(872, 310, 270, "WARNEN UNTER (GB)", "20"))
+    out.append(text(872, 366, "Zeigt einen Hinweis und schickt eine", FAINT, 10.5))
+    out.append(text(872, 382, "Benachrichtigung. 0 schaltet es ab.", FAINT, 10.5))
+
+    out.append(field(872, 404, 270, "SICHERUNG ANHALTEN UNTER (GB)", "5"))
+    out.append(text(872, 460, "Eine laufende Sicherung hört auf, statt", FAINT, 10.5))
+    out.append(text(872, 476, "die Platte vollzuschreiben.", FAINT, 10.5))
+
+    out.append(card(872, 506, 270, 76, "#2f2513", "none", 12))
+    out.append(f'    <g stroke="#e0a33f" stroke-width="1.6" fill="none"><path d="M892 546l9-16 9 16z" stroke-linejoin="round"/><path d="M901 537v5" stroke-linecap="round"/></g>\n')
+    out.append(text(922, 534, "Unter der Warngrenze wird", "#e0a33f", 10.5))
+    out.append(text(922, 550, "einmal gemeldet, nicht bei", "#e0a33f", 10.5))
+    out.append(text(922, 566, "jedem Lauf.", "#e0a33f", 10.5))
+
+    out.append(tail())
+    return "".join(out)
+
+
 def patch_sidebar(path: Path, active: str) -> None:
     """Replaces the navigation in an older picture with the current one."""
     content = path.read_text()
@@ -699,6 +816,8 @@ def main() -> None:
     (SRC / "transfer.svg").write_text(transfer())
     (SRC / "search.svg").write_text(search())
     (SRC / "homeassistant.svg").write_text(homeassistant())
+    (SRC / "oauth.svg").write_text(oauth())
+    (SRC / "notifications.svg").write_text(notifications())
     patch_sidebar(SRC / "overview.svg", "Übersicht")
     patch_sidebar(SRC / "settings.svg", "Einstellungen")
 

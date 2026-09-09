@@ -86,10 +86,25 @@ downloads nothing.</em>
 
 <br><br>
 
+<img src="assets/screenshots/oauth.svg" width="880" alt="Account dialog connecting a mailbox with OAuth, showing the device code and the address to enter it at, dark and light side by side">
+
+<em>OAuth — Microsoft hands out a code you type on any device, Gmail goes through
+the browser. The token is refreshed by itself, so scheduled backups keep
+running.</em>
+
+<br><br>
+
 <img src="assets/screenshots/homeassistant.svg" width="880" alt="Home Assistant screen with the MQTT broker, topics and the switches for discovery and commands, dark and light side by side">
 
 <em>Home Assistant — enter the MQTT broker and you are done: the entities appear
 through discovery, with the account in the topic.</em>
+
+<br><br>
+
+<img src="assets/screenshots/notifications.svg" width="880" alt="Notification settings with the webhook address, format, the four events and the two disk space thresholds, dark and light side by side">
+
+<em>Notifications and disk space — one address that takes a POST is enough, and
+two thresholds decide when you get a warning and when a running backup stops.</em>
 
 <br><br>
 

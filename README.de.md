@@ -88,10 +88,26 @@ nichts.</em>
 
 <br><br>
 
+<img src="assets/screenshots/oauth.svg" width="880" alt="Kontodialog beim Verbinden per OAuth mit Device-Code und der Adresse zur Eingabe, dunkel und hell nebeneinander">
+
+<em>OAuth — Microsoft gibt einen Code aus, den du auf einem beliebigen Gerät
+eingibst, Gmail läuft über den Browser. Der Token erneuert sich selbst,
+geplante Sicherungen laufen weiter.</em>
+
+<br><br>
+
 <img src="assets/screenshots/homeassistant.svg" width="880" alt="Home-Assistant-Seite mit MQTT-Broker, Topics und Schaltern für Discovery und Befehle, dunkel und hell nebeneinander">
 
 <em>Home Assistant — MQTT-Broker eintragen, fertig: die Entitäten entstehen per
 Discovery, das Konto steckt im Topic.</em>
+
+<br><br>
+
+<img src="assets/screenshots/notifications.svg" width="880" alt="Benachrichtigungen mit Adresse, Format, den vier Ereignissen und den beiden Speicherplatzgrenzen, dunkel und hell nebeneinander">
+
+<em>Benachrichtigungen und Speicherplatz — eine Adresse, die einen POST annimmt,
+genügt; zwei Grenzen entscheiden, wann gewarnt wird und wann eine laufende
+Sicherung anhält.</em>
 
 <br><br>
 
