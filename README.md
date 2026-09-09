@@ -13,7 +13,9 @@ with a folder tree that mirrors your mailbox.
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Checking the archive](#checking-the-archive) · [Statistics](#statistics-and-the-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+
+**Also part of this project:** [Home Assistant integration](https://github.com/sphings79/mail-archiver-home-assistant) · [Home Assistant App (Add-on)](https://github.com/sphings79/mail-archiver-ha-app)
 
 </div>
 
@@ -31,8 +33,9 @@ read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
 `\Seen` flag.
 
-> **All six stages are done.** Backup, attachment export, search, viewer,
-> exports, MCP, restore, the container and the remote mode all work.
+> **Everything on the roadmap is done.** Backup, attachment export, search,
+> viewer, exports, MCP, restore, the container, the remote mode, OAuth, the
+> archive check, moving an archive, statistics and the register all work.
 
 ## Screenshots
 
@@ -163,7 +166,44 @@ to the Docker guide.</em>
   scheduled backups run on your server while you look at them from your desk
 - **Optional archive encryption** with the master password, for an archive on
   a disk you do not fully control
+- **OAuth for Gmail and Microsoft 365**, which no longer accept a password for
+  IMAP. Microsoft is connected with a device code, Gmail through a browser; the
+  token is refreshed before every connection, so scheduled backups keep running
+- **Mailbox browser**: accounts and folders on the left, the messages of the
+  selected folder on the right, straight from the local index
+- **Archive check.** Every file against the checksum taken when it was
+  downloaded, every folder against the count on the server — so "is anything
+  missing?" has an answer
+- **Move an archive** to another instance from inside the app: the files
+  travel, the other side rebuilds its index from the journals, and the first
+  backup there downloads nothing
+- **Gmail duplicates stored once.** A mail that sits in its folder and in All
+  Mail is recognised before anything is fetched: both folders still show it,
+  the bytes exist once
+- **Protect everything before a date** from deletion, for emptying a mailbox to
+  win back space on the server while the archive keeps it
+- **Statistics**: messages per year, the frequent senders, the largest folders
+  and messages, attachments by type
+- **A register in the archive** — an `index.html` per folder linking to the
+  `.eml` files beside it, readable without this program
+- **Disk space guard**: a warning threshold and one at which a running backup
+  stops instead of filling the volume
+- **Notifications** to anything that takes a POST — ntfy, Gotify, Discord,
+  Apprise — for a failed backup, a finished one, a verification that found
+  something, or a volume running low
+- **Installable on a phone**: the web interface is a progressive web app
 - **Live progress** over a websocket, with a log you can actually read
+
+## Three projects, one archive
+
+| | What it is |
+| --- | --- |
+| **Mail Archiver** (here) | The application: desktop app for macOS, Windows and Linux, and a Docker container with the same interface |
+| [**Mail Archiver Integration**](https://github.com/sphings79/mail-archiver-home-assistant) | Home Assistant integration from HACS: a device per mailbox, sensors, a backup button and a Lovelace card |
+| [**Home Assistant App (Add-on)**](https://github.com/sphings79/mail-archiver-ha-app) | Runs Mail Archiver on Home Assistant OS, in the sidebar through ingress |
+
+The application stands on its own; the other two are there if you run Home
+Assistant.
 
 ## Install
 
@@ -254,190 +294,6 @@ The web interface answers on `http://<host>:8484`. It works behind a reverse
 proxy, both on a subdomain and on a sub-path. Images are built for
 `linux/amd64` and `linux/arm64`.
 
-## AI access over MCP
-
-Mail Archiver can expose the archive to an AI assistant through the Model
-Context Protocol — searching, reading, and, if you allow it, operating the
-application. It is **off by default**, and each permission group has its own
-switch:
-
-| Group | What it allows |
-| --- | --- |
-| Read | Search, open messages and attachments, statistics |
-| Back up | Start and cancel backups and indexing |
-| Export | Attachment export and export bundles |
-| Accounts | Create accounts, change server details, set folder selection |
-| Settings | Change application settings |
-| Delete | Remove accounts, drop the index |
-
-Passwords are never readable through MCP — they can only be set.
-
-**Claude Desktop** (stdio transport):
-
-```json
-{
-  "mcpServers": {
-    "mail-archiver": {
-      "command": "node",
-      "args": ["/path/to/mail-archiver/packages/server/dist/mcp-stdio.js"],
-      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "your-master-password" }
-    }
-  }
-}
-```
-
-**Over HTTP** (for the container or a remote client): switch it on in the
-settings, copy the generated token and point the client at `POST /mcp` with
-`Authorization: Bearer <token>`.
-
-## Disk space and notifications
-
-Two things a backup that runs unattended needs: room, and somebody to tell when
-there is none.
-
-**Disk space** is shown in the settings, for the volume the archive sits on. Two
-limits go with it: a warning threshold, and one at which a running backup
-**stops** rather than filling the volume. Stopping leaves a complete archive
-that is missing recent mail; filling the disk leaves a machine that cannot even
-write a log file.
-
-**Notifications** go to any address that takes a POST, so ntfy, Gotify,
-Discord, Apprise and anything self-built all work:
-
-| Event | Default |
-| --- | --- |
-| A backup failed | on |
-| A backup finished | off |
-| A verification found something | on |
-| Disk space is running low | on |
-
-Pick the format your service speaks, paste the address, and there is a test
-button. An extra header field covers services that want a token.
-
-```json
-{
-  "event": "backupFailed",
-  "level": "error",
-  "title": "Mail Archiver: backup of Privat failed",
-  "message": "Connection refused - check host and port",
-  "text": "…",
-  "at": "2026-09-09T02:00:11.000Z",
-  "details": { "account": "Privat", "stats": { … } }
-}
-```
-
-### Emptying the mailbox, keeping the archive
-
-Clearing old mail off the server to win back space there is a normal thing to
-do — and the archive is exactly where that mail should survive it. Set
-**Never delete anything before** to a date in the account's advanced settings,
-and everything older than it stays, whatever happens on the server and whatever
-the deletion policy says. Anything newer follows the usual rule.
-
-```
-Server emptied, deletion policy "mirror", protected before 2024-01-01:
-  2 protected, 1 removed
-  files left: the 2019 and the 2020 message
-```
-
-The comparison with the server then stops reporting that folder as differing:
-holding more than the server is the point of the setting, not a fault.
-
-## Statistics and the register
-
-**Statistics** answers what is actually in the archive: messages per year, the
-most frequent senders, the largest folders and messages, attachments by type.
-All of it comes out of the index, so the page costs a few queries and reads no
-file.
-
-**The register** makes the archive usable without this program. It writes an
-`index.html` next to the messages — one page per folder, linking to the `.eml`
-files beside it, plus an overview. Open it in any browser from a plain
-directory: no server, no database, nothing to install. It is written on demand,
-from the **Verify** dialog.
-
-## Gmail: one message, several folders
-
-Gmail shows every mail in its folder **and** in All Mail, so archiving both
-stores it twice. Turn on **Store a message only once** in the account's
-advanced settings and the second copy becomes a row pointing at the first file:
-
-| | Files | Archive |
-| --- | --- | --- |
-| Off | 6 | 1080 bytes |
-| On | 3 | 540 bytes |
-
-Both folders still show all messages, search finds them, and opening one works
-from either side. The message is not even downloaded a second time — it is
-recognised from the envelope before a byte of the body is fetched.
-
-When the folder that holds the file loses the message on the server, the file
-moves to a folder that still shows it. Deleting one copy never takes the other
-with it.
-
-## Moving an archive
-
-An archive that started on the desktop belongs on the server sooner or later —
-and after a lost index database, the files are still all there. **Move** on an
-account sends the archive to another instance, which rebuilds its index from
-what arrives.
-
-1. Create the account on the target instance, with the same address
-2. **Move** on the source account, enter the address of the target and its
-   interface password
-3. Pick the target account and start
-
-The files travel, the index does not: every folder carries a journal, and the
-other side builds its index from that. Which means an interrupted transfer is
-harmless — run it again and only what is still missing is sent, compared by
-name and size.
-
-A message keeps the UID it had, so the first backup on the new machine
-downloads **nothing**. A file whose journal entry is gone is read instead and
-gets UIDVALIDITY zero, which makes the next backup match it to the server by
-fingerprint — the same path an actual UIDVALIDITY change takes, and still no
-download.
-
-**Nothing is deleted on the source.** Verify the archive on the target and run
-one backup there; only when both look right should the old copy go, by hand.
-
-Two things to know:
-
-- An **encrypted archive** travels as it is. The target can only read it with
-  the same master password.
-- The endpoint that receives files only accepts relative paths ending in `.eml`
-  or the journal name, below the account directory. Anything else is refused.
-
-The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
-over an archive directory that is already in place — which is how an index
-database is rebuilt after it was lost.
-
-## Checking the archive
-
-A backup nobody ever verifies is a hope, not a backup. **Verify** on an account
-reads every archived file and compares it with the checksum taken the day it was
-downloaded, so a bit that rotted on the disk, a file somebody deleted and a file
-that no longer belongs to anything all show up by name.
-
-| Finding | What it means |
-| --- | --- |
-| File is gone | The index knows the message, the file is not there |
-| Content changed | The file no longer matches what came off the server |
-| Cannot be read | Damaged, or encrypted with a different master password |
-| Not in the index | A message file nothing points at any more |
-| Count differs | The folder holds a different number of messages than the server |
-
-**Compare with the server** answers the question one actually has: is anything
-missing? It asks the server how many messages each archived folder holds and
-puts that next to the local count. One `STATUS` per folder, no message bodies.
-
-Nothing is written to the archive and nothing is deleted. The one change is a
-checksum filled in for messages archived before checksums existed — the first
-run after an update writes them, and every run after that compares against them.
-
-There is a `verify_archive` tool for the AI connection as well, in the
-**Back up** permission group.
-
 ## OAuth for Gmail and Microsoft 365
 
 Google and Microsoft no longer accept a password for IMAP. Mail Archiver can
@@ -500,6 +356,190 @@ A mailbox that genuinely needs a client of its own — a Workspace tenant with
 its own app registration, say — can use the **Other** provider slot with its
 own endpoints.
 
+
+## Checking the archive
+
+A backup nobody ever verifies is a hope, not a backup. **Verify** on an account
+reads every archived file and compares it with the checksum taken the day it was
+downloaded, so a bit that rotted on the disk, a file somebody deleted and a file
+that no longer belongs to anything all show up by name.
+
+| Finding | What it means |
+| --- | --- |
+| File is gone | The index knows the message, the file is not there |
+| Content changed | The file no longer matches what came off the server |
+| Cannot be read | Damaged, or encrypted with a different master password |
+| Not in the index | A message file nothing points at any more |
+| Count differs | The folder holds a different number of messages than the server |
+
+**Compare with the server** answers the question one actually has: is anything
+missing? It asks the server how many messages each archived folder holds and
+puts that next to the local count. One `STATUS` per folder, no message bodies.
+
+Nothing is written to the archive and nothing is deleted. The one change is a
+checksum filled in for messages archived before checksums existed — the first
+run after an update writes them, and every run after that compares against them.
+
+There is a `verify_archive` tool for the AI connection as well, in the
+**Back up** permission group.
+
+## Moving an archive
+
+An archive that started on the desktop belongs on the server sooner or later —
+and after a lost index database, the files are still all there. **Move** on an
+account sends the archive to another instance, which rebuilds its index from
+what arrives.
+
+1. Create the account on the target instance, with the same address
+2. **Move** on the source account, enter the address of the target and its
+   interface password
+3. Pick the target account and start
+
+The files travel, the index does not: every folder carries a journal, and the
+other side builds its index from that. Which means an interrupted transfer is
+harmless — run it again and only what is still missing is sent, compared by
+name and size.
+
+A message keeps the UID it had, so the first backup on the new machine
+downloads **nothing**. A file whose journal entry is gone is read instead and
+gets UIDVALIDITY zero, which makes the next backup match it to the server by
+fingerprint — the same path an actual UIDVALIDITY change takes, and still no
+download.
+
+**Nothing is deleted on the source.** Verify the archive on the target and run
+one backup there; only when both look right should the old copy go, by hand.
+
+Two things to know:
+
+- An **encrypted archive** travels as it is. The target can only read it with
+  the same master password.
+- The endpoint that receives files only accepts relative paths ending in `.eml`
+  or the journal name, below the account directory. Anything else is refused.
+
+The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
+over an archive directory that is already in place — which is how an index
+database is rebuilt after it was lost.
+
+## Gmail: one message, several folders
+
+Gmail shows every mail in its folder **and** in All Mail, so archiving both
+stores it twice. Turn on **Store a message only once** in the account's
+advanced settings and the second copy becomes a row pointing at the first file:
+
+| | Files | Archive |
+| --- | --- | --- |
+| Off | 6 | 1080 bytes |
+| On | 3 | 540 bytes |
+
+Both folders still show all messages, search finds them, and opening one works
+from either side. The message is not even downloaded a second time — it is
+recognised from the envelope before a byte of the body is fetched.
+
+When the folder that holds the file loses the message on the server, the file
+moves to a folder that still shows it. Deleting one copy never takes the other
+with it.
+
+## Statistics and the register
+
+**Statistics** answers what is actually in the archive: messages per year, the
+most frequent senders, the largest folders and messages, attachments by type.
+All of it comes out of the index, so the page costs a few queries and reads no
+file.
+
+**The register** makes the archive usable without this program. It writes an
+`index.html` next to the messages — one page per folder, linking to the `.eml`
+files beside it, plus an overview. Open it in any browser from a plain
+directory: no server, no database, nothing to install. It is written on demand,
+from the **Verify** dialog.
+
+## Disk space and notifications
+
+Two things a backup that runs unattended needs: room, and somebody to tell when
+there is none.
+
+**Disk space** is shown in the settings, for the volume the archive sits on. Two
+limits go with it: a warning threshold, and one at which a running backup
+**stops** rather than filling the volume. Stopping leaves a complete archive
+that is missing recent mail; filling the disk leaves a machine that cannot even
+write a log file.
+
+**Notifications** go to any address that takes a POST, so ntfy, Gotify,
+Discord, Apprise and anything self-built all work:
+
+| Event | Default |
+| --- | --- |
+| A backup failed | on |
+| A backup finished | off |
+| A verification found something | on |
+| Disk space is running low | on |
+
+Pick the format your service speaks, paste the address, and there is a test
+button. An extra header field covers services that want a token.
+
+```json
+{
+  "event": "backupFailed",
+  "level": "error",
+  "title": "Mail Archiver: backup of Privat failed",
+  "message": "Connection refused - check host and port",
+  "text": "…",
+  "at": "2026-09-09T02:00:11.000Z",
+  "details": { "account": "Privat", "stats": { … } }
+}
+```
+
+### Emptying the mailbox, keeping the archive
+
+Clearing old mail off the server to win back space there is a normal thing to
+do — and the archive is exactly where that mail should survive it. Set
+**Never delete anything before** to a date in the account's advanced settings,
+and everything older than it stays, whatever happens on the server and whatever
+the deletion policy says. Anything newer follows the usual rule.
+
+```
+Server emptied, deletion policy "mirror", protected before 2024-01-01:
+  2 protected, 1 removed
+  files left: the 2019 and the 2020 message
+```
+
+The comparison with the server then stops reporting that folder as differing:
+holding more than the server is the point of the setting, not a fault.
+
+## AI access over MCP
+
+Mail Archiver can expose the archive to an AI assistant through the Model
+Context Protocol — searching, reading, and, if you allow it, operating the
+application. It is **off by default**, and each permission group has its own
+switch:
+
+| Group | What it allows |
+| --- | --- |
+| Read | Search, open messages and attachments, statistics |
+| Back up | Start and cancel backups and indexing |
+| Export | Attachment export and export bundles |
+| Accounts | Create accounts, change server details, set folder selection |
+| Settings | Change application settings |
+| Delete | Remove accounts, drop the index |
+
+Passwords are never readable through MCP — they can only be set.
+
+**Claude Desktop** (stdio transport):
+
+```json
+{
+  "mcpServers": {
+    "mail-archiver": {
+      "command": "node",
+      "args": ["/path/to/mail-archiver/packages/server/dist/mcp-stdio.js"],
+      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "your-master-password" }
+    }
+  }
+}
+```
+
+**Over HTTP** (for the container or a remote client): switch it on in the
+settings, copy the generated token and point the client at `POST /mcp` with
+`Authorization: Bearer <token>`.
 
 ## Home Assistant
 
@@ -605,7 +645,10 @@ machine can talk to the API.
 | 3 | Viewer, full text search, "open in mail client", export as mbox/PDF/ZIP, MCP server | ✅ done |
 | 4 | Restore, and migration to a different server | ✅ done |
 | 5 | Docker image, web login, cron schedule, remote mode | ✅ done |
-| 6 | Polish: themes, translations, optional archive encryption, Windows and Linux releases | planned |
+| 6 | Themes, translations, optional archive encryption, Windows and Linux releases | ✅ done |
+| 7 | Mailbox browser, richer search filters, MQTT and the Home Assistant projects | ✅ done |
+| 8 | OAuth, archive check, moving an archive, Gmail duplicates, statistics, register | ✅ done |
+| next | CalDAV/CardDAV is explicitly **not** planned — this backs up mail |  |
 
 ## FAQ
 
@@ -635,7 +678,13 @@ No, deliberately. POP3 has no folders and often no stable message identity,
 which makes a trustworthy incremental backup impossible.
 
 **Does it support Gmail or Microsoft 365 with OAuth2?**
-Not yet — app passwords work today, OAuth2 is planned.
+Yes. Microsoft is connected with a device code, Gmail through the browser, and
+the token is refreshed on its own, so scheduled backups keep running. See
+[OAuth](#oauth-for-gmail-and-microsoft-365).
+
+**Can I empty my mailbox on the server and keep everything here?**
+Yes — that is what the protection date is for. Set a date and nothing older is
+ever removed from the archive, no matter what happens on the server.
 
 **How big can a mailbox be?**
 Messages are scanned and fetched in batches, and a run can be cancelled and

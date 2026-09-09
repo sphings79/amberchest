@@ -48,12 +48,12 @@
       <g transform="translate(0,42)">
         <circle cx="82" cy="428" r="9" fill="none" stroke="#35c489" stroke-width="2.2"/>
         <path d="M78 428l3 3 5.5-6" stroke="#35c489" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="104" y="434">Your folder tree, mirrored on disk</text>
+        <text x="104" y="434">OAuth for Gmail and Microsoft 365</text>
       </g>
       <g transform="translate(0,84)">
         <circle cx="82" cy="428" r="9" fill="none" stroke="#35c489" stroke-width="2.2"/>
         <path d="M78 428l3 3 5.5-6" stroke="#35c489" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="104" y="434">Encrypted credentials, one master password</text>
+        <text x="104" y="434">Every file checked against its checksum</text>
       </g>
     </g>
 

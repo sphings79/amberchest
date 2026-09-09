@@ -13,7 +13,9 @@ schreibgeschützt, inkrementell, mit dem Ordnerbaum deines Postfachs.
 [![Mit TypeScript gebaut](https://img.shields.io/badge/gebaut%20mit-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Sterne](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [OAuth](#oauth-für-gmail-und-microsoft-365) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [OAuth](#oauth-für-gmail-und-microsoft-365) · [Archiv prüfen](#das-archiv-prüfen) · [Statistik](#statistik-und-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+
+**Gehört ebenfalls zum Projekt:** [Home-Assistant-Integration](https://github.com/sphings79/mail-archiver-home-assistant) · [Home Assistant App (Addon)](https://github.com/sphings79/mail-archiver-ha-app)
 
 </div>
 
@@ -32,8 +34,9 @@ Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt 
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
 
-> **Alle sechs Etappen sind fertig.** Sicherung, Anhang-Export, Suche, Viewer,
-> Export, MCP, Rückspielen, der Container und die Fernsteuerung laufen.
+> **Alles auf dem Fahrplan ist fertig.** Sicherung, Anhang-Export, Suche,
+> Viewer, Export, MCP, Rückspielen, der Container, die Fernsteuerung, OAuth,
+> die Archivprüfung, der Umzug, Statistik und Register laufen.
 
 ## Bildschirmfotos
 
@@ -171,7 +174,44 @@ zur Docker-Anleitung.</em>
   Schreibtisch aus
 - **Optionale Archivverschlüsselung** mit dem Master-Passwort, für ein Archiv
   auf einer Platte, die dir nicht allein gehört
+- **OAuth für Gmail und Microsoft 365**, die für IMAP kein Passwort mehr
+  annehmen. Microsoft per Device-Code, Gmail über den Browser; der Token wird
+  vor jeder Verbindung erneuert, geplante Sicherungen laufen also weiter
+- **Postfach-Browser**: links Konten und Ordner, rechts die Mails des gewählten
+  Ordners, direkt aus dem lokalen Index
+- **Archivprüfung.** Jede Datei gegen die Prüfsumme vom Tag des Herunterladens,
+  jeder Ordner gegen die Anzahl auf dem Server — damit „fehlt etwas?" eine
+  Antwort hat
+- **Archiv umziehen** auf eine andere Instanz, aus der App heraus: es wandern
+  die Dateien, die Gegenstelle baut ihren Index aus den Journalen, und die
+  erste Sicherung dort lädt nichts
+- **Gmail-Duplikate einmal gespeichert.** Eine Mail, die im Ordner und in
+  „Alle Nachrichten" liegt, wird erkannt, bevor etwas geladen wird: beide
+  Ordner zeigen sie, die Bytes gibt es einmal
+- **Alles vor einem Datum vor dem Löschen schützen** — um das Postfach auf dem
+  Server zu leeren, während das Archiv es behält
+- **Statistik**: Nachrichten je Jahr, häufigste Absender, größte Ordner und
+  Nachrichten, Anhänge nach Typ
+- **Register im Archiv** — eine `index.html` je Ordner, die auf die
+  `.eml`-Dateien daneben verweist, lesbar ohne dieses Programm
+- **Speicherplatz-Wächter**: eine Grenze zum Warnen und eine, ab der eine
+  laufende Sicherung anhält, statt die Platte vollzuschreiben
+- **Benachrichtigungen** an alles, was einen POST annimmt — ntfy, Gotify,
+  Discord, Apprise — bei fehlgeschlagener Sicherung, erfolgreicher Sicherung,
+  einem Prüfbefund oder knappem Speicher
+- **Auf dem Handy installierbar**: die Weboberfläche ist eine progressive Web-App
 - **Live-Fortschritt** über WebSocket, mit einem lesbaren Protokoll
+
+## Drei Projekte, ein Archiv
+
+| | Was es ist |
+| --- | --- |
+| **Mail Archiver** (hier) | Die Anwendung: Desktop-App für macOS, Windows und Linux, dazu ein Docker-Container mit derselben Oberfläche |
+| [**Mail Archiver Integration**](https://github.com/sphings79/mail-archiver-home-assistant) | Home-Assistant-Integration aus HACS: ein Gerät je Postfach, Sensoren, ein Knopf zum Sichern und eine Lovelace-Karte |
+| [**Home Assistant App (Addon)**](https://github.com/sphings79/mail-archiver-ha-app) | Betreibt Mail Archiver unter Home Assistant OS, per Ingress in der Seitenleiste |
+
+Die Anwendung steht für sich; die beiden anderen sind da, wenn du Home
+Assistant betreibst.
 
 ## Installation
 
@@ -263,197 +303,6 @@ Die Weboberfläche antwortet dann auf `http://<host>:8484`. Sie funktioniert
 hinter einem Reverse Proxy, sowohl auf einer Subdomain als auch auf einem
 Unterpfad. Images entstehen für `linux/amd64` und `linux/arm64`.
 
-## KI-Zugriff über MCP
-
-Mail Archiver kann das Archiv über das Model Context Protocol für eine KI
-öffnen — zum Suchen, Lesen und, wenn du es erlaubst, zum Bedienen. Das ist
-**standardmäßig aus**, und jede Berechtigungsgruppe hat ihren eigenen Schalter:
-
-| Gruppe | Was sie erlaubt |
-| --- | --- |
-| Lesen | Suchen, Nachrichten und Anhänge öffnen, Statistiken |
-| Sichern | Sicherung und Indizierung starten und abbrechen |
-| Exportieren | Anhang-Export und Export-Pakete |
-| Konten | Konten anlegen, Serverdaten ändern, Ordnerauswahl setzen |
-| Einstellungen | Anwendungseinstellungen ändern |
-| Löschen | Konten entfernen, Index verwerfen |
-
-Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
-
-**Claude Desktop** (stdio):
-
-```json
-{
-  "mcpServers": {
-    "mail-archiver": {
-      "command": "node",
-      "args": ["/pfad/zu/mail-archiver/packages/server/dist/mcp-stdio.js"],
-      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "dein-master-passwort" }
-    }
-  }
-}
-```
-
-**Über HTTP** (für den Container oder entfernte Clients): in den Einstellungen
-einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
-`Authorization: Bearer <token>` zeigen lassen.
-
-## Speicherplatz und Benachrichtigungen
-
-Zwei Dinge braucht eine Sicherung, die unbeaufsichtigt läuft: Platz, und
-jemanden, dem sie Bescheid sagen kann, wenn keiner mehr da ist.
-
-**Der freie Platz** steht in den Einstellungen, für das Laufwerk, auf dem das
-Archiv liegt. Dazu zwei Grenzen: eine, ab der gewarnt wird, und eine, ab der
-eine laufende Sicherung **anhält**, statt die Platte vollzuschreiben. Anhalten
-hinterlässt ein vollständiges Archiv, dem die neuesten Mails fehlen — eine
-volle Platte hinterlässt ein System, das nicht einmal mehr ein Protokoll
-schreiben kann.
-
-**Benachrichtigungen** gehen an jede Adresse, die einen POST annimmt: ntfy,
-Gotify, Discord, Apprise oder etwas Selbstgebautes.
-
-| Ereignis | Voreinstellung |
-| --- | --- |
-| Eine Sicherung ist fehlgeschlagen | an |
-| Eine Sicherung ist durchgelaufen | aus |
-| Eine Archivprüfung hat etwas gefunden | an |
-| Der Speicherplatz wird knapp | an |
-
-Format auswählen, Adresse eintragen, Testknopf drücken. Für Dienste, die einen
-Token wollen, gibt es ein Feld für einen zusätzlichen Header.
-
-```json
-{
-  "event": "backupFailed",
-  "level": "error",
-  "title": "Mail Archiver: backup of Privat failed",
-  "message": "Connection refused - check host and port",
-  "text": "…",
-  "at": "2026-09-09T02:00:11.000Z",
-  "details": { "account": "Privat", "stats": { … } }
-}
-```
-
-### Postfach leeren, Archiv behalten
-
-Alte Mail vom Server räumen, um dort Platz zu gewinnen, ist ein ganz normaler
-Vorgang — und das Archiv ist genau der Ort, an dem sie das überleben soll. In
-den erweiterten Kontoeinstellungen ein Datum unter **Älteres nie löschen ab**
-eintragen, und alles davor bleibt liegen, egal was auf dem Server passiert und
-egal welche Löschregel eingestellt ist. Alles Neuere folgt weiter der normalen
-Regel.
-
-```
-Server geleert, Löschregel „spiegeln", geschützt vor dem 01.01.2024:
-  2 geschützt, 1 entfernt
-  übrig: die Nachricht von 2019 und die von 2020
-```
-
-Der Abgleich mit dem Server meldet den Ordner danach nicht mehr als abweichend:
-mehr zu haben als der Server ist bei dieser Einstellung der Zweck und kein
-Fehler.
-
-## Statistik und Register
-
-**Die Statistik** beantwortet, was eigentlich im Archiv liegt: Nachrichten je
-Jahr, die häufigsten Absender, die größten Ordner und Nachrichten, Anhänge nach
-Typ. Alles kommt aus dem Index — die Seite kostet ein paar Abfragen und liest
-keine einzige Datei.
-
-**Das Register** macht das Archiv ohne dieses Programm benutzbar. Es schreibt
-neben die Nachrichten eine `index.html` — je Ordner eine Seite, die auf die
-`.eml`-Dateien daneben verweist, dazu eine Übersicht. In jedem Browser aus einem
-gewöhnlichen Verzeichnis zu öffnen: kein Server, keine Datenbank, nichts zu
-installieren. Geschrieben wird es auf Knopfdruck, im Dialog **Prüfen**.
-
-## Gmail: eine Nachricht, mehrere Ordner
-
-Gmail zeigt jede Mail in ihrem Ordner **und** in „Alle Nachrichten" — wer beides
-sichert, hat sie doppelt. Mit **Nachricht nur einmal speichern** in den
-erweiterten Kontoeinstellungen wird aus der zweiten Kopie ein Eintrag, der auf
-die erste Datei zeigt:
-
-| | Dateien | Archiv |
-| --- | --- | --- |
-| Aus | 6 | 1080 Bytes |
-| An | 3 | 540 Bytes |
-
-Beide Ordner zeigen weiterhin alle Nachrichten, die Suche findet sie, und
-öffnen lässt sie sich von beiden Seiten. Heruntergeladen wird sie kein zweites
-Mal — sie wird schon am Umschlag erkannt, bevor ein Byte des Inhalts abgerufen
-wird.
-
-Verliert ausgerechnet der Ordner mit der Datei die Nachricht auf dem Server,
-wandert die Datei in einen Ordner, der sie noch zeigt. Das Löschen einer Kopie
-nimmt nie die andere mit.
-
-## Ein Archiv umziehen
-
-Ein Archiv, das auf dem Desktop angefangen hat, gehört irgendwann auf den
-Server — und nach einer verlorenen Index-Datenbank sind die Dateien ja noch
-alle da. **Umziehen** schickt das Archiv eines Kontos an eine andere Instanz,
-die ihren Index aus dem Ankommenden neu aufbaut.
-
-1. Auf der Zielinstanz das Konto anlegen, mit derselben Adresse
-2. Beim Quellkonto auf **Umziehen**, Adresse und Oberflächen-Passwort des Ziels
-   eintragen
-3. Zielkonto auswählen und starten
-
-Es wandern die Dateien, nicht der Index: jeder Ordner führt ein Journal, und
-die Gegenstelle baut daraus ihren Index. Ein abgebrochener Umzug ist deshalb
-harmlos — beim nächsten Anlauf geht nur, was noch fehlt, verglichen über Name
-und Größe.
-
-Jede Nachricht behält ihre UID, die erste Sicherung auf der neuen Maschine lädt
-also **nichts** herunter. Eine Datei, deren Journaleintrag fehlt, wird
-stattdessen gelesen und bekommt UIDVALIDITY null — die nächste Sicherung ordnet
-sie dann über den Fingerabdruck zu, denselben Weg wie bei einer echten
-UIDVALIDITY-Änderung, und lädt ebenfalls nichts.
-
-**Auf der Quelle wird nichts gelöscht.** Prüfe das Archiv drüben und lass dort
-einmal sichern; erst wenn beides passt, kommt die alte Kopie weg — von Hand.
-
-Zwei Dinge, die man wissen sollte:
-
-- Ein **verschlüsseltes Archiv** wandert, wie es ist. Die Gegenstelle kann es
-  nur mit demselben Master-Passwort lesen.
-- Der empfangende Endpunkt nimmt ausschließlich relative Pfade an, die auf
-  `.eml` oder den Journalnamen enden, unterhalb des Kontoverzeichnisses. Alles
-  andere wird abgewiesen.
-
-Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
-Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
-Index-Datenbank wieder aufgebaut.
-
-## Das Archiv prüfen
-
-Ein Backup, das nie geprüft wird, ist eine Hoffnung und keine Sicherung.
-**Prüfen** liest bei einem Konto jede gesicherte Datei und vergleicht sie mit
-der Prüfsumme vom Tag des Herunterladens. Ein Bit, das auf der Platte gekippt
-ist, eine gelöschte Datei und eine Datei, die zu nichts mehr gehört, tauchen
-damit namentlich auf.
-
-| Befund | Was er bedeutet |
-| --- | --- |
-| Datei fehlt | Der Index kennt die Nachricht, die Datei ist weg |
-| Inhalt verändert | Die Datei entspricht nicht mehr dem, was vom Server kam |
-| Nicht lesbar | Beschädigt, oder mit einem anderen Master-Passwort verschlüsselt |
-| Nicht im Index | Eine Nachrichtendatei, auf die nichts mehr zeigt |
-| Anzahl weicht ab | Der Ordner hat eine andere Anzahl Nachrichten als auf dem Server |
-
-**Mit dem Server abgleichen** beantwortet die Frage, die man wirklich hat: fehlt
-etwas? Dafür wird je gesichertem Ordner die Anzahl vom Server geholt und neben
-die lokale gestellt. Ein `STATUS` pro Ordner, keine Nachrichteninhalte.
-
-Es wird nichts ins Archiv geschrieben und nichts gelöscht. Die einzige Änderung
-ist eine Prüfsumme, die für Nachrichten nachgetragen wird, die vor dieser
-Funktion gesichert wurden — der erste Lauf nach dem Update schreibt sie, jeder
-weitere vergleicht dagegen.
-
-Für die KI-Anbindung gibt es dasselbe als Werkzeug `verify_archive`, in der
-Rechtegruppe **Sichern**.
-
 ## OAuth für Gmail und Microsoft 365
 
 Google und Microsoft nehmen für IMAP kein Passwort mehr an. Mail Archiver meldet
@@ -518,6 +367,197 @@ Ein Postfach, das wirklich einen eigenen Client braucht — etwa ein
 Workspace-Tenant mit eigener App-Registrierung —, kann den Anbieter-Platz
 **Anderer** mit eigenen Endpunkten benutzen.
 
+
+## Das Archiv prüfen
+
+Ein Backup, das nie geprüft wird, ist eine Hoffnung und keine Sicherung.
+**Prüfen** liest bei einem Konto jede gesicherte Datei und vergleicht sie mit
+der Prüfsumme vom Tag des Herunterladens. Ein Bit, das auf der Platte gekippt
+ist, eine gelöschte Datei und eine Datei, die zu nichts mehr gehört, tauchen
+damit namentlich auf.
+
+| Befund | Was er bedeutet |
+| --- | --- |
+| Datei fehlt | Der Index kennt die Nachricht, die Datei ist weg |
+| Inhalt verändert | Die Datei entspricht nicht mehr dem, was vom Server kam |
+| Nicht lesbar | Beschädigt, oder mit einem anderen Master-Passwort verschlüsselt |
+| Nicht im Index | Eine Nachrichtendatei, auf die nichts mehr zeigt |
+| Anzahl weicht ab | Der Ordner hat eine andere Anzahl Nachrichten als auf dem Server |
+
+**Mit dem Server abgleichen** beantwortet die Frage, die man wirklich hat: fehlt
+etwas? Dafür wird je gesichertem Ordner die Anzahl vom Server geholt und neben
+die lokale gestellt. Ein `STATUS` pro Ordner, keine Nachrichteninhalte.
+
+Es wird nichts ins Archiv geschrieben und nichts gelöscht. Die einzige Änderung
+ist eine Prüfsumme, die für Nachrichten nachgetragen wird, die vor dieser
+Funktion gesichert wurden — der erste Lauf nach dem Update schreibt sie, jeder
+weitere vergleicht dagegen.
+
+Für die KI-Anbindung gibt es dasselbe als Werkzeug `verify_archive`, in der
+Rechtegruppe **Sichern**.
+
+## Ein Archiv umziehen
+
+Ein Archiv, das auf dem Desktop angefangen hat, gehört irgendwann auf den
+Server — und nach einer verlorenen Index-Datenbank sind die Dateien ja noch
+alle da. **Umziehen** schickt das Archiv eines Kontos an eine andere Instanz,
+die ihren Index aus dem Ankommenden neu aufbaut.
+
+1. Auf der Zielinstanz das Konto anlegen, mit derselben Adresse
+2. Beim Quellkonto auf **Umziehen**, Adresse und Oberflächen-Passwort des Ziels
+   eintragen
+3. Zielkonto auswählen und starten
+
+Es wandern die Dateien, nicht der Index: jeder Ordner führt ein Journal, und
+die Gegenstelle baut daraus ihren Index. Ein abgebrochener Umzug ist deshalb
+harmlos — beim nächsten Anlauf geht nur, was noch fehlt, verglichen über Name
+und Größe.
+
+Jede Nachricht behält ihre UID, die erste Sicherung auf der neuen Maschine lädt
+also **nichts** herunter. Eine Datei, deren Journaleintrag fehlt, wird
+stattdessen gelesen und bekommt UIDVALIDITY null — die nächste Sicherung ordnet
+sie dann über den Fingerabdruck zu, denselben Weg wie bei einer echten
+UIDVALIDITY-Änderung, und lädt ebenfalls nichts.
+
+**Auf der Quelle wird nichts gelöscht.** Prüfe das Archiv drüben und lass dort
+einmal sichern; erst wenn beides passt, kommt die alte Kopie weg — von Hand.
+
+Zwei Dinge, die man wissen sollte:
+
+- Ein **verschlüsseltes Archiv** wandert, wie es ist. Die Gegenstelle kann es
+  nur mit demselben Master-Passwort lesen.
+- Der empfangende Endpunkt nimmt ausschließlich relative Pfade an, die auf
+  `.eml` oder den Journalnamen enden, unterhalb des Kontoverzeichnisses. Alles
+  andere wird abgewiesen.
+
+Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
+Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
+Index-Datenbank wieder aufgebaut.
+
+## Gmail: eine Nachricht, mehrere Ordner
+
+Gmail zeigt jede Mail in ihrem Ordner **und** in „Alle Nachrichten" — wer beides
+sichert, hat sie doppelt. Mit **Nachricht nur einmal speichern** in den
+erweiterten Kontoeinstellungen wird aus der zweiten Kopie ein Eintrag, der auf
+die erste Datei zeigt:
+
+| | Dateien | Archiv |
+| --- | --- | --- |
+| Aus | 6 | 1080 Bytes |
+| An | 3 | 540 Bytes |
+
+Beide Ordner zeigen weiterhin alle Nachrichten, die Suche findet sie, und
+öffnen lässt sie sich von beiden Seiten. Heruntergeladen wird sie kein zweites
+Mal — sie wird schon am Umschlag erkannt, bevor ein Byte des Inhalts abgerufen
+wird.
+
+Verliert ausgerechnet der Ordner mit der Datei die Nachricht auf dem Server,
+wandert die Datei in einen Ordner, der sie noch zeigt. Das Löschen einer Kopie
+nimmt nie die andere mit.
+
+## Statistik und Register
+
+**Die Statistik** beantwortet, was eigentlich im Archiv liegt: Nachrichten je
+Jahr, die häufigsten Absender, die größten Ordner und Nachrichten, Anhänge nach
+Typ. Alles kommt aus dem Index — die Seite kostet ein paar Abfragen und liest
+keine einzige Datei.
+
+**Das Register** macht das Archiv ohne dieses Programm benutzbar. Es schreibt
+neben die Nachrichten eine `index.html` — je Ordner eine Seite, die auf die
+`.eml`-Dateien daneben verweist, dazu eine Übersicht. In jedem Browser aus einem
+gewöhnlichen Verzeichnis zu öffnen: kein Server, keine Datenbank, nichts zu
+installieren. Geschrieben wird es auf Knopfdruck, im Dialog **Prüfen**.
+
+## Speicherplatz und Benachrichtigungen
+
+Zwei Dinge braucht eine Sicherung, die unbeaufsichtigt läuft: Platz, und
+jemanden, dem sie Bescheid sagen kann, wenn keiner mehr da ist.
+
+**Der freie Platz** steht in den Einstellungen, für das Laufwerk, auf dem das
+Archiv liegt. Dazu zwei Grenzen: eine, ab der gewarnt wird, und eine, ab der
+eine laufende Sicherung **anhält**, statt die Platte vollzuschreiben. Anhalten
+hinterlässt ein vollständiges Archiv, dem die neuesten Mails fehlen — eine
+volle Platte hinterlässt ein System, das nicht einmal mehr ein Protokoll
+schreiben kann.
+
+**Benachrichtigungen** gehen an jede Adresse, die einen POST annimmt: ntfy,
+Gotify, Discord, Apprise oder etwas Selbstgebautes.
+
+| Ereignis | Voreinstellung |
+| --- | --- |
+| Eine Sicherung ist fehlgeschlagen | an |
+| Eine Sicherung ist durchgelaufen | aus |
+| Eine Archivprüfung hat etwas gefunden | an |
+| Der Speicherplatz wird knapp | an |
+
+Format auswählen, Adresse eintragen, Testknopf drücken. Für Dienste, die einen
+Token wollen, gibt es ein Feld für einen zusätzlichen Header.
+
+```json
+{
+  "event": "backupFailed",
+  "level": "error",
+  "title": "Mail Archiver: backup of Privat failed",
+  "message": "Connection refused - check host and port",
+  "text": "…",
+  "at": "2026-09-09T02:00:11.000Z",
+  "details": { "account": "Privat", "stats": { … } }
+}
+```
+
+### Postfach leeren, Archiv behalten
+
+Alte Mail vom Server räumen, um dort Platz zu gewinnen, ist ein ganz normaler
+Vorgang — und das Archiv ist genau der Ort, an dem sie das überleben soll. In
+den erweiterten Kontoeinstellungen ein Datum unter **Älteres nie löschen ab**
+eintragen, und alles davor bleibt liegen, egal was auf dem Server passiert und
+egal welche Löschregel eingestellt ist. Alles Neuere folgt weiter der normalen
+Regel.
+
+```
+Server geleert, Löschregel „spiegeln", geschützt vor dem 01.01.2024:
+  2 geschützt, 1 entfernt
+  übrig: die Nachricht von 2019 und die von 2020
+```
+
+Der Abgleich mit dem Server meldet den Ordner danach nicht mehr als abweichend:
+mehr zu haben als der Server ist bei dieser Einstellung der Zweck und kein
+Fehler.
+
+## KI-Zugriff über MCP
+
+Mail Archiver kann das Archiv über das Model Context Protocol für eine KI
+öffnen — zum Suchen, Lesen und, wenn du es erlaubst, zum Bedienen. Das ist
+**standardmäßig aus**, und jede Berechtigungsgruppe hat ihren eigenen Schalter:
+
+| Gruppe | Was sie erlaubt |
+| --- | --- |
+| Lesen | Suchen, Nachrichten und Anhänge öffnen, Statistiken |
+| Sichern | Sicherung und Indizierung starten und abbrechen |
+| Exportieren | Anhang-Export und Export-Pakete |
+| Konten | Konten anlegen, Serverdaten ändern, Ordnerauswahl setzen |
+| Einstellungen | Anwendungseinstellungen ändern |
+| Löschen | Konten entfernen, Index verwerfen |
+
+Passwörter sind über MCP nie lesbar — sie lassen sich nur setzen.
+
+**Claude Desktop** (stdio):
+
+```json
+{
+  "mcpServers": {
+    "mail-archiver": {
+      "command": "node",
+      "args": ["/pfad/zu/mail-archiver/packages/server/dist/mcp-stdio.js"],
+      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "dein-master-passwort" }
+    }
+  }
+}
+```
+
+**Über HTTP** (für den Container oder entfernte Clients): in den Einstellungen
+einschalten, den erzeugten Token kopieren und den Client auf `POST /mcp` mit
+`Authorization: Bearer <token>` zeigen lassen.
 
 ## Home Assistant
 
@@ -622,12 +662,15 @@ auf dem Rechner kann die Schnittstelle ansprechen.
 
 | Etappe | Inhalt | Stand |
 | --- | --- | --- |
-| 1 | Fundament, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
-| 2 | Anhang-Export mit Layouts, Filtern und Doppelerkennung | ✅ fertig |
-| 3 | Viewer, Volltextsuche, „im Mailprogramm öffnen“, Export als mbox/PDF/ZIP, MCP-Server | ✅ fertig |
-| 4 | Rückspielen und Umzug auf einen anderen Server | ✅ fertig |
-| 5 | Docker-Image, Web-Login, Cron-Zeitplan, Fernsteuerung | ✅ fertig |
-| 6 | Feinschliff: optionale Archivverschlüsselung, Update-Hinweis, Windows- und Linux-Builds | ✅ fertig |
+| 1 | Grundlage, Konten, Ordnerauswahl, inkrementelle Sicherung, Desktop-App | ✅ fertig |
+| 2 | Anhang-Export mit Ablagen, Filtern und Doppelerkennung | ✅ fertig |
+| 3 | Ansicht, Volltextsuche, „im Mailprogramm öffnen", Export als mbox/PDF/ZIP, MCP-Server | ✅ fertig |
+| 4 | Rückspielen, auch zu einem anderen Anbieter | ✅ fertig |
+| 5 | Docker-Image, Web-Login, Zeitplan, Fernsteuerung | ✅ fertig |
+| 6 | Themes, Übersetzungen, optionale Archivverschlüsselung, Windows- und Linux-Pakete | ✅ fertig |
+| 7 | Postfach-Browser, mehr Suchfilter, MQTT und die Home-Assistant-Projekte | ✅ fertig |
+| 8 | OAuth, Archivprüfung, Umzug, Gmail-Duplikate, Statistik, Register | ✅ fertig |
+| weiter | CalDAV/CardDAV ist ausdrücklich **nicht** geplant — hier geht es um Mail |  |
 
 ## FAQ
 
@@ -658,7 +701,13 @@ Nachrichten-Identität — eine verlässliche inkrementelle Sicherung ist damit
 nicht möglich.
 
 **Unterstützt es Gmail oder Microsoft 365 mit OAuth2?**
-Noch nicht — App-Passwörter funktionieren heute, OAuth2 ist geplant.
+Ja. Microsoft per Device-Code, Gmail über den Browser, und der Token wird von
+selbst erneuert — geplante Sicherungen laufen also weiter. Siehe
+[OAuth](#oauth-für-gmail-und-microsoft-365).
+
+**Kann ich das Postfach auf dem Server leeren und hier alles behalten?**
+Ja, dafür gibt es das Schutzdatum. Ist ein Datum gesetzt, wird nichts Älteres
+je aus dem Archiv entfernt, egal was auf dem Server passiert.
 
 **Wie groß darf ein Postfach sein?**
 Nachrichten werden stapelweise geprüft und geladen, ein Lauf lässt sich
