@@ -255,6 +255,18 @@ export interface PublicSettings
   };
 }
 
+/**
+ * The settings as the authenticated interface gets them.
+ *
+ * A step short of PublicSettings: the operator is allowed to read the MCP
+ * token back, because the interface shows it to be copied into a client
+ * configuration. The broker password, the notification header and the client
+ * secrets are only ever typed in, never read back, so they are not sent.
+ */
+export interface OperatorSettings extends Omit<PublicSettings, 'mcp'> {
+  mcp: McpSettings;
+}
+
 export interface AppConfig {
   version: number;
   settings: AppSettings;

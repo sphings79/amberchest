@@ -1,13 +1,13 @@
-import type { AppSettings } from '@amberchest/core';
+import type { OperatorSettings } from '@amberchest/core';
 import { Bell, Check, HardDrive, Send, TriangleAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client.js';
+import { api, type SettingsPatch } from '../api/client.js';
 import { Button, Card, Field, Input, Select, Toggle } from '../components/ui.js';
 import { formatBytes } from './Overview.js';
 
-type Notifications = AppSettings['notifications'];
-type Storage = AppSettings['storage'];
+type Notifications = OperatorSettings['notifications'];
+type Storage = OperatorSettings['storage'];
 type EventKey = keyof Notifications['events'];
 
 /**
@@ -25,11 +25,14 @@ export function NotificationSettings({
   notifications: Notifications;
   storage: Storage;
   space: { free: number; total: number } | null;
-  onChange: (part: Partial<AppSettings>) => void;
+  /** May carry the write only header, which the display type does not have. */
+  onChange: (part: SettingsPatch) => void;
 }): ReactNode {
   const { t } = useTranslation();
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; error?: string } | null>(null);
+  /** Only what was typed; the stored header never reaches the browser. */
+  const [authHeader, setAuthHeader] = useState('');
 
   const events: EventKey[] = ['backupFailed', 'backupFinished', 'verifyProblems', 'lowDiskSpace'];
   const low = space !== null && storage.warnBelowGb > 0 && space.free < storage.warnBelowGb * 1024 ** 3;
@@ -159,15 +162,25 @@ export function NotificationSettings({
                   <option value="apprise">Apprise</option>
                 </Select>
               </Field>
-              <Field label={t('notify.authHeader')} hint={t('notify.authHeaderHint')}>
+              <Field
+                label={t('notify.authHeader')}
+                hint={
+                  notifications.hasAuthHeader ? t('secret.stored') : t('notify.authHeaderHint')
+                }
+              >
                 <Input
-                  value={notifications.authHeader}
-                  placeholder="Authorization: Bearer …"
-                  onChange={(event) =>
-                    onChange({
-                      notifications: { ...notifications, authHeader: event.target.value },
-                    })
+                  type="password"
+                  value={authHeader}
+                  placeholder={
+                    notifications.hasAuthHeader ? t('secret.unchanged') : 'Authorization: Bearer …'
                   }
+                  autoComplete="new-password"
+                  onChange={(event) => setAuthHeader(event.target.value)}
+                  onBlur={() => {
+                    if (authHeader === '') return;
+                    onChange({ notifications: { ...notifications, authHeader } });
+                    setAuthHeader('');
+                  }}
                 />
               </Field>
             </div>

@@ -7,7 +7,9 @@ import type {
   AppConfig,
   AppSettings,
   AttachmentSettings,
+  McpSettings,
   OAuthClient,
+  OperatorSettings,
   PublicAccount,
   PublicOAuthClient,
   PublicSettings,
@@ -91,6 +93,69 @@ export function toPublicSettings(settings: AppSettings): PublicSettings {
 function toPublicOAuthClient(client: OAuthClient): PublicOAuthClient {
   const { clientSecret, ...rest } = client;
   return { ...rest, hasClientSecret: clientSecret.length > 0 };
+}
+
+/**
+ * The settings for the authenticated interface.
+ *
+ * Same redaction as toPublicSettings except for the MCP token, which the
+ * settings screen shows behind a copy button - the whole point of that token
+ * is to be pasted somewhere else.
+ */
+export function toOperatorSettings(settings: AppSettings): OperatorSettings {
+  return { ...toPublicSettings(settings), mcp: { ...settings.mcp } };
+}
+
+/**
+ * Puts back the secrets the client did not send.
+ *
+ * The write-only fields do not travel to the interface, so a patch that
+ * carries a whole section arrives without them - and the schema fills in its
+ * default, an empty string, which would wipe the stored value. Absent means
+ * "leave it alone"; an empty string that was actually sent still clears it,
+ * which is how a secret is removed.
+ *
+ * Deliberately spelled out rather than derived: this list and the one in
+ * toPublicSettings have to say the same thing, and both are easier to check
+ * side by side than a clever abstraction over them.
+ */
+export function keepUnsentSecrets(
+  stored: AppSettings,
+  patch: Partial<AppSettings>,
+  raw: Record<string, unknown>,
+): Partial<AppSettings> {
+  const next = { ...patch };
+
+  if (next.mqtt && !wasSent(raw, 'mqtt', 'password')) {
+    next.mqtt = { ...next.mqtt, password: stored.mqtt.password };
+  }
+  if (next.notifications && !wasSent(raw, 'notifications', 'authHeader')) {
+    next.notifications = { ...next.notifications, authHeader: stored.notifications.authHeader };
+  }
+  if (next.oauth) {
+    const oauth = { ...next.oauth };
+    for (const provider of ['google', 'microsoft', 'custom'] as const) {
+      const rawProvider = section(raw, 'oauth')?.[provider];
+      const sent =
+        typeof rawProvider === 'object' && rawProvider !== null && 'clientSecret' in rawProvider;
+      if (!sent) {
+        oauth[provider] = { ...oauth[provider], clientSecret: stored.oauth[provider].clientSecret };
+      }
+    }
+    next.oauth = oauth;
+  }
+
+  return next;
+}
+
+function section(raw: Record<string, unknown>, name: string): Record<string, unknown> | null {
+  const value = raw[name];
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function wasSent(raw: Record<string, unknown>, name: string, field: string): boolean {
+  const value = section(raw, name);
+  return value !== null && field in value;
 }
 
 /**

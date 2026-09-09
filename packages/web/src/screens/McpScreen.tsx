@@ -1,4 +1,4 @@
-import type { AppSettings } from '@amberchest/core';
+import type { OperatorSettings } from '@amberchest/core';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
@@ -14,7 +14,7 @@ export function McpScreen(): ReactNode {
   const settings = server?.settings;
   if (!settings) return null;
 
-  const update = async (mcp: AppSettings['mcp']): Promise<void> => {
+  const update = async (mcp: OperatorSettings['mcp']): Promise<void> => {
     applySettings({ ...settings, mcp });
     try {
       applySettings(await api.updateSettings({ mcp }));

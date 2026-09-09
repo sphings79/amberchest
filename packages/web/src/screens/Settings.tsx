@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type AppSettings } from '../api/client.js';
+import { api, type SettingsPatch, type OperatorSettings } from '../api/client.js';
 import { Button, Card, Field, Input, ProgressBar, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
 import { NotificationSettings } from './NotificationSettings.js';
@@ -23,7 +23,7 @@ import { useApp } from '../state.js';
 
 const EMPTY_OAUTH_CLIENT = {
   clientId: '',
-  clientSecret: '',
+  hasClientSecret: false,
   authorizationEndpoint: '',
   tokenEndpoint: '',
   deviceEndpoint: '',
@@ -43,7 +43,7 @@ const ACCENT_SWATCH: Record<string, string> = {
 export function Settings(): ReactNode {
   const { t } = useTranslation();
   const { server, accounts, indexProgress, migrationProgress, applySettings } = useApp();
-  const [values, setValues] = useState<AppSettings>(
+  const [values, setValues] = useState<OperatorSettings>(
     server?.settings ?? {
       archivePath: '',
       language: 'de',
@@ -68,7 +68,7 @@ export function Settings(): ReactNode {
         enabled: false,
         url: '',
         username: '',
-        password: '',
+        hasPassword: false,
         clientId: '',
         baseTopic: 'amberchest',
         discovery: true,
@@ -90,7 +90,7 @@ export function Settings(): ReactNode {
         enabled: false,
         url: '',
         format: 'json',
-        authHeader: '',
+        hasAuthHeader: false,
         events: {
           backupFailed: true,
           backupFinished: false,
@@ -115,14 +115,22 @@ export function Settings(): ReactNode {
     : false;
   const [error, setError] = useState<string | null>(null);
 
-  /** Appearance changes apply immediately; the path needs an explicit save. */
-  const update = async (patch: Partial<AppSettings>, immediate: boolean): Promise<void> => {
-    const next = { ...values, ...patch };
+  /**
+   * Appearance changes apply immediately; the path needs an explicit save.
+   *
+   * A patch may carry a secret on its way out while the local copy, which is
+   * what the form renders, never holds one. The stored answer replaces the
+   * copy, so it stays what the server actually has.
+   */
+  const update = async (patch: SettingsPatch, immediate: boolean): Promise<void> => {
+    const next = { ...values, ...patch } as OperatorSettings;
     setValues(next);
     if (!immediate) return;
     applySettings(next);
     try {
-      applySettings(await api.updateSettings(patch));
+      const stored = await api.updateSettings(patch);
+      setValues(stored);
+      applySettings(stored);
     } catch (cause) {
       setError((cause as Error).message);
     }
@@ -131,7 +139,9 @@ export function Settings(): ReactNode {
   const save = async (): Promise<void> => {
     setError(null);
     try {
-      applySettings(await api.updateSettings(values));
+      // The hasX flags are not part of the schema and are dropped on the way
+      // in; a secret this form never held stays as it is stored.
+      applySettings(await api.updateSettings(values as unknown as SettingsPatch));
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2200);
     } catch (cause) {
@@ -155,7 +165,7 @@ export function Settings(): ReactNode {
           <Field label={t('settings.language')}>
             <Select
               value={values.language}
-              onChange={(event) => void update({ language: event.target.value as AppSettings['language'] }, true)}
+              onChange={(event) => void update({ language: event.target.value as OperatorSettings['language'] }, true)}
             >
               <option value="de">Deutsch</option>
               <option value="en">English</option>
@@ -165,7 +175,7 @@ export function Settings(): ReactNode {
           <Field label={t('settings.theme')}>
             <Select
               value={values.theme}
-              onChange={(event) => void update({ theme: event.target.value as AppSettings['theme'] }, true)}
+              onChange={(event) => void update({ theme: event.target.value as OperatorSettings['theme'] }, true)}
             >
               <option value="system">{t('settings.themeSystem')}</option>
               <option value="light">{t('settings.themeLight')}</option>
@@ -382,7 +392,7 @@ export function Settings(): ReactNode {
       <OAuthSettings
         settings={values.oauth}
         callbackUrl={`${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/api/oauth/callback`}
-        onChange={(oauth) => void update({ oauth }, true)}
+        onChange={(oauth) => void update({ oauth } as SettingsPatch, true)}
       />
 
       <UpdateCard />

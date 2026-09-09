@@ -1,6 +1,7 @@
 import type {
   AccountOverview,
   AppSettings,
+  OperatorSettings,
   AttachmentSettings,
   ConnectionTestResult,
   ExportProgress,
@@ -20,6 +21,7 @@ import type {
 export type {
   AccountOverview,
   AppSettings,
+  OperatorSettings,
   AttachmentSettings,
   ConnectionTestResult,
   ExportProgress,
@@ -113,7 +115,7 @@ export interface ServerState {
   unlocked: boolean;
   authMode: 'none' | 'token' | 'password';
   authenticated: boolean;
-  settings: AppSettings | null;
+  settings: OperatorSettings | null;
 }
 
 export interface AccountFormValues {
@@ -242,6 +244,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return payload as T;
 }
 
+/**
+ * A patch may leave a secret out of a section, which the whole type otherwise
+ * insists on. Only one level deep, which is as deep as the settings go.
+ */
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? Partial<T[K]> : T[K] };
+
+/** What may be written: every field, secrets included. */
+export type SettingsPatch = DeepPartial<AppSettings>;
+
 export const api = {
   state: () => request<ServerState>('/state'),
   login: (password: string) => request<{ token: string }>('/login', {
@@ -254,9 +265,12 @@ export const api = {
     request<{ ok: true }>('/unlock', { method: 'POST', body: JSON.stringify({ masterPassword }) }),
   lock: () => request<{ ok: true }>('/lock', { method: 'POST' }),
 
-  settings: () => request<AppSettings>('/settings'),
-  updateSettings: (patch: Partial<AppSettings>) =>
-    request<AppSettings>('/settings', { method: 'PATCH', body: JSON.stringify(patch) }),
+  // Asymmetric on purpose: a patch may carry any field, including the
+  // secrets, while what comes back never does. A secret left out of the patch
+  // keeps its stored value, an empty string that is sent clears it.
+  settings: () => request<OperatorSettings>('/settings'),
+  updateSettings: (patch: SettingsPatch) =>
+    request<OperatorSettings>('/settings', { method: 'PATCH', body: JSON.stringify(patch) }),
 
   accounts: () => request<AccountOverview[]>('/accounts'),
   createAccount: (values: AccountFormValues) =>

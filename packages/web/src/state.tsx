@@ -19,7 +19,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, eventsUrl, type AccountOverview, type AppSettings, type ServerState } from './api/client.js';
+import { api, eventsUrl, type AccountOverview, type OperatorSettings, type ServerState } from './api/client.js';
 import { setLanguage, type Language } from './i18n/index.js';
 
 interface AppState {
@@ -39,13 +39,13 @@ interface AppState {
   error: string | null;
   refreshState: () => Promise<void>;
   refreshAccounts: () => Promise<void>;
-  applySettings: (settings: AppSettings) => void;
+  applySettings: (settings: OperatorSettings) => void;
 }
 
 const Context = createContext<AppState | null>(null);
 
 /** Applies theme, accent and language to the document. */
-function applyAppearance(settings: AppSettings | null): void {
+function applyAppearance(settings: OperatorSettings | null): void {
   const root = document.documentElement;
   const theme = settings?.theme ?? 'system';
   const resolved =
@@ -96,7 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     }
   }, []);
 
-  const applySettings = useCallback((settings: AppSettings) => {
+  const applySettings = useCallback((settings: OperatorSettings) => {
     setServer((current) => (current ? { ...current, settings } : current));
     applyAppearance(settings);
   }, []);

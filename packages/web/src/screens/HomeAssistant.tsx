@@ -1,4 +1,4 @@
-import type { AppSettings, MqttStatus } from '@amberchest/core';
+import type { OperatorSettings, MqttStatus } from '@amberchest/core';
 import {
   CircleCheck,
   CircleX,
@@ -15,7 +15,7 @@ import { Badge, Button, Card, Field, Input, Select, Toggle } from '../components
 import { HA_ADDON_URL, HA_INTEGRATION_URL } from '../constants.js';
 import { useApp } from '../state.js';
 
-type Mqtt = AppSettings['mqtt'];
+type Mqtt = OperatorSettings['mqtt'];
 
 /**
  * Everything that points at Home Assistant, in one place: the MQTT bridge and
@@ -27,6 +27,8 @@ export function HomeAssistant(): ReactNode {
   const [status, setStatus] = useState<MqttStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Only what was typed since the last save; the stored one is never here. */
+  const [password, setPassword] = useState('');
 
   const settings = server?.settings;
 
@@ -53,12 +55,18 @@ export function HomeAssistant(): ReactNode {
   if (!settings) return null;
   const mqtt = settings.mqtt;
 
-  const update = async (patch: Partial<Mqtt>): Promise<void> => {
+  /**
+   * The broker password never comes back from the server, so it is only sent
+   * when it was typed here. Leaving it out means "keep what is stored".
+   */
+  const update = async (patch: Partial<Mqtt>, password?: string): Promise<void> => {
     const next = { ...mqtt, ...patch };
     applySettings({ ...settings, mqtt: next });
     setError(null);
     try {
-      applySettings(await api.updateSettings({ mqtt: next }));
+      applySettings(
+        await api.updateSettings({ mqtt: password === undefined ? next : { ...next, password } }),
+      );
       setStatus(await api.mqttStatus());
     } catch (cause) {
       setError((cause as Error).message);
@@ -138,12 +146,21 @@ export function HomeAssistant(): ReactNode {
                   onChange={(event) => void update({ username: event.target.value })}
                 />
               </Field>
-              <Field label={t('ha.password')}>
+              <Field
+                label={t('ha.password')}
+                hint={mqtt.hasPassword ? t('secret.stored') : undefined}
+              >
                 <Input
                   type="password"
-                  value={mqtt.password}
+                  value={password}
+                  placeholder={mqtt.hasPassword ? t('secret.unchanged') : ''}
                   autoComplete="new-password"
-                  onChange={(event) => void update({ password: event.target.value })}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => {
+                    if (password === '') return;
+                    void update({}, password);
+                    setPassword('');
+                  }}
                 />
               </Field>
             </div>

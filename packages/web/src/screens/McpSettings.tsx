@@ -1,10 +1,10 @@
-import type { AppSettings } from '@amberchest/core';
+import type { OperatorSettings } from '@amberchest/core';
 import { Bot, Check, Copy, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Field, Input, Toggle } from '../components/ui.js';
 
-type Permission = keyof AppSettings['mcp']['permissions'];
+type Permission = keyof OperatorSettings['mcp']['permissions'];
 
 /** Random token generated in the browser; it never has to leave this machine. */
 function generateToken(): string {
@@ -20,8 +20,8 @@ export function McpSettings({
   settings,
   onChange,
 }: {
-  settings: AppSettings['mcp'];
-  onChange: (next: AppSettings['mcp']) => void;
+  settings: OperatorSettings['mcp'];
+  onChange: (next: OperatorSettings['mcp']) => void;
 }): ReactNode {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);

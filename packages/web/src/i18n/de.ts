@@ -286,6 +286,10 @@ export const de = {
     stopBelowHint:
       'Eine laufende Sicherung hört auf, statt die Platte vollzuschreiben. 0 schaltet es ab.',
   },
+  secret: {
+    stored: 'Gespeichert. Zum Ersetzen ein neues eingeben.',
+    unchanged: 'unverändert',
+  },
   notify: {
     title: 'Benachrichtigungen',
     intro:

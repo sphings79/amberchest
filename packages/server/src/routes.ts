@@ -5,7 +5,9 @@ import {
   appSettingsSchema,
   attachmentSettingsSchema,
   describeImapError,
+  keepUnsentSecrets,
   logger,
+  toOperatorSettings,
   WrongPasswordError,
   type ExportProgress,
   type LogEntry,
@@ -163,7 +165,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       unlocked: app.isUnlocked,
       authMode: auth.mode,
       authenticated,
-      settings: authenticated && app.isUnlocked ? app.getSettings() : null,
+      settings: authenticated && app.isUnlocked ? toOperatorSettings(app.getSettings()) : null,
     };
   });
 
@@ -208,7 +210,9 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
   // --------------------------------------------------------------- settings
 
-  server.get('/api/settings', { preHandler: requireUnlocked }, async () => app.getSettings());
+  server.get('/api/settings', { preHandler: requireUnlocked }, async () =>
+    toOperatorSettings(app.getSettings()),
+  );
 
   server.patch('/api/settings', { preHandler: requireUnlocked }, async (request, reply) => {
     const raw = request.body;
@@ -230,7 +234,11 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       Object.entries(body.data).filter(([key]) => sent.has(key)),
     ) as Partial<typeof body.data>;
 
-    return app.updateSettings(patch);
+    // The same trap one level down: the interface never receives the write
+    // only secrets, so a section it sends back arrives without them.
+    const merged = keepUnsentSecrets(app.getSettings(), patch, raw as Record<string, unknown>);
+
+    return toOperatorSettings(await app.updateSettings(merged));
   });
 
   // ----------------------------------------------------------------- archive

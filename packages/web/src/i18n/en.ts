@@ -287,6 +287,10 @@ export const en: Translations = {
     stopBelow: 'Stop a backup below (GB)',
     stopBelowHint: 'A running backup stops instead of filling the volume. 0 switches it off.',
   },
+  secret: {
+    stored: 'Stored. Type a new one to replace it.',
+    unchanged: 'unchanged',
+  },
   notify: {
     title: 'Notifications',
     intro:

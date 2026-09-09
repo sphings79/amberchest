@@ -1,10 +1,16 @@
-import type { AppSettings } from '@amberchest/core';
+import type { OAuthClient, OperatorSettings } from '@amberchest/core';
 import { KeyRound } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Field, Input, Select } from '../components/ui.js';
 
-type OAuth = AppSettings['oauth'];
+type OAuth = OperatorSettings['oauth'];
+/** The same sections, but a provider may carry its secret on the way out. */
+type OAuthPatch = Omit<OAuth, 'google' | 'microsoft' | 'custom'> & {
+  google: Partial<OAuthClient> & OAuth['google'];
+  microsoft: Partial<OAuthClient> & OAuth['microsoft'];
+  custom: Partial<OAuthClient> & OAuth['custom'];
+};
 type ProviderId = 'google' | 'microsoft' | 'custom';
 
 /**
@@ -21,13 +27,16 @@ export function OAuthSettings({
   settings: OAuth;
   /** Full address of this instance's callback, for the public redirect. */
   callbackUrl: string;
-  onChange: (next: OAuth) => void;
+  /** The client secret may be in here even though OAuth does not carry it. */
+  onChange: (next: OAuthPatch) => void;
 }): ReactNode {
   const { t } = useTranslation();
   const [provider, setProvider] = useState<ProviderId>('google');
+  /** Typed here only; the stored secret never comes back from the server. */
+  const [secret, setSecret] = useState('');
 
   const client = settings[provider];
-  const patch = (part: Partial<OAuth[ProviderId]>): void =>
+  const patch = (part: Partial<OAuthClient>): void =>
     onChange({ ...settings, [provider]: { ...client, ...part } });
 
   return (
@@ -71,12 +80,21 @@ export function OAuthSettings({
         />
       </Field>
 
-      <Field label={t('oauth.clientSecret')} hint={t('oauth.clientSecretHint')}>
+      <Field
+        label={t('oauth.clientSecret')}
+        hint={client.hasClientSecret ? t('secret.stored') : t('oauth.clientSecretHint')}
+      >
         <Input
           type="password"
-          value={client.clientSecret}
+          value={secret}
+          placeholder={client.hasClientSecret ? t('secret.unchanged') : ''}
           autoComplete="new-password"
-          onChange={(event) => patch({ clientSecret: event.target.value })}
+          onChange={(event) => setSecret(event.target.value)}
+          onBlur={() => {
+            if (secret === '') return;
+            patch({ clientSecret: secret });
+            setSecret('');
+          }}
         />
       </Field>
 
