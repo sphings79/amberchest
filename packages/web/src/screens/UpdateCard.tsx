@@ -12,7 +12,7 @@ import { REPO_URL } from '../constants.js';
  * into the browser bundle, where the first call brings the whole interface
  * down. Type imports are fine, they disappear at build time.
  */
-const CURRENT_VERSION = '2.0.0';
+const CURRENT_VERSION = '2.1.0';
 
 const RELEASES_API = 'https://api.github.com/repos/sphings79/amberchest/releases/latest';
 
