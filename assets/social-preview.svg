@@ -86,10 +86,15 @@
     <rect x="700" y="136" width="126" height="408" fill="#12151d"/>
     <line x1="826" y1="136" x2="826" y2="544" stroke="#262c3a"/>
     <rect x="712" y="156" width="102" height="26" rx="9" fill="#221d3d"/>
-    <text x="726" y="174" fill="#7c5cff" font-size="12" font-weight="500">Übersicht</text>
-    <text x="726" y="206" fill="#6b7386" font-size="12">Konten</text>
-    <text x="726" y="234" fill="#6b7386" font-size="12">Einstellungen</text>
-    <text x="726" y="262" fill="#6b7386" font-size="12">Protokoll</text>
+    <text x="726" y="174" fill="#7c5cff" font-size="11.5" font-weight="500">Übersicht</text>
+    <text x="726" y="201" fill="#6b7386" font-size="11.5">Konten</text>
+    <text x="726" y="228" fill="#6b7386" font-size="11.5">Postfach</text>
+    <text x="726" y="255" fill="#6b7386" font-size="11.5">Suche</text>
+    <text x="726" y="282" fill="#6b7386" font-size="11.5">Statistik</text>
+    <text x="726" y="309" fill="#6b7386" font-size="11.5">Einstellungen</text>
+    <text x="726" y="336" fill="#6b7386" font-size="11.5">KI-Anbindung</text>
+    <text x="726" y="363" fill="#6b7386" font-size="11.5">Home Assistant</text>
+    <text x="726" y="390" fill="#6b7386" font-size="11.5">Protokoll</text>
 
     <!-- stat tiles -->
     <g>
