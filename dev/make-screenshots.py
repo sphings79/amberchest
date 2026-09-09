@@ -116,7 +116,7 @@ def nav_icon(name: str, x: int, y: int, colour: str) -> str:
         return f"""<g {s}>
       <path d="M{x + 1} {y + 9} {x + 9} {y + 2} {x + 17} {y + 9}" stroke-linejoin="round"/>
       <path d="M{x + 3.5} {y + 8}v8h11v-8" stroke-linejoin="round"/>
-      <path d="M{x + 6.5} {y + 12.5}a4 4 0 0 1 5 0" stroke-linecap="round"/>
+      <path d="M{x + 6.8} {y + 16}v-3a2.4 2.4 0 0 1 4.4 0v3"/>
     </g>"""
     return f"""<g {s}>
       <rect x="{x + 1}" y="{y + 1}" width="15" height="17" rx="2"/>
