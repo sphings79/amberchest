@@ -202,6 +202,27 @@ export class ArchiveDatabase {
     this.db.prepare('DELETE FROM folders WHERE id = ?').run(folderId);
   }
 
+  /** Every message of a folder, whatever its state, for discarding the folder. */
+  listMessagesInFolder(folderId: number): MessageRow[] {
+    return this.db
+      .prepare('SELECT * FROM messages WHERE folder_id = ? ORDER BY uid')
+      .all(folderId) as MessageRow[];
+  }
+
+  /**
+   * Removes a folder and everything the index knows about its messages.
+   *
+   * The indexed text and the attachment rows follow on their own: both tables
+   * reference messages with ON DELETE CASCADE, foreign keys are enabled, and
+   * the trigger on message_text takes the rows out of the search index.
+   */
+  deleteFolderContents(folderId: number): void {
+    this.transaction(() => {
+      this.db.prepare('DELETE FROM messages WHERE folder_id = ?').run(folderId);
+      this.db.prepare('DELETE FROM folders WHERE id = ?').run(folderId);
+    });
+  }
+
   // --------------------------------------------------------------- messages
 
   listActiveMessages(folderId: number): MessageRow[] {

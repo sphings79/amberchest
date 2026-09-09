@@ -684,10 +684,35 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     }
   });
 
+  /*
+   * Throws away the local copy of one folder.
+   *
+   * A DELETE with a body, because it carries the one decision that goes with
+   * it: whether the folder should also leave the selection, without which the
+   * next backup fetches all of it again.
+   */
+  server.delete('/api/accounts/:id/folders/:path', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id, path } = request.params as { id: string; path: string };
+    const body = z
+      .object({ deselect: z.boolean().default(false) })
+      .safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    try {
+      return await app.discardFolder(id, decodeURIComponent(path), body.data.deselect);
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
   server.post('/api/accounts/:id/attachments/export', { preHandler: requireUnlocked }, async (request, reply) => {
     const { id } = request.params as { id: string };
     if (app.exports.isRunning(id)) return fail(reply, 409, 'An export is already running');
-    void app.startAttachmentExport(id).catch(() => undefined);
+    const body = z
+      .object({ folders: z.array(z.string()).optional() })
+      .safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    void app.startAttachmentExport(id, body.data.folders).catch(() => undefined);
     return { started: true };
   });
 

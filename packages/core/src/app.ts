@@ -1,4 +1,5 @@
 import { ConfigStore, toPublicAccount } from './config/store.js';
+import { discardFolder, type DiscardResult } from './storage/discard.js';
 import type { AccountInput } from './config/schema.js';
 import { ArchiveDatabase } from './db/database.js';
 import {
@@ -340,6 +341,36 @@ export class AmberChestApp {
     this.db.setSelectedFolders(accountId, folders);
   }
 
+  /**
+   * Throws away the local copy of one folder.
+   *
+   * Nothing happens on the server, so the folder comes back with the next
+   * backup unless it is taken out of the selection - which is what `deselect`
+   * is for, and what makes this mean anything for a folder somebody wants
+   * gone for good.
+   */
+  async discardFolder(
+    accountId: string,
+    path: string,
+    deselect: boolean,
+  ): Promise<DiscardResult & { deselected: boolean }> {
+    const account = this.requireAccount(accountId);
+    const folder = this.db.listFolders(accountId).find((entry) => entry.path === path);
+    if (!folder) throw new Error(`No archived folder ${path}`);
+
+    const result = await discardFolder(this.db, account, folder, this.config.getSettings().archivePath);
+
+    let deselected = false;
+    if (deselect) {
+      const selected = account.selectedFolders.filter((entry) => entry !== path);
+      if (selected.length !== account.selectedFolders.length) {
+        await this.setSelectedFolders(accountId, selected);
+        deselected = true;
+      }
+    }
+    return { ...result, deselected };
+  }
+
   getAttachmentSettings(accountId: string): AttachmentSettings {
     return { ...this.requireAccount(accountId).attachments };
   }
@@ -351,8 +382,20 @@ export class AmberChestApp {
     return this.config.updateAttachmentSettings(accountId, patch);
   }
 
-  startAttachmentExport(accountId: string): Promise<ExportProgress | undefined> {
-    return this.exports.start(this.requireAccount(accountId));
+  /**
+   * Runs the attachment export.
+   *
+   * `folders` overrides the stored selection for this run alone, which is how
+   * the folder tree offers "export the attachments of this folder" without
+   * changing what the account is set to do next time.
+   */
+  startAttachmentExport(accountId: string, folders?: string[]): Promise<ExportProgress | undefined> {
+    const account = this.requireAccount(accountId);
+    if (!folders) return this.exports.start(account);
+    return this.exports.start({
+      ...account,
+      attachments: { ...account.attachments, folders },
+    });
   }
 
   cancelAttachmentExport(accountId: string): boolean {

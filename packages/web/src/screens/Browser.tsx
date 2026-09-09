@@ -10,6 +10,9 @@ import {
   Paperclip,
   RefreshCw,
   Search as SearchIcon,
+  Download,
+  ExternalLink,
+  FileText,
   Send,
   ShieldAlert,
   SlidersHorizontal,
@@ -17,7 +20,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client.js';
+import { api, downloadUrl, isDesktop } from '../api/client.js';
+import { ContextMenu, type ContextMenuItem, type ContextMenuState } from '../components/ContextMenu.js';
 import {
   EMPTY_MESSAGE_FILTERS,
   MessageFilters,
@@ -27,6 +31,8 @@ import {
 } from '../components/MessageFilters.js';
 import { Badge, Button, EmptyState, Input, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
+import { DiscardFolderDialog } from './DiscardFolderDialog.js';
+import { ExportDialog, type ExportSelection } from './ExportDialog.js';
 import { MessageView } from './MessageView.js';
 import { formatBytes } from './Overview.js';
 
@@ -77,6 +83,14 @@ function buildTree(folders: LocalFolder[]): TreeNode[] {
  * on the right - the layout everybody already knows from their mail client,
  * for the times when searching is not what you want.
  */
+/** Starts a download without leaving the page. */
+function download(url: string): void {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = '';
+  link.click();
+}
+
 export function Browser(): ReactNode {
   const { t, i18n } = useTranslation();
   const { accounts } = useApp();
@@ -91,6 +105,14 @@ export function Browser(): ReactNode {
   const [filter, setFilter] = useState('');
   const [filters, setFilters] = useState<MessageFilterValues>(EMPTY_MESSAGE_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
+  const [menu, setMenu] = useState<ContextMenuState | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<ExportSelection | null>(null);
+  const [discarding, setDiscarding] = useState<{
+    accountId: string;
+    path: string;
+    messages: number;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<{ accountId: string; messageId: number } | null>(null);
 
@@ -161,6 +183,86 @@ export function Browser(): ReactNode {
     return result;
   }, [folders]);
 
+  /** What a right click on a message offers. */
+  const messageMenu = (hit: SearchHit): ContextMenuItem[] => {
+    const base = `/accounts/${hit.accountId}/messages/${hit.messageId}`;
+    const items: ContextMenuItem[] = [
+      {
+        key: 'eml',
+        label: t('menu.saveEml'),
+        icon: <Download size={14} />,
+        onSelect: () => download(downloadUrl(`${base}/raw`)),
+      },
+      {
+        key: 'pdf',
+        label: t('menu.savePdf'),
+        icon: <FileText size={14} />,
+        onSelect: () => download(downloadUrl(`${base}/pdf`)),
+      },
+      {
+        key: 'sender',
+        label: t('menu.searchSender'),
+        icon: <SearchIcon size={14} />,
+        disabled: !hit.fromAddr,
+        onSelect: () => {
+          if (!hit.fromAddr) return;
+          setFilters((current) => ({ ...current, from: hit.fromAddr as string }));
+          setShowFilters(true);
+        },
+      },
+    ];
+
+    // Only the desktop app can hand a file to the system mail client.
+    if (isDesktop) {
+      items.unshift({
+        key: 'open',
+        label: t('menu.openInClient'),
+        icon: <ExternalLink size={14} />,
+        onSelect: () => {
+          void api
+            .openMessage(hit.accountId, hit.messageId)
+            .catch((cause: Error) => setNotice(cause.message));
+        },
+      });
+    }
+    return items;
+  };
+
+  /** What a right click on a folder offers. */
+  const folderMenu = (accountId: string, node: TreeNode): ContextMenuItem[] => [
+    {
+      key: 'attachments',
+      label: t('menu.exportAttachments'),
+      icon: <Paperclip size={14} />,
+      onSelect: () => {
+        void api
+          .startExport(accountId, [node.path])
+          .then(() => setNotice(t('menu.exportStarted')))
+          .catch((cause: Error) => setNotice(cause.message));
+      },
+    },
+    {
+      key: 'export',
+      label: t('menu.exportFolder'),
+      icon: <Download size={14} />,
+      onSelect: () =>
+        setExporting({
+          q: '',
+          account: accountId,
+          folders: [node.path],
+          withAttachments: false,
+          total: node.messages,
+        }),
+    },
+    {
+      key: 'discard',
+      label: t('menu.discardFolder'),
+      icon: <Trash2 size={14} />,
+      danger: true,
+      onSelect: () => setDiscarding({ accountId, path: node.path, messages: node.messages }),
+    },
+  ];
+
   const renderFolder = (accountId: string, node: TreeNode, depth: number): ReactNode => {
     const key = `${accountId}:${node.path}`;
     const isCollapsed = collapsedFolders.has(key);
@@ -194,6 +296,15 @@ export function Browser(): ReactNode {
           <button
             type="button"
             onClick={() => setActive({ accountId, path: node.path })}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setActive({ accountId, path: node.path });
+              setMenu({
+                x: event.clientX,
+                y: event.clientY,
+                items: folderMenu(accountId, node),
+              });
+            }}
             className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left"
           >
             <span style={{ color: isActive ? 'var(--accent)' : 'var(--text-faint)' }}>
@@ -342,6 +453,10 @@ export function Browser(): ReactNode {
                     key={hit.messageId}
                     type="button"
                     onClick={() => setOpen({ accountId: hit.accountId, messageId: hit.messageId })}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      setMenu({ x: event.clientX, y: event.clientY, items: messageMenu(hit) });
+                    }}
                     className="flex w-full flex-col gap-0.5 border-b px-3 py-2 text-left transition last:border-b-0 hover:bg-[var(--surface-2)]"
                     style={{ borderColor: 'var(--border)' }}
                   >
@@ -393,6 +508,36 @@ export function Browser(): ReactNode {
 
       {open && (
         <MessageView accountId={open.accountId} messageId={open.messageId} onClose={() => setOpen(null)} />
+      )}
+
+      <ContextMenu state={menu} onClose={() => setMenu(null)} />
+
+      {exporting && <ExportDialog selection={exporting} onClose={() => setExporting(null)} />}
+
+      {discarding && (
+        <DiscardFolderDialog
+          accountId={discarding.accountId}
+          path={discarding.path}
+          messages={discarding.messages}
+          onClose={() => setDiscarding(null)}
+          onDone={(summary) => {
+            setDiscarding(null);
+            setNotice(summary);
+            setActive(null);
+            void loadFolders();
+          }}
+        />
+      )}
+
+      {notice && (
+        <button
+          type="button"
+          onClick={() => setNotice(null)}
+          className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl border px-4 py-2 text-xs shadow-lg"
+          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        >
+          {notice}
+        </button>
       )}
     </div>
   );

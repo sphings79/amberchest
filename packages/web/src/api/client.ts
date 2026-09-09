@@ -485,8 +485,19 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
-  startExport: (id: string) =>
-    request<{ started: boolean }>(`/accounts/${id}/attachments/export`, { method: 'POST' }),
+  /** `folders` limits this one run without changing the stored selection. */
+  startExport: (id: string, folders?: string[]) =>
+    request<{ started: boolean }>(`/accounts/${id}/attachments/export`, {
+      method: 'POST',
+      body: JSON.stringify(folders ? { folders } : {}),
+    }),
+
+  /** Deletes the archived copy of one folder: its files and its index entries. */
+  discardFolder: (id: string, path: string, deselect: boolean) =>
+    request<{ messages: number; handedOver: number; bytes: number; deselected: boolean }>(
+      `/accounts/${id}/folders/${encodeURIComponent(path)}`,
+      { method: 'DELETE', body: JSON.stringify({ deselect }) },
+    ),
   cancelExport: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/attachments/export/cancel`, { method: 'POST' }),
   resetExport: (id: string) =>
