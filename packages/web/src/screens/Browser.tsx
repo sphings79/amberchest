@@ -12,11 +12,19 @@ import {
   Search as SearchIcon,
   Send,
   ShieldAlert,
+  SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
+import {
+  EMPTY_MESSAGE_FILTERS,
+  MessageFilters,
+  activeFilterCount,
+  toSearchOptions,
+  type MessageFilterValues,
+} from '../components/MessageFilters.js';
 import { Badge, Button, EmptyState, Input, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { MessageView } from './MessageView.js';
@@ -81,6 +89,8 @@ export function Browser(): ReactNode {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState('');
+  const [filters, setFilters] = useState<MessageFilterValues>(EMPTY_MESSAGE_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<{ accountId: string; messageId: number } | null>(null);
 
@@ -115,6 +125,8 @@ export function Browser(): ReactNode {
     }
   }, [folders, accounts, active]);
 
+  const filterCount = activeFilterCount(filters, false);
+
   const loadMessages = useCallback(
     async (nextOffset: number): Promise<void> => {
       if (!active) return;
@@ -124,6 +136,7 @@ export function Browser(): ReactNode {
           q: filter,
           account: active.accountId,
           folders: [active.path],
+          ...toSearchOptions(filters),
           limit: PAGE_SIZE,
           offset: nextOffset,
         });
@@ -134,7 +147,7 @@ export function Browser(): ReactNode {
         setBusy(false);
       }
     },
-    [active, filter],
+    [active, filter, filters],
   );
 
   useEffect(() => {
@@ -294,10 +307,24 @@ export function Browser(): ReactNode {
                 className="!py-1.5 !pl-9 !text-xs"
               />
             </div>
+            <Button
+              onClick={() => setShowFilters((value) => !value)}
+              className="shrink-0 !py-1.5 !text-xs"
+            >
+              <SlidersHorizontal size={14} />
+              {t('search.filters')}
+              {filterCount > 0 && <Badge>{filterCount}</Badge>}
+            </Button>
             <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--text-faint)' }}>
               {t('browser.count', { count: total })}
             </span>
           </div>
+
+          {showFilters && (
+            // The folder is what was clicked in the tree, so the chips that
+            // pick folders in the search have nothing to offer here.
+            <MessageFilters filters={filters} onChange={setFilters} />
+          )}
 
           <div
             className="min-h-0 flex-1 rounded-2xl border lg:overflow-y-auto"

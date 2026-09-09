@@ -1,4 +1,4 @@
-import type { SearchField, SearchHit, SearchResult, SearchSort } from '@amberchest/core';
+import type { SearchHit, SearchResult } from '@amberchest/core';
 import {
   Database,
   Download,
@@ -10,72 +10,21 @@ import {
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
-import { Badge, Button, Card, EmptyState, Field, Input, Select, Toggle, cx } from '../components/ui.js';
+import {
+  EMPTY_MESSAGE_FILTERS,
+  MessageFilters,
+  activeFilterCount,
+  sizeToBytes,
+  toSearchOptions,
+  type MessageFilterValues,
+} from '../components/MessageFilters.js';
+import { Badge, Button, Card, EmptyState, Input, Select, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { ExportDialog, type ExportSelection } from './ExportDialog.js';
 import { MessageView } from './MessageView.js';
 import { formatBytes } from './Overview.js';
 
 const PAGE_SIZE = 50;
-
-interface Filters {
-  accountId: string;
-  from: string;
-  to: string;
-  field: SearchField;
-  sort: SearchSort;
-  dateFrom: string;
-  dateTo: string;
-  withAttachments: boolean;
-  unreadOnly: boolean;
-  flaggedOnly: boolean;
-  includeDeleted: boolean;
-  /** Kept as text so the fields can be empty. */
-  minSizeKb: string;
-  maxSizeKb: string;
-  folders: string[];
-}
-
-const EMPTY_FILTERS: Filters = {
-  accountId: '',
-  from: '',
-  to: '',
-  field: 'all',
-  sort: 'relevance',
-  dateFrom: '',
-  dateTo: '',
-  withAttachments: false,
-  unreadOnly: false,
-  flaggedOnly: false,
-  includeDeleted: false,
-  minSizeKb: '',
-  maxSizeKb: '',
-  folders: [],
-};
-
-/** Filters that are not the account picker, for the little badge on the button. */
-function activeFilterCount(filters: Filters): number {
-  let count = 0;
-  if (filters.from) count += 1;
-  if (filters.to) count += 1;
-  if (filters.field !== 'all') count += 1;
-  if (filters.dateFrom) count += 1;
-  if (filters.dateTo) count += 1;
-  if (filters.withAttachments) count += 1;
-  if (filters.unreadOnly) count += 1;
-  if (filters.flaggedOnly) count += 1;
-  if (filters.includeDeleted) count += 1;
-  if (filters.minSizeKb) count += 1;
-  if (filters.maxSizeKb) count += 1;
-  count += filters.folders.length;
-  return count;
-}
-
-/** Kilobytes from an input field into bytes, ignoring anything unusable. */
-function sizeToBytes(value: string): number | undefined {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed * 1024 : undefined;
-}
 
 /** Renders the FTS snippet, which contains <mark> around the matched words. */
 function Snippet({ html }: { html: string }): ReactNode {
@@ -105,7 +54,7 @@ export function Search(): ReactNode {
   const { accounts, indexProgress } = useApp();
 
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<MessageFilterValues>(EMPTY_MESSAGE_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [hits, setHits] = useState<SearchHit[]>([]);
@@ -125,18 +74,7 @@ export function Search(): ReactNode {
           q: query,
           account: filters.accountId || undefined,
           folders: filters.folders,
-          from: filters.from || undefined,
-          to: filters.to || undefined,
-          field: filters.field,
-          sort: filters.sort,
-          dateFrom: filters.dateFrom || undefined,
-          dateTo: filters.dateTo || undefined,
-          withAttachments: filters.withAttachments,
-          unreadOnly: filters.unreadOnly,
-          flaggedOnly: filters.flaggedOnly,
-          includeDeleted: filters.includeDeleted,
-          minSize: sizeToBytes(filters.minSizeKb),
-          maxSize: sizeToBytes(filters.maxSizeKb),
+          ...toSearchOptions(filters),
           limit: PAGE_SIZE,
           offset: nextOffset,
         });
@@ -256,136 +194,7 @@ export function Search(): ReactNode {
         </div>
 
         {showFilters && (
-          <div className="animate-fade-up flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--surface-2)' }}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Field label={t('search.from')}>
-                <Input value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} />
-              </Field>
-              <Field label={t('search.to')}>
-                <Input value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} />
-              </Field>
-              <Field label={t('search.field')}>
-                <Select
-                  value={filters.field}
-                  onChange={(event) => setFilters({ ...filters, field: event.target.value as SearchField })}
-                >
-                  <option value="all">{t('search.fieldAll')}</option>
-                  <option value="subject">{t('search.fieldSubject')}</option>
-                  <option value="from">{t('search.fieldFrom')}</option>
-                  <option value="to">{t('search.fieldTo')}</option>
-                  <option value="body">{t('search.fieldBody')}</option>
-                  <option value="attachments">{t('search.fieldAttachments')}</option>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Field label={t('search.dateFrom')}>
-                <Input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(event) => setFilters({ ...filters, dateFrom: event.target.value })}
-                />
-              </Field>
-              <Field label={t('search.dateTo')}>
-                <Input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(event) => setFilters({ ...filters, dateTo: event.target.value })}
-                />
-              </Field>
-              <Field label={t('search.sort')}>
-                <Select
-                  value={filters.sort}
-                  onChange={(event) => setFilters({ ...filters, sort: event.target.value as SearchSort })}
-                >
-                  <option value="relevance">{t('search.sortRelevance')}</option>
-                  <option value="date-desc">{t('search.sortDateDesc')}</option>
-                  <option value="date-asc">{t('search.sortDateAsc')}</option>
-                  <option value="size-desc">{t('search.sortSizeDesc')}</option>
-                  <option value="size-asc">{t('search.sortSizeAsc')}</option>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label={t('search.minSize')}>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={filters.minSizeKb}
-                  onChange={(event) => setFilters({ ...filters, minSizeKb: event.target.value })}
-                />
-              </Field>
-              <Field label={t('search.maxSize')}>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={filters.maxSizeKb}
-                  onChange={(event) => setFilters({ ...filters, maxSizeKb: event.target.value })}
-                />
-              </Field>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Toggle
-                checked={filters.withAttachments}
-                onChange={(withAttachments) => setFilters({ ...filters, withAttachments })}
-                label={t('search.withAttachments')}
-              />
-              <Toggle
-                checked={filters.unreadOnly}
-                onChange={(unreadOnly) => setFilters({ ...filters, unreadOnly })}
-                label={t('search.unreadOnly')}
-              />
-              <Toggle
-                checked={filters.flaggedOnly}
-                onChange={(flaggedOnly) => setFilters({ ...filters, flaggedOnly })}
-                label={t('search.flaggedOnly')}
-              />
-              <Toggle
-                checked={filters.includeDeleted}
-                onChange={(includeDeleted) => setFilters({ ...filters, includeDeleted })}
-                label={t('search.includeDeleted')}
-              />
-            </div>
-
-            {folderOptions.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {folderOptions.map((path) => {
-                  const active = filters.folders.includes(path);
-                  return (
-                    <button
-                      key={path}
-                      type="button"
-                      onClick={() =>
-                        setFilters({
-                          ...filters,
-                          folders: active
-                            ? filters.folders.filter((value) => value !== path)
-                            : [...filters.folders, path],
-                        })
-                      }
-                      className="rounded-full border px-2.5 py-1 text-xs transition"
-                      style={{
-                        background: active ? 'var(--accent-soft)' : 'var(--surface-1)',
-                        borderColor: active ? 'var(--accent)' : 'var(--border)',
-                        color: active ? 'var(--accent)' : 'var(--text-muted)',
-                      }}
-                    >
-                      {path}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <Button variant="ghost" className="self-start" onClick={() => setFilters(EMPTY_FILTERS)}>
-              {t('search.reset')}
-            </Button>
-          </div>
+          <MessageFilters filters={filters} onChange={setFilters} folderOptions={folderOptions} />
         )}
       </Card>
 
