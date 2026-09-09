@@ -1,5 +1,5 @@
 import type { OperatorSettings } from '@amberchest/core';
-import { Bot, Check, Copy, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Bot, Check, Copy, Eye, EyeOff, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Field, Input, Toggle } from '../components/ui.js';
@@ -25,6 +25,8 @@ export function McpSettings({
 }): ReactNode {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  /** Off by default and never remembered; asking again is one click. */
+  const [revealed, setRevealed] = useState(false);
 
   const permissions: Array<{ id: Permission; label: string; warning?: string }> = [
     { id: 'read', label: t('mcp.permRead') },
@@ -124,12 +126,33 @@ export function McpSettings({
           {settings.httpEnabled && (
             <Field label={t('mcp.token')} hint={t('mcp.tokenHint')}>
               <div className="flex gap-2">
-                <Input readOnly value={settings.token} className="font-mono !text-xs" />
+                {/*
+                  Covered unless it is asked for: the token grants whatever
+                  permissions are switched on, and a settings screen is open
+                  for far longer than it takes to photograph it. Copying works
+                  without ever showing it.
+                */}
+                <Input
+                  readOnly
+                  type={revealed ? 'text' : 'password'}
+                  value={settings.token}
+                  className="font-mono !text-xs"
+                />
+                <Button
+                  onClick={() => setRevealed((value) => !value)}
+                  aria-label={revealed ? t('mcp.hide') : t('mcp.reveal')}
+                  title={revealed ? t('mcp.hide') : t('mcp.reveal')}
+                >
+                  {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
+                </Button>
                 <Button onClick={() => void copyToken()} aria-label={t('mcp.copy')}>
                   {copied ? <Check size={15} /> : <Copy size={15} />}
                 </Button>
                 <Button
-                  onClick={() => onChange({ ...settings, token: generateToken() })}
+                  onClick={() => {
+                    setRevealed(false);
+                    onChange({ ...settings, token: generateToken() });
+                  }}
                   aria-label={t('mcp.generate')}
                 >
                   <RefreshCw size={15} />

@@ -167,8 +167,25 @@ export function App(): ReactNode {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8">
-          <div className={cx('mx-auto', view === 'browser' ? 'max-w-none' : 'max-w-5xl')}>
+        <main
+          className={cx(
+            'flex min-h-0 flex-1 flex-col px-5 py-6 md:px-8 md:py-8',
+            // From the two column layout upwards the mailbox divides the
+            // height between its panels and scrolls inside them, so this
+            // element must bound the height instead of growing with it. Below
+            // that breakpoint the panels are stacked and this one scrolls -
+            // clipping there would put half the messages out of reach.
+            view === 'browser' ? 'overflow-y-auto lg:overflow-hidden' : 'overflow-y-auto',
+          )}
+        >
+          <div
+            className={cx(
+              'mx-auto',
+              // The mailbox is handed the full height so its panels can divide
+              // it; every other screen keeps its readable column and grows.
+              view === 'browser' ? 'flex min-h-0 w-full flex-1 flex-col' : 'max-w-5xl',
+            )}
+          >
             {view === 'overview' && <Overview onGoToAccounts={() => setView('accounts')} />}
             {view === 'accounts' && <Dashboard />}
             {view === 'browser' && <Browser />}

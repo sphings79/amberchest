@@ -492,6 +492,9 @@ export const de = {
     remoteWarning:
       'Externe Bilder verraten dem Absender, dass du die Mail geöffnet hast. Nur laden, wenn du der Quelle traust.',
     noBody: 'Diese Nachricht hat keinen darstellbaren Text.',
+    showDark: 'Dunkel',
+    showLight: 'Hell',
+    schemeHint: 'Wie diese Mail dargestellt wird. Eigene Farben des Absenders bleiben erhalten.',
     showHtml: 'HTML',
     showText: 'Text',
     showSource: 'Quelltext',
@@ -664,6 +667,8 @@ export const de = {
     token: 'MCP-Token',
     tokenHint: 'Wird als Bearer-Token für den HTTP-Zugang gebraucht.',
     generate: 'Neu erzeugen',
+    reveal: 'Token anzeigen',
+    hide: 'Token verbergen',
     copy: 'Kopieren',
     copied: 'Kopiert.',
     setupTitle: 'Einrichtung in Claude Desktop',

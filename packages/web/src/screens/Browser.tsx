@@ -214,7 +214,9 @@ export function Browser(): ReactNode {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    // The screen claims the height the main area gives it, so the two panels
+    // grow with the window instead of stopping at a guessed fraction of it.
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold tracking-tight">{t('browser.title')}</h1>
         <Button variant="ghost" onClick={() => void loadFolders()} aria-label={t('folders.reload')}>
@@ -222,10 +224,10 @@ export function Browser(): ReactNode {
         </Button>
       </div>
 
-      <div className="flex min-h-[60vh] flex-col gap-4 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         {/* folder tree */}
         <div
-          className="w-full shrink-0 overflow-y-auto rounded-2xl border p-2 lg:max-h-[70vh] lg:w-64"
+          className="max-h-64 w-full shrink-0 overflow-y-auto rounded-2xl border p-2 lg:max-h-none lg:w-64"
           style={{ background: 'var(--surface-1)' }}
         >
           {accounts.map((entry) => {
@@ -298,7 +300,7 @@ export function Browser(): ReactNode {
           </div>
 
           <div
-            className="flex-1 overflow-y-auto rounded-2xl border lg:max-h-[70vh]"
+            className="min-h-0 flex-1 rounded-2xl border lg:overflow-y-auto"
             style={{ background: 'var(--surface-1)' }}
           >
             {hits.length === 0 && !busy ? (

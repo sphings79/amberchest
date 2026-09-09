@@ -493,6 +493,9 @@ export const en: Translations = {
     remoteWarning:
       'External images tell the sender that you opened the message. Only load them if you trust the source.',
     noBody: 'This message has no displayable body.',
+    showDark: 'Dark',
+    showLight: 'Light',
+    schemeHint: 'How this message is rendered. Colours the sender set are kept.',
     showHtml: 'HTML',
     showText: 'Text',
     showSource: 'Source',
@@ -665,6 +668,8 @@ export const en: Translations = {
     token: 'MCP token',
     tokenHint: 'Used as the bearer token for HTTP access.',
     generate: 'Generate new',
+    reveal: 'Show the token',
+    hide: 'Hide the token',
     copy: 'Copy',
     copied: 'Copied.',
     setupTitle: 'Setting it up in Claude Desktop',

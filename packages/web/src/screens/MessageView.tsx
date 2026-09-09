@@ -1,5 +1,14 @@
 import type { MessageContent } from '@amberchest/core';
-import { Download, ExternalLink, Eye, FileText, Paperclip, ShieldAlert } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  Eye,
+  FileText,
+  Moon,
+  Paperclip,
+  ShieldAlert,
+  Sun,
+} from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, downloadUrl, isDesktop } from '../api/client.js';
@@ -15,7 +24,7 @@ type Mode = 'html' | 'text';
  * and the CSP inside the document blocks everything that is not an inlined
  * image. Remote content is only reachable after the user asks for it.
  */
-function buildDocument(html: string, allowRemote: boolean): string {
+function buildDocument(html: string, allowRemote: boolean, dark: boolean): string {
   const imgSources = allowRemote ? "data: https: http:" : 'data:';
   const csp = [
     "default-src 'none'",
@@ -25,22 +34,40 @@ function buildDocument(html: string, allowRemote: boolean): string {
     "form-action 'none'",
   ].join('; ');
 
+  /*
+   * Only the page around the message is themed, never the message itself.
+   *
+   * A mail brings its own colours and was written for a white background. What
+   * can be done without wrecking it is to say which scheme this is - so a
+   * sender who set nothing inherits readable defaults - and to leave anything
+   * they did set alone. Forcing the rest, by inverting for instance, turns
+   * logos inside out and makes light text on a light block invisible.
+   */
+  const scheme = dark
+    ? { root: 'dark', text: '#e8eaf0', background: '#171a21', link: '#a78bfa' }
+    : { root: 'light', text: '#171a21', background: '#ffffff', link: '#5b3fd6' };
+
   return `<!doctype html>
 <html><head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="${csp}">
 <base target="_blank">
 <style>
-  :root { color-scheme: light; }
+  :root { color-scheme: ${scheme.root}; }
   body { margin: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-         font-size: 14px; line-height: 1.5; color: #171a21; background: #ffffff;
+         font-size: 14px; line-height: 1.5; color: ${scheme.text}; background: ${scheme.background};
          overflow-wrap: break-word; }
   img { max-width: 100%; height: auto; }
   table { max-width: 100%; }
-  a { color: #5b3fd6; }
+  a { color: ${scheme.link}; }
   pre { white-space: pre-wrap; }
 </style>
 </head><body>${html}</body></html>`;
+}
+
+/** Whether the application is currently showing its dark theme. */
+function isDarkTheme(): boolean {
+  return document.documentElement.dataset.theme === 'dark';
 }
 
 export function MessageView({
@@ -57,10 +84,13 @@ export function MessageView({
   const [error, setError] = useState<string | null>(null);
   const [allowRemote, setAllowRemote] = useState(false);
   const [mode, setMode] = useState<Mode>('html');
+  /** Follows the application theme, and can be flipped for one message. */
+  const [dark, setDark] = useState(isDarkTheme);
 
   useEffect(() => {
     setMessage(null);
     setAllowRemote(false);
+    setDark(isDarkTheme());
     api
       .message(accountId, messageId)
       .then((value) => {
@@ -77,10 +107,10 @@ export function MessageView({
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-      return buildDocument(`<pre>${escaped}</pre>`, false);
+      return buildDocument(`<pre>${escaped}</pre>`, false, dark);
     }
-    return buildDocument(message.html ?? '', allowRemote);
-  }, [message, mode, allowRemote]);
+    return buildDocument(message.html ?? '', allowRemote, dark);
+  }, [message, mode, allowRemote, dark]);
 
   const openExternally = async (): Promise<void> => {
     try {
@@ -142,6 +172,14 @@ export function MessageView({
                 ))}
               </div>
             )}
+
+            <Button
+              onClick={() => setDark((value) => !value)}
+              title={t('message.schemeHint')}
+            >
+              {dark ? <Sun size={15} /> : <Moon size={15} />}
+              {dark ? t('message.showLight') : t('message.showDark')}
+            </Button>
 
             <a href={downloadUrl(`/accounts/${accountId}/messages/${messageId}/raw`)} download>
               <Button>
