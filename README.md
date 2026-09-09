@@ -13,7 +13,7 @@ with a folder tree that mirrors your mailbox.
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Checking the archive](#checking-the-archive) · [Statistics](#statistics-and-the-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Desktop or container?](#desktop-or-container) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Checking the archive](#checking-the-archive) · [Statistics](#statistics-and-the-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 **Also part of this project:** [Home Assistant integration](https://github.com/sphings79/mail-archiver-home-assistant) · [Home Assistant App (Add-on)](https://github.com/sphings79/mail-archiver-ha-app)
 
@@ -253,10 +253,31 @@ sudo dpkg -i mail-archiver_1.0.0_amd64.deb
 
 Both x64 and arm64 are built.
 
-## Docker
+## Desktop or container?
 
-> The image is built and tested; publishing to the registry happens with the
-> first release.
+Both run the same engine and the same interface. Only these differ:
+
+| | Desktop app | Container / add-on |
+| --- | --- | --- |
+| Backs up while your computer is off | — | ✅ |
+| Scheduled backups | — | ✅ cron |
+| Reachable from other devices, phone included | — | ✅ |
+| A login in front of the interface | — | ✅ |
+| OAuth redirect caught by the app itself | ✅ | — paste the address once |
+| Open a message in your mail client | ✅ | — download the `.eml` |
+| Installed by double-click, no server needed | ✅ | — |
+
+Everything else is identical: backup, attachment export, search, viewer, PDF,
+mbox and ZIP export, restore, the archive check, moving an archive, Gmail
+linking, the protection date, statistics, the register, notifications, the disk
+space guard, MCP and MQTT. The archive on disk has the same shape either way,
+so it can go from one to the other — see [Moving an archive](#moving-an-archive).
+
+A common arrangement is both: the container on a NAS or on Home Assistant does
+the nightly work, the desktop app connects to it when you want to look at
+something.
+
+## Docker
 
 The container runs the same engine and the same web interface as the desktop
 app, plus a scheduler. Intended usage on unRAID, Synology or any Docker host:
@@ -430,6 +451,23 @@ Two things to know:
   the same master password.
 - The endpoint that receives files only accepts relative paths ending in `.eml`
   or the journal name, below the account directory. Anything else is refused.
+
+
+### Moving into the Home Assistant add-on
+
+The add-on normally answers through ingress only, and ingress is not an address
+the desktop app can send files to. Two settings on the add-on's **Configuration**
+tab open the way:
+
+1. Set an **interface password** (`ui_password`). Without one the add-on refuses
+   everything that is not the supervisor — ingress has no login of its own, so
+   that guard is the only thing protecting it.
+2. Under **Network**, map port `8484` to the host.
+
+The interface then also answers at `http://homeassistant.local:8484`, and that
+is the address **Move** wants, together with the interface password. Mapping the
+port without setting the password changes nothing: the add-on keeps refusing,
+and says so in its log.
 
 The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
 over an archive directory that is already in place — which is how an index

@@ -13,7 +13,7 @@ schreibgeschützt, inkrementell, mit dem Ordnerbaum deines Postfachs.
 [![Mit TypeScript gebaut](https://img.shields.io/badge/gebaut%20mit-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![Sterne](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
 
-[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Docker](#docker) · [OAuth](#oauth-für-gmail-und-microsoft-365) · [Archiv prüfen](#das-archiv-prüfen) · [Statistik](#statistik-und-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
+[English version](README.md) · [Funktionen](#funktionen) · [Installation](#installation) · [Desktop oder Container?](#desktop-oder-container) · [Docker](#docker) · [OAuth](#oauth-für-gmail-und-microsoft-365) · [Archiv prüfen](#das-archiv-prüfen) · [Statistik](#statistik-und-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
 **Gehört ebenfalls zum Projekt:** [Home-Assistant-Integration](https://github.com/sphings79/mail-archiver-home-assistant) · [Home Assistant App (Addon)](https://github.com/sphings79/mail-archiver-ha-app)
 
@@ -262,6 +262,32 @@ sudo dpkg -i mail-archiver_1.0.0_amd64.deb
 
 Es werden x64 und arm64 gebaut.
 
+## Desktop oder Container?
+
+Beide führen dieselbe Maschinerie und dieselbe Oberfläche aus. Nur das hier
+unterscheidet sich:
+
+| | Desktop-App | Container / Add-on |
+| --- | --- | --- |
+| Sichert, während der Rechner aus ist | — | ✅ |
+| Sicherung nach Zeitplan | — | ✅ Cron |
+| Von anderen Geräten erreichbar, auch vom Handy | — | ✅ |
+| Anmeldung vor der Oberfläche | — | ✅ |
+| OAuth-Rückleitung fängt die App selbst auf | ✅ | — Adresse einmal einfügen |
+| Nachricht im Mailprogramm öffnen | ✅ | — `.eml` herunterladen |
+| Per Doppelklick installiert, ohne Server | ✅ | — |
+
+Alles andere ist gleich: Sicherung, Anhang-Export, Suche, Ansicht, Export als
+PDF, mbox und ZIP, Rückspielen, Archivprüfung, Umzug, Gmail-Verlinkung,
+Schutzdatum, Statistik, Register, Benachrichtigungen, Speicherplatz-Wächter,
+MCP und MQTT. Das Archiv auf der Platte sieht in beiden Fällen gleich aus, es
+kann also von einem zum anderen wandern — siehe
+[Ein Archiv umziehen](#ein-archiv-umziehen).
+
+Verbreitet ist beides zusammen: der Container auf dem NAS oder in Home
+Assistant erledigt die Nacht, die Desktop-App verbindet sich damit, wenn du
+etwas nachsehen willst.
+
 ## Docker
 
 > Das Image ist gebaut und getestet; veröffentlicht wird es mit dem ersten
@@ -445,6 +471,23 @@ Zwei Dinge, die man wissen sollte:
 - Der empfangende Endpunkt nimmt ausschließlich relative Pfade an, die auf
   `.eml` oder den Journalnamen enden, unterhalb des Kontoverzeichnisses. Alles
   andere wird abgewiesen.
+
+
+### Umzug in das Home-Assistant-Add-on
+
+Das Add-on antwortet normalerweise nur über Ingress, und Ingress ist keine
+Adresse, an die die Desktop-App Dateien schicken kann. Zwei Einstellungen im
+Reiter **Konfiguration** des Add-ons öffnen den Weg:
+
+1. Ein **Oberflächen-Passwort** setzen (`ui_password`). Ohne eins weist das
+   Add-on alles ab, was nicht der Supervisor ist — Ingress hat keine eigene
+   Anmeldung, dieser Schutz ist also das Einzige, was davor steht.
+2. Unter **Netzwerk** den Port `8484` auf den Host legen.
+
+Die Oberfläche antwortet dann auch unter `http://homeassistant.local:8484`, und
+genau diese Adresse will **Umziehen**, zusammen mit dem Oberflächen-Passwort.
+Den Port ohne das Passwort freizugeben ändert nichts: das Add-on weist weiter
+ab und schreibt das ins Protokoll.
 
 Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
 Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
