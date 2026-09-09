@@ -1,5 +1,5 @@
 {
-  "name": "@mail-archiver/web",
+  "name": "@amberchest/web",
   "version": "1.2.1",
   "private": true,
   "license": "AGPL-3.0-or-later",
@@ -19,7 +19,7 @@
     "react-i18next": "^16.2.4"
   },
   "devDependencies": {
-    "@mail-archiver/core": "*",
+    "@amberchest/core": "*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

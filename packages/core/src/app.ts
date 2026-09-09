@@ -85,7 +85,7 @@ export interface AccountOverview {
  * The desktop app and the container both create exactly one of these; the only
  * difference is where the master password comes from.
  */
-export class MailArchiverApp {
+export class AmberChestApp {
   readonly config: ConfigStore;
   readonly db: ArchiveDatabase;
   readonly sync: SyncManager;
@@ -502,7 +502,7 @@ export class MailArchiverApp {
     return new McpServer({
       app: this,
       permissions: () => this.mcpPermissions(),
-      serverName: 'mail-archiver',
+      serverName: 'amberchest',
       serverVersion: '1.0.0',
     });
   }
@@ -594,7 +594,7 @@ export class MailArchiverApp {
       await this.notifier.send({
         event: 'backupFailed',
         level: 'error',
-        title: `Mail Archiver: backup of ${name} failed`,
+        title: `AmberChest: backup of ${name} failed`,
         message: progress.error ?? 'The run ended with an error.',
         details: { account: name, accountId: progress.accountId, stats: progress.stats },
       });
@@ -608,7 +608,7 @@ export class MailArchiverApp {
       await this.notifier.send({
         event: 'backupFinished',
         level: 'info',
-        title: `Mail Archiver: ${name} backed up`,
+        title: `AmberChest: ${name} backed up`,
         message: `${messagesNew} new, ${messagesMoved} moved, ${messagesDeleted} removed.`,
         details: { account: name, accountId: progress.accountId, stats: progress.stats },
       });
@@ -620,7 +620,7 @@ export class MailArchiverApp {
       await this.notifier.send({
         event: 'lowDiskSpace',
         level: 'warning',
-        title: 'Mail Archiver: the archive volume is filling up',
+        title: 'AmberChest: the archive volume is filling up',
         message:
           `Only ${Math.round(status.space.free / 1024 / 1024 / 1024)} GB left where the archive ` +
           `is stored. Below ${this.config.getSettings().storage.stopBelowGb} GB a backup stops ` +
@@ -639,7 +639,7 @@ export class MailArchiverApp {
     await this.notifier.send({
       event: 'verifyProblems',
       level: missing + changed + unreadable > 0 ? 'error' : 'warning',
-      title: `Mail Archiver: the archive of ${account?.name ?? progress.accountId} has problems`,
+      title: `AmberChest: the archive of ${account?.name ?? progress.accountId} has problems`,
       message:
         `${missing} missing, ${changed} changed, ${unreadable} unreadable, ${orphans} orphaned, ` +
         `${foldersDiffering} folder(s) differ from the server.`,

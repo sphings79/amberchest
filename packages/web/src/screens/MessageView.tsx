@@ -1,4 +1,4 @@
-import type { MessageContent } from '@mail-archiver/core';
+import type { MessageContent } from '@amberchest/core';
 import { Download, ExternalLink, Eye, FileText, Paperclip, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

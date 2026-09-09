@@ -18,7 +18,7 @@ export type PdfRenderer = (html: string) => Promise<Buffer>;
 
 /** Chromium binaries to look for when no renderer was injected. */
 const CHROMIUM_CANDIDATES = [
-  process.env.MAIL_ARCHIVER_CHROMIUM,
+  process.env.AMBERCHEST_CHROMIUM,
   'chromium',
   'chromium-browser',
   'google-chrome',
@@ -48,7 +48,7 @@ export const chromiumPdfRenderer: PdfRenderer = async (html) => {
   const binary = await findChromium();
   if (!binary) throw new Error('No Chromium found for PDF rendering');
 
-  const dir = await mkdtemp(join(tmpdir(), 'mail-archiver-pdf-'));
+  const dir = await mkdtemp(join(tmpdir(), 'amberchest-pdf-'));
   const htmlPath = join(dir, 'message.html');
   const pdfPath = join(dir, 'message.pdf');
 

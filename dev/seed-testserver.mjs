@@ -5,7 +5,7 @@
  * attachment.
  *
  * Usage:
- *   docker start mail-archiver-dovecot
+ *   docker start amberchest-dovecot
  *   node dev/seed-testserver.mjs
  */
 import { ImapFlow } from 'imapflow';
@@ -66,7 +66,7 @@ function buildMessage({ subject, from, to, date, body, attachment }) {
 }
 
 const MESSAGES = [
-  { folder: 'INBOX', subject: 'Willkommen bei Mail Archiver', body: 'Erste Testnachricht.' },
+  { folder: 'INBOX', subject: 'Willkommen bei AmberChest', body: 'Erste Testnachricht.' },
   { folder: 'INBOX', subject: 'Grüße aus München', body: 'Umlaute im Betreff: äöüß.' },
   {
     folder: 'INBOX',

@@ -6,7 +6,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
  * Off by default, because the whole point of .eml is that any mail client can
  * open it. Switched on, every message file gets sealed with AES-256-GCM using
  * a key derived from the master password - which means the archive can then
- * only be read through Mail Archiver.
+ * only be read through AmberChest.
  *
  * File layout:
  *   magic "MAENC1"  6 bytes

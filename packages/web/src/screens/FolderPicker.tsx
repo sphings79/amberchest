@@ -1,4 +1,4 @@
-import type { FolderTreeNode } from '@mail-archiver/core';
+import type { FolderTreeNode } from '@amberchest/core';
 import {
   Archive,
   Check,

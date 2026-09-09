@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <!-- Community Applications template for unRAID. -->
 <Container version="2">
-  <Name>mail-archiver</Name>
-  <Repository>ghcr.io/sphings79/mail-archiver:latest</Repository>
-  <Registry>https://github.com/sphings79/mail-archiver/pkgs/container/mail-archiver</Registry>
-  <Support>https://github.com/sphings79/mail-archiver/issues</Support>
-  <Project>https://github.com/sphings79/mail-archiver</Project>
+  <Name>amberchest</Name>
+  <Repository>ghcr.io/sphings79/amberchest:latest</Repository>
+  <Registry>https://github.com/sphings79/amberchest/pkgs/container/amberchest</Registry>
+  <Support>https://github.com/sphings79/amberchest/issues</Support>
+  <Project>https://github.com/sphings79/amberchest</Project>
   <Overview>
     Backs up IMAP mailboxes to plain .eml files on your own storage. Nothing is
     deleted on the server and nothing is marked as read. Includes full text
@@ -14,7 +14,7 @@
   </Overview>
   <Category>Backup: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8484]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/sphings79/mail-archiver/main/assets/icon.svg</Icon>
+  <Icon>https://raw.githubusercontent.com/sphings79/amberchest/main/assets/icon.svg</Icon>
   <ExtraParams/>
   <PostArgs/>
   <Networking>
@@ -28,19 +28,19 @@
     </Publish>
   </Networking>
   <Config Name="WebUI Port" Target="8484" Default="8484" Mode="tcp" Type="Port" Display="always" Required="true"/>
-  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/mail-archiver" Mode="rw" Type="Path" Display="always" Required="true">
+  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/amberchest" Mode="rw" Type="Path" Display="always" Required="true">
     Encrypted configuration and the search index.
   </Config>
   <Config Name="Archive" Target="/archive" Default="/mnt/user/backup/mail" Mode="rw" Type="Path" Display="always" Required="true">
     Where the .eml files are written.
   </Config>
-  <Config Name="Master password" Target="MAIL_ARCHIVER_MASTER_PASSWORD" Default="" Mode="" Type="Variable" Display="always" Required="true" Mask="true">
+  <Config Name="Master password" Target="AMBERCHEST_MASTER_PASSWORD" Default="" Mode="" Type="Variable" Display="always" Required="true" Mask="true">
     Encrypts your IMAP credentials. There is no recovery, keep it safe.
   </Config>
-  <Config Name="Web interface password" Target="MAIL_ARCHIVER_UI_PASSWORD" Default="" Mode="" Type="Variable" Display="always" Required="true" Mask="true">
+  <Config Name="Web interface password" Target="AMBERCHEST_UI_PASSWORD" Default="" Mode="" Type="Variable" Display="always" Required="true" Mask="true">
     Needed to open the interface.
   </Config>
-  <Config Name="Schedule (cron)" Target="MAIL_ARCHIVER_CRON" Default="0 3 * * *" Mode="" Type="Variable" Display="always" Required="false">
+  <Config Name="Schedule (cron)" Target="AMBERCHEST_CRON" Default="0 3 * * *" Mode="" Type="Variable" Display="always" Required="false">
     Standard cron syntax. Empty means no automatic backups.
   </Config>
   <Config Name="Time zone" Target="TZ" Default="Europe/Berlin" Mode="" Type="Variable" Display="always" Required="false"/>

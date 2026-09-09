@@ -14,7 +14,7 @@ import { REPO_URL } from '../constants.js';
  */
 const CURRENT_VERSION = '1.2.1';
 
-const RELEASES_API = 'https://api.github.com/repos/sphings79/mail-archiver/releases/latest';
+const RELEASES_API = 'https://api.github.com/repos/sphings79/amberchest/releases/latest';
 
 /**
  * Tells the user when a newer release exists.

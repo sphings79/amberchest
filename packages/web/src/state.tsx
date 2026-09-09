@@ -8,7 +8,7 @@ import type {
   SyncProgress,
   TransferProgress,
   VerifyProgress,
-} from '@mail-archiver/core';
+} from '@amberchest/core';
 import {
   createContext,
   useCallback,

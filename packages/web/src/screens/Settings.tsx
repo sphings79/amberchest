@@ -70,7 +70,7 @@ export function Settings(): ReactNode {
         username: '',
         password: '',
         clientId: '',
-        baseTopic: 'mailarchiver',
+        baseTopic: 'amberchest',
         discovery: true,
         discoveryPrefix: 'homeassistant',
         retain: true,

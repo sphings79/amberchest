@@ -1,4 +1,4 @@
-import type { SearchHit } from '@mail-archiver/core';
+import type { SearchHit } from '@amberchest/core';
 import {
   Archive,
   ChevronRight,

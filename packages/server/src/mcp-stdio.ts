@@ -1,5 +1,5 @@
 import { createInterface } from 'node:readline';
-import { MailArchiverApp, handleRawMessage, logger } from '@mail-archiver/core';
+import { AmberChestApp, handleRawMessage, logger } from '@amberchest/core';
 
 /**
  * MCP over stdio, the transport Claude Desktop and most editors speak.
@@ -8,10 +8,10 @@ import { MailArchiverApp, handleRawMessage, logger } from '@mail-archiver/core';
  *
  *   {
  *     "mcpServers": {
- *       "mail-archiver": {
+ *       "amberchest": {
  *         "command": "node",
- *         "args": ["/path/to/mail-archiver/packages/server/dist/mcp-stdio.js"],
- *         "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "..." }
+ *         "args": ["/path/to/amberchest/packages/server/dist/mcp-stdio.js"],
+ *         "env": { "AMBERCHEST_MASTER_PASSWORD": "..." }
  *       }
  *     }
  *   }
@@ -20,24 +20,24 @@ import { MailArchiverApp, handleRawMessage, logger } from '@mail-archiver/core';
  * because stdout is the transport.
  */
 async function main(): Promise<void> {
-  const masterPassword = process.env.MAIL_ARCHIVER_MASTER_PASSWORD;
+  const masterPassword = process.env.AMBERCHEST_MASTER_PASSWORD;
   if (!masterPassword) {
     process.stderr.write(
-      'MAIL_ARCHIVER_MASTER_PASSWORD is required so the configuration can be unlocked.\n',
+      'AMBERCHEST_MASTER_PASSWORD is required so the configuration can be unlocked.\n',
     );
     process.exit(1);
   }
 
-  const app = new MailArchiverApp();
+  const app = new AmberChestApp();
   if (!app.isInitialized) {
-    process.stderr.write('No configuration found. Set up Mail Archiver first.\n');
+    process.stderr.write('No configuration found. Set up AmberChest first.\n');
     process.exit(1);
   }
 
   await app.unlock(masterPassword);
 
   if (!app.getSettings().mcp.enabled) {
-    process.stderr.write('MCP is switched off in the Mail Archiver settings.\n');
+    process.stderr.write('MCP is switched off in the AmberChest settings.\n');
     process.exit(1);
   }
 
@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   const server = app.createMcpServer();
   const lines = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
-  process.stderr.write('Mail Archiver MCP server ready on stdio\n');
+  process.stderr.write('AmberChest MCP server ready on stdio\n');
 
   for await (const line of lines) {
     const trimmed = line.trim();

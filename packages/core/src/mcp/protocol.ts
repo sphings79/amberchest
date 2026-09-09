@@ -1,4 +1,4 @@
-import type { MailArchiverApp } from '../app.js';
+import type { AmberChestApp } from '../app.js';
 import { logger } from '../util/logger.js';
 import { availableTools, callTool, type McpPermissions } from './tools.js';
 
@@ -36,7 +36,7 @@ const ERROR_CODES = {
 } as const;
 
 export interface McpServerOptions {
-  app: MailArchiverApp;
+  app: AmberChestApp;
   /** Read fresh for every call, so a changed setting takes effect at once. */
   permissions: () => McpPermissions;
   serverName?: string;
@@ -117,7 +117,7 @@ export class McpServer {
         tools: { listChanged: false },
       },
       serverInfo: {
-        name: this.options.serverName ?? 'mail-archiver',
+        name: this.options.serverName ?? 'amberchest',
         version: this.options.serverVersion ?? '0.1.0',
       },
       instructions:

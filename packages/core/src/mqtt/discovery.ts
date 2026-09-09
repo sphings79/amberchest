@@ -7,7 +7,7 @@ import type { Topics } from './topics.js';
  * Home Assistant creates the entities itself once these retained messages sit
  * on `<prefix>/<component>/<object_id>/config`, so nothing has to be written
  * into its configuration by hand. The unique ids contain the base topic, which
- * keeps two Mail Archiver instances on one broker apart.
+ * keeps two AmberChest instances on one broker apart.
  */
 export interface DiscoveryMessage {
   topic: string;
@@ -24,14 +24,14 @@ interface DiscoveryOptions {
 }
 
 function idPrefix(baseTopic: string): string {
-  return baseTopic.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'mailarchiver';
+  return baseTopic.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'amberchest';
 }
 
 function hubDevice(options: DiscoveryOptions): Record<string, unknown> {
   return {
     identifiers: [`${idPrefix(options.baseTopic)}_hub`],
-    name: 'Mail Archiver',
-    manufacturer: 'Mail Archiver',
+    name: 'AmberChest',
+    manufacturer: 'AmberChest',
     model: 'Mail backup',
     sw_version: options.version,
   };
@@ -58,7 +58,7 @@ export function hubDiscovery(options: DiscoveryOptions): DiscoveryMessage[] {
         ...common,
         name: 'Archive size',
         unique_id: `${id}_total_size`,
-        object_id: 'mail_archiver_archive_size',
+        object_id: 'amberchest_archive_size',
         value_template: '{{ value_json.bytes }}',
         device_class: 'data_size',
         state_class: 'measurement',
@@ -73,7 +73,7 @@ export function hubDiscovery(options: DiscoveryOptions): DiscoveryMessage[] {
         ...common,
         name: 'Next scheduled backup',
         unique_id: `${id}_next_run`,
-        object_id: 'mail_archiver_next_scheduled_backup',
+        object_id: 'amberchest_next_scheduled_backup',
         value_template: '{{ value_json.next_run }}',
         device_class: 'timestamp',
         icon: 'mdi:calendar-clock',
@@ -93,7 +93,7 @@ export function accountDiscovery(
   const device = {
     identifiers: [id],
     name: overview.account.name,
-    manufacturer: 'Mail Archiver',
+    manufacturer: 'AmberChest',
     model: 'IMAP account',
     sw_version: options.version,
     via_device: `${idPrefix(options.baseTopic)}_hub`,

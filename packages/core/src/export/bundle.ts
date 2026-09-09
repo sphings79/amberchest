@@ -159,7 +159,7 @@ export class BundleEngine extends EventEmitter {
     const account = this.selection.accountId
       ? sanitizeSegment(this.options.resolveAccount(this.selection.accountId).email)
       : 'alle-konten';
-    return `mail-archiver_${account}_${stamp}.${EXTENSIONS[this.format]}`;
+    return `amberchest_${account}_${stamp}.${EXTENSIONS[this.format]}`;
   }
 
   private async sourceOf(hit: { accountId: string; messageId: number }): Promise<Buffer | null> {

@@ -28,7 +28,7 @@ app.whenReady().then(async () => {
 <style>html,body{margin:0;padding:0;background:transparent}svg{display:block;width:${width}px;height:${height}px}</style>
 ${svg}`;
 
-    const tmpPage = join(tmpdir(), `mail-archiver-render-${process.pid}.html`);
+    const tmpPage = join(tmpdir(), `amberchest-render-${process.pid}.html`);
     writeFileSync(tmpPage, page, 'utf8');
 
     const win = new BrowserWindow({

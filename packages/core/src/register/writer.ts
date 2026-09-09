@@ -67,7 +67,7 @@ ${body}
  * The point of keeping mail as .eml files is that they outlive the program
  * that wrote them. A register makes that real: one page per folder, linking to
  * the files next to it, readable in any browser from a plain directory - no
- * server, no database, no Mail Archiver.
+ * server, no database, no AmberChest.
  */
 export async function writeRegister(
   account: Account,
@@ -119,7 +119,7 @@ export async function writeRegister(
 ${rows}
 </tbody></table>${
       options.encrypted
-        ? '<p class="note">Dieses Archiv ist verschlüsselt. Die Dateien lassen sich nur mit dem Master-Passwort in Mail Archiver öffnen.</p>'
+        ? '<p class="note">Dieses Archiv ist verschlüsselt. Die Dateien lassen sich nur mit dem Master-Passwort in AmberChest öffnen.</p>'
         : ''
     }`;
 
@@ -155,7 +155,7 @@ ${rows}
 ${list}
 </tbody></table>
 <p class="note">Diese Seiten sind ein Verzeichnis der Dateien daneben. Jede Nachricht ist eine
-gewöhnliche .eml-Datei und lässt sich mit jedem Mailprogramm öffnen — auch ohne Mail Archiver.</p>`;
+gewöhnliche .eml-Datei und lässt sich mit jedem Mailprogramm öffnen — auch ohne AmberChest.</p>`;
 
   const indexPath = join(accountDir, 'index.html');
   await mkdir(accountDir, { recursive: true });

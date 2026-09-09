@@ -13,11 +13,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ImapFlow } from 'imapflow';
 
-const workdir = mkdtempSync(join(tmpdir(), 'mail-archiver-behaviour-'));
-process.env.MAIL_ARCHIVER_CONFIG_DIR = join(workdir, 'config');
-process.env.MAIL_ARCHIVER_ARCHIVE_DIR = join(workdir, 'archive');
+const workdir = mkdtempSync(join(tmpdir(), 'amberchest-behaviour-'));
+process.env.AMBERCHEST_CONFIG_DIR = join(workdir, 'config');
+process.env.AMBERCHEST_ARCHIVE_DIR = join(workdir, 'archive');
 
-const { MailArchiverApp } = await import('@mail-archiver/core');
+const { AmberChestApp } = await import('@amberchest/core');
 
 const IMAP = {
   host: '127.0.0.1',
@@ -74,7 +74,7 @@ await withImap(async (client) => {
   await client.append('INBOX', source, [], new Date());
 });
 
-const app = new MailArchiverApp();
+const app = new AmberChestApp();
 await app.initialize('behaviour-test-pass');
 await app.unlock('behaviour-test-pass');
 await app.updateSettings({ archivePath: join(workdir, 'archive') });

@@ -1,4 +1,4 @@
-import type { AccountOverview, TransferProgress } from '@mail-archiver/core';
+import type { AccountOverview, TransferProgress } from '@amberchest/core';
 import { ArrowRightLeft, CircleCheck, Square, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

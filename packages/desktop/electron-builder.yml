@@ -1,5 +1,5 @@
-appId: eu.sphings.mailarchiver
-productName: Mail Archiver
+appId: eu.sphings.amberchest
+productName: AmberChest
 copyright: Copyright © 2026 sphings79
 
 directories:
@@ -52,7 +52,7 @@ mac:
   gatekeeperAssess: false
 
 dmg:
-  title: Mail Archiver ${version}
+  title: AmberChest ${version}
   # background.png and background@2x.png live in build/ and are generated from
   # assets/dmg-background.svg, so the installer window matches the app.
   background: build/background.png
@@ -90,17 +90,17 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Mail Archiver
+  shortcutName: AmberChest
 
 linux:
   # The package name is scoped, which Linux cannot use as a binary name.
-  executableName: mail-archiver
+  executableName: amberchest
   # Debian derives the package name from this, so it must not be scoped either.
-  artifactName: mail-archiver_${version}_${arch}.${ext}
+  artifactName: amberchest_${version}_${arch}.${ext}
   maintainer: sphings79 <43515272+sphings79@users.noreply.github.com>
   desktop:
     entry:
-      Name: Mail Archiver
+      Name: AmberChest
       Comment: Back up IMAP mailboxes to plain .eml files
   category: Utility
   synopsis: Archive IMAP mailboxes to local .eml files

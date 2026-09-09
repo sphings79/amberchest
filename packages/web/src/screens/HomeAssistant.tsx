@@ -1,4 +1,4 @@
-import type { AppSettings, MqttStatus } from '@mail-archiver/core';
+import type { AppSettings, MqttStatus } from '@amberchest/core';
 import {
   CircleCheck,
   CircleX,
@@ -78,7 +78,7 @@ export function HomeAssistant(): ReactNode {
   };
 
   const connected = status?.connected ?? false;
-  const topic = mqtt.baseTopic || 'mailarchiver';
+  const topic = mqtt.baseTopic || 'amberchest';
   const sample = accounts[0]?.account.name ?? 'privat';
   const sampleSlug = sample
     .toLowerCase()

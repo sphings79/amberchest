@@ -1,5 +1,5 @@
 export * from './types.js';
-export { MailArchiverApp, type AccountOverview } from './app.js';
+export { AmberChestApp, type AccountOverview } from './app.js';
 export { ConfigStore, ConfigLockedError, toPublicAccount } from './config/store.js';
 export { WrongPasswordError } from './config/crypto.js';
 export {
@@ -13,7 +13,14 @@ export {
   defaultAttachmentSettings,
   type AccountInput,
 } from './config/schema.js';
-export { configDir, configFilePath, databaseFilePath, defaultArchiveDir } from './config/locations.js';
+export {
+  applyLegacyEnv,
+  configDir,
+  configFilePath,
+  databaseFilePath,
+  defaultArchiveDir,
+  migrateLegacyConfigDir,
+} from './config/locations.js';
 export {
   ArchiveDatabase,
   type AttachmentRow,

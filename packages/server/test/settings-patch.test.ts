@@ -1,4 +1,4 @@
-import { appSettingsSchema } from '@mail-archiver/core';
+import { appSettingsSchema } from '@amberchest/core';
 import { describe, expect, it } from 'vitest';
 
 /**

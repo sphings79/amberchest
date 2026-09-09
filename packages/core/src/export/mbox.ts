@@ -22,7 +22,7 @@ export function toMboxEntry(source: Buffer, from: string | null, date: Date): Bu
     .map((line) => (FROM_LINE.test(line) ? `>${line}` : line))
     .join('\n');
 
-  const separator = `From ${from ?? 'mail-archiver@localhost'} ${mboxDate(date)}\n`;
+  const separator = `From ${from ?? 'amberchest@localhost'} ${mboxDate(date)}\n`;
   const trailing = escaped.endsWith('\n') ? '\n' : '\n\n';
   return Buffer.from(separator + escaped + trailing, 'binary');
 }

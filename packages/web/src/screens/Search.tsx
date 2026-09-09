@@ -1,4 +1,4 @@
-import type { SearchField, SearchHit, SearchResult, SearchSort } from '@mail-archiver/core';
+import type { SearchField, SearchHit, SearchResult, SearchSort } from '@amberchest/core';
 import {
   Database,
   Download,

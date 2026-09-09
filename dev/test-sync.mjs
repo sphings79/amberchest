@@ -11,16 +11,16 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const workdir = process.argv[2] ?? mkdtempSync(join(tmpdir(), 'mail-archiver-'));
-process.env.MAIL_ARCHIVER_CONFIG_DIR = join(workdir, 'config');
-process.env.MAIL_ARCHIVER_ARCHIVE_DIR = join(workdir, 'archive');
+const workdir = process.argv[2] ?? mkdtempSync(join(tmpdir(), 'amberchest-'));
+process.env.AMBERCHEST_CONFIG_DIR = join(workdir, 'config');
+process.env.AMBERCHEST_ARCHIVE_DIR = join(workdir, 'archive');
 
-const { MailArchiverApp, logger } = await import('@mail-archiver/core');
+const { AmberChestApp, logger } = await import('@amberchest/core');
 
 logger.setLevel('debug');
 logger.on('entry', (entry) => console.log(`  [${entry.level}] ${entry.message}`));
 
-const app = new MailArchiverApp();
+const app = new AmberChestApp();
 if (!app.isInitialized) await app.initialize('test-password-123');
 await app.unlock('test-password-123');
 await app.updateSettings({ archivePath: join(workdir, 'archive') });

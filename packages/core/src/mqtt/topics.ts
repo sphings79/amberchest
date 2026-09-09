@@ -54,7 +54,7 @@ export interface Topics {
 }
 
 export function buildTopics(baseTopic: string): Topics {
-  const base = baseTopic.replace(/^\/+|\/+$/g, '') || 'mailarchiver';
+  const base = baseTopic.replace(/^\/+|\/+$/g, '') || 'amberchest';
   return {
     status: `${base}/status`,
     state: `${base}/state`,

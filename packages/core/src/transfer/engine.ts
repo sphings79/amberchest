@@ -228,7 +228,7 @@ export class TransferEngine extends EventEmitter {
           continue;
         }
         if (!entry.isFile()) continue;
-        if (!entry.name.endsWith('.eml') && !entry.name.startsWith('.mailarchiver')) continue;
+        if (!entry.name.endsWith('.eml') && !entry.name.startsWith('.amberchest')) continue;
 
         const info = await stat(full).catch(() => null);
         if (info) found.push({ path: relative(accountDir, full).split(sep).join('/'), size: info.size });

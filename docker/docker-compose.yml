@@ -1,8 +1,8 @@
-# Mail Archiver, ready to run. Adjust the two passwords and the paths.
+# AmberChest, ready to run. Adjust the two passwords and the paths.
 services:
-  mail-archiver:
-    image: ghcr.io/sphings79/mail-archiver:latest
-    container_name: mail-archiver
+  amberchest:
+    image: ghcr.io/sphings79/amberchest:latest
+    container_name: amberchest
     ports:
       - "8484:8484"
     volumes:
@@ -12,13 +12,13 @@ services:
       - ./archive:/archive
     environment:
       # Unlocks the encrypted configuration on start.
-      MAIL_ARCHIVER_MASTER_PASSWORD: change-me
+      AMBERCHEST_MASTER_PASSWORD: change-me
       # Password for the web interface. Without it the interface is open to
       # anyone who can reach the port.
-      MAIL_ARCHIVER_UI_PASSWORD: change-me-too
+      AMBERCHEST_UI_PASSWORD: change-me-too
       # Backup schedule, standard cron syntax. Leave out to disable.
-      MAIL_ARCHIVER_CRON: "0 3 * * *"
+      AMBERCHEST_CRON: "0 3 * * *"
       # Export attachments after every scheduled backup as well.
-      MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS: "false"
+      AMBERCHEST_CRON_EXPORT_ATTACHMENTS: "false"
       TZ: Europe/Berlin
     restart: unless-stopped

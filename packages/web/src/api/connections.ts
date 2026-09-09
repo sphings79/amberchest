@@ -17,9 +17,9 @@ export interface Connection {
 /** The built-in connection: the server this page was loaded from. */
 export const LOCAL_CONNECTION: Connection = { id: 'local', name: '', url: '' };
 
-const CONNECTIONS_KEY = 'mail-archiver-connections';
-const ACTIVE_KEY = 'mail-archiver-active-connection';
-const TOKEN_PREFIX = 'mail-archiver-token:';
+const CONNECTIONS_KEY = 'amberchest-connections';
+const ACTIVE_KEY = 'amberchest-active-connection';
+const TOKEN_PREFIX = 'amberchest-token:';
 
 function readJson<T>(key: string, fallback: T): T {
   try {

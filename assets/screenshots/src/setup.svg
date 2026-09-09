@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Mail Archiver first run, choosing the master password">
-  <title>Mail Archiver — First run</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="AmberChest first run, choosing the master password">
+  <title>AmberChest — First run</title>
   <desc>The welcome screen where the master password that encrypts all credentials is chosen.</desc>
 
   <defs>
@@ -23,8 +23,8 @@
     <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
     <circle cx="44" cy="22" r="6" fill="#febc2e"/>
     <circle cx="64" cy="22" r="6" fill="#28c840"/>
-    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">Mail Archiver</text>
-    <text x="184" y="26" fill="#6b7386" font-size="12.5">The Mail Backup Solution</text>
+    <text x="94" y="26" fill="#9aa2b5" font-size="12.5" font-weight="500">AmberChest</text>
+    <text x="184" y="26" fill="#6b7386" font-size="12.5">IMAP mail backup in plain .eml files</text>
 
     <!-- brand block -->
     <rect x="572" y="120" width="56" height="56" rx="17" fill="url(#accent3)" filter="url(#soft3)"/>
@@ -32,8 +32,8 @@
       <rect x="587" y="137" width="26" height="21" rx="4"/>
       <path d="M587 141.5l13 8.5 13-8.5"/>
     </g>
-    <text x="600" y="206" fill="#e8eaf0" font-size="19" font-weight="600" text-anchor="middle">Mail Archiver</text>
-    <text x="600" y="226" fill="#6b7386" font-size="12" text-anchor="middle">The Mail Backup Solution</text>
+    <text x="600" y="206" fill="#e8eaf0" font-size="19" font-weight="600" text-anchor="middle">AmberChest</text>
+    <text x="600" y="226" fill="#6b7386" font-size="12" text-anchor="middle">IMAP mail backup in plain .eml files</text>
 
     <!-- card -->
     <rect x="380" y="262" width="440" height="368" rx="16" fill="#151821" stroke="#262c3a" filter="url(#soft3)"/>

@@ -147,7 +147,7 @@ export const mqttSettingsSchema = z.object({
   password: z.string().default(''),
   clientId: z.string().default(''),
   /** Everything is published below this topic. */
-  baseTopic: z.string().min(1).default('mailarchiver'),
+  baseTopic: z.string().min(1).default('amberchest'),
   /** Publish the Home Assistant discovery messages. */
   discovery: z.boolean().default(true),
   discoveryPrefix: z.string().min(1).default('homeassistant'),

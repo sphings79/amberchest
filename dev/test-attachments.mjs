@@ -11,11 +11,11 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const workdir = mkdtempSync(join(tmpdir(), 'mail-archiver-attach-'));
-process.env.MAIL_ARCHIVER_CONFIG_DIR = join(workdir, 'config');
-process.env.MAIL_ARCHIVER_ARCHIVE_DIR = join(workdir, 'archive');
+const workdir = mkdtempSync(join(tmpdir(), 'amberchest-attach-'));
+process.env.AMBERCHEST_CONFIG_DIR = join(workdir, 'config');
+process.env.AMBERCHEST_ARCHIVE_DIR = join(workdir, 'archive');
 
-const { MailArchiverApp } = await import('@mail-archiver/core');
+const { AmberChestApp } = await import('@amberchest/core');
 
 let failures = 0;
 function check(label, condition, detail = '') {
@@ -35,7 +35,7 @@ function tree(dir) {
   }
 }
 
-const app = new MailArchiverApp();
+const app = new AmberChestApp();
 await app.initialize('attachment-test-pass');
 await app.unlock('attachment-test-pass');
 await app.updateSettings({ archivePath: join(workdir, 'archive') });

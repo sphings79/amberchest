@@ -1,5 +1,5 @@
 {
-  "name": "@mail-archiver/desktop",
+  "name": "@amberchest/desktop",
   "version": "1.2.1",
   "private": true,
   "type": "module",
@@ -12,19 +12,19 @@
     "dist": "electron-builder --mac --arm64"
   },
   "dependencies": {
-    "@mail-archiver/core": "*",
-    "@mail-archiver/server": "*"
+    "@amberchest/core": "*",
+    "@amberchest/server": "*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "electron": "44.2.0",
     "electron-builder": "^26.15.3"
   },
-  "description": "Mail Archiver - The Mail Backup Solution",
+  "description": "AmberChest - IMAP mail backup in plain .eml files",
   "author": "sphings79",
-  "homepage": "https://github.com/sphings79/mail-archiver",
+  "homepage": "https://github.com/sphings79/amberchest",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sphings79/mail-archiver.git"
+    "url": "https://github.com/sphings79/amberchest.git"
   }
 }

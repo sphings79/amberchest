@@ -1,4 +1,4 @@
-import type { AttachmentSettings, FolderTreeNode } from '@mail-archiver/core';
+import type { AttachmentSettings, FolderTreeNode } from '@amberchest/core';
 import { CalendarRange, FileStack, FolderTree, Layers, Paperclip, RotateCcw, Square } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

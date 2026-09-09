@@ -2,8 +2,13 @@ import { existsSync } from 'node:fs';
 import { rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MailArchiverApp, logger } from '@mail-archiver/core';
-import { AuthGuard, startServer, type RunningServer } from '@mail-archiver/server';
+import {
+  AmberChestApp,
+  applyLegacyEnv,
+  logger,
+  migrateLegacyConfigDir,
+} from '@amberchest/core';
+import { AuthGuard, startServer, type RunningServer } from '@amberchest/server';
 import { tmpdir } from 'node:os';
 import { BrowserWindow, Menu, app, dialog, ipcMain, shell } from 'electron';
 import { createServer } from 'node:http';
@@ -26,10 +31,10 @@ async function catchLoopbackRedirect(url: string, port: number): Promise<string>
       const landed = `http://127.0.0.1:${port}${request.url ?? '/'}`;
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       response.end(
-        '<!doctype html><meta charset="utf-8"><title>Mail Archiver</title>' +
+        '<!doctype html><meta charset="utf-8"><title>AmberChest</title>' +
           '<style>body{font-family:system-ui,sans-serif;background:#0d0f14;color:#e8eaf0;' +
           'display:grid;place-items:center;height:100vh;margin:0}</style>' +
-          '<p>You can close this tab and go back to Mail Archiver.</p>',
+          '<p>You can close this tab and go back to AmberChest.</p>',
       );
       server.close();
       resolve(landed);
@@ -51,7 +56,7 @@ async function catchLoopbackRedirect(url: string, port: number): Promise<string>
 
 let mainWindow: BrowserWindow | null = null;
 let running: RunningServer | null = null;
-let core: MailArchiverApp | null = null;
+let core: AmberChestApp | null = null;
 
 /**
  * The built frontend lives next to the compiled main process when packaged
@@ -69,7 +74,7 @@ async function createWindow(url: string): Promise<void> {
     height: 820,
     minWidth: 900,
     minHeight: 620,
-    title: 'Mail Archiver',
+    title: 'AmberChest',
     // Only macOS gets the frameless look with the in-page title bar; Windows
     // and Linux keep their native window chrome, which is what users there
     // expect and what their window managers can snap and tile.
@@ -109,7 +114,7 @@ async function createWindow(url: string): Promise<void> {
 
   // Development helper: capture the window and exit. Used to verify the
   // window chrome without asking a human to look at the screen.
-  const screenshotPath = process.env.MAIL_ARCHIVER_SCREENSHOT;
+  const screenshotPath = process.env.AMBERCHEST_SCREENSHOT;
   if (screenshotPath) {
     const window = mainWindow;
     setTimeout(() => {
@@ -176,7 +181,7 @@ function buildMenu(): void {
  * message cannot execute anything the message brought with it.
  */
 async function renderPdf(html: string): Promise<Buffer> {
-  const file = join(tmpdir(), `mail-archiver-print-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
+  const file = join(tmpdir(), `amberchest-print-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
   await writeFile(file, html, 'utf8');
 
   const window = new BrowserWindow({
@@ -201,7 +206,11 @@ async function renderPdf(html: string): Promise<Buffer> {
 }
 
 async function start(): Promise<void> {
-  core = new MailArchiverApp({ pdfRenderer: renderPdf });
+  // An installation from before the rename keeps its configuration and index.
+  applyLegacyEnv();
+  migrateLegacyConfigDir();
+
+  core = new AmberChestApp({ pdfRenderer: renderPdf });
   // A random token per launch; the window receives it in the URL and keeps it
   // in sessionStorage. Nothing on the machine can talk to the API without it.
   const auth = AuthGuard.withToken();
@@ -221,7 +230,7 @@ async function start(): Promise<void> {
   });
 
   logger.info(`Local server ready on ${running.url}`);
-  console.log(`Mail Archiver ready on ${running.url}`);
+  console.log(`AmberChest ready on ${running.url}`);
   // `desktop=1` makes the UI render its own title bar - only where the window
   // has none of its own.
   const chrome = process.platform === 'darwin' ? '&desktop=1' : '';
@@ -233,7 +242,7 @@ void app.whenReady().then(async () => {
   try {
     await start();
   } catch (error) {
-    dialog.showErrorBox('Mail Archiver', `Start failed:\n\n${(error as Error).message}`);
+    dialog.showErrorBox('AmberChest', `Start failed:\n\n${(error as Error).message}`);
     app.quit();
   }
 

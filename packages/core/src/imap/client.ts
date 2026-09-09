@@ -49,7 +49,7 @@ export function createClient(options: ImapConnectionOptions): ImapFlow {
     connectionTimeout: 30_000,
     greetingTimeout: 20_000,
     socketTimeout: 15 * 60_000,
-    clientInfo: { name: 'Mail Archiver', vendor: 'sphings79' },
+    clientInfo: { name: 'AmberChest', vendor: 'sphings79' },
   });
 }
 

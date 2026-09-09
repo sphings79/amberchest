@@ -2,14 +2,14 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
-import type { MailArchiverApp } from '@mail-archiver/core';
+import type { AmberChestApp } from '@amberchest/core';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { isIngressAddress } from './addon.js';
 import { AuthGuard } from './auth.js';
 import { registerRoutes } from './routes.js';
 
 export interface ServerOptions {
-  app: MailArchiverApp;
+  app: AmberChestApp;
   auth: AuthGuard;
   /** Directory holding the built frontend; omitted during frontend dev. */
   webRoot?: string | null;
@@ -54,7 +54,7 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
    * has to make sure it only answers the gateway. Turned on by the add-on when
    * no interface password was configured.
    */
-  if (process.env.MAIL_ARCHIVER_INGRESS_ONLY === 'true') {
+  if (process.env.AMBERCHEST_INGRESS_ONLY === 'true') {
     server.addHook('onRequest', async (request, reply) => {
       // request.ip honours trustProxy, which is not what is wanted here: the
       // socket address is the only thing an outsider cannot forge.

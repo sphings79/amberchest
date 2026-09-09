@@ -1,4 +1,4 @@
-import type { MailArchiverApp } from '../app.js';
+import type { AmberChestApp } from '../app.js';
 import type { BundleFormat } from '../export/bundle.js';
 import type { SearchField, SearchSort } from '../search/search.js';
 import { logger } from '../util/logger.js';
@@ -42,7 +42,7 @@ export interface ToolDefinition {
   permission: McpPermission;
   /** JSON Schema of the arguments, as the MCP protocol expects it. */
   inputSchema: Record<string, unknown>;
-  handler: (app: MailArchiverApp, args: Record<string, unknown>) => Promise<unknown> | unknown;
+  handler: (app: AmberChestApp, args: Record<string, unknown>) => Promise<unknown> | unknown;
 }
 
 function str(args: Record<string, unknown>, key: string): string | undefined {
@@ -523,14 +523,14 @@ export function availableTools(permissions: McpPermissions): ToolDefinition[] {
 
 export class ToolNotAllowedError extends Error {
   constructor(name: string) {
-    super(`Tool ${name} is not enabled in the Mail Archiver settings`);
+    super(`Tool ${name} is not enabled in the AmberChest settings`);
     this.name = 'ToolNotAllowedError';
   }
 }
 
 /** Runs one tool after checking that its permission group is switched on. */
 export async function callTool(
-  app: MailArchiverApp,
+  app: AmberChestApp,
   permissions: McpPermissions,
   name: string,
   args: Record<string, unknown>,

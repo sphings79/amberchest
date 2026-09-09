@@ -2,8 +2,8 @@ import type { Translations } from './de.js';
 
 export const en: Translations = {
   app: {
-    name: 'Mail Archiver',
-    tagline: 'The Mail Backup Solution',
+    name: 'AmberChest',
+    tagline: 'IMAP mail backup in plain .eml files',
   },
   gate: {
     loginTitle: 'Sign in',
@@ -40,7 +40,7 @@ export const en: Translations = {
   connections: {
     title: 'Connections',
     hint:
-      'This interface can also operate a Mail Archiver on another machine - the container on your server, for example.',
+      'This interface can also operate a AmberChest on another machine - the container on your server, for example.',
     label: 'Connection',
     buttonHint: 'Switch between this machine and a server, or add one',
     local: 'This machine',
@@ -52,7 +52,7 @@ export const en: Translations = {
     url: 'Address',
     urlHint: 'For example http://192.168.1.10:8484',
     password: 'Web interface password',
-    passwordHint: 'The password from MAIL_ARCHIVER_UI_PASSWORD. Remembered for this session only.',
+    passwordHint: 'The password from AMBERCHEST_UI_PASSWORD. Remembered for this session only.',
     wrongPassword: 'Password rejected.',
   },
   nav: {
@@ -181,7 +181,7 @@ export const en: Translations = {
       'There is also a dedicated Home Assistant integration, installable through HACS. It talks to this instance directly, brings its own Lovelace card and needs no MQTT broker.',
     integrationLink: 'Integration on GitHub',
     addonHint:
-      'And as the Home Assistant App (add-on), Mail Archiver runs on Home Assistant OS itself - in the sidebar through ingress, which means inside the Home Assistant app on your phone too.',
+      'And as the Home Assistant App (add-on), AmberChest runs on Home Assistant OS itself - in the sidebar through ingress, which means inside the Home Assistant app on your phone too.',
     addonLink: 'Home Assistant App on GitHub',
   },
   oauth: {
@@ -611,7 +611,7 @@ export const en: Translations = {
     encryptHint:
       'Archived messages are written to disk encrypted with your master password.',
     encryptWarning:
-      'Encrypted files can no longer be opened with Thunderbird or Apple Mail - only through Mail Archiver. Without the master password they are lost.',
+      'Encrypted files can no longer be opened with Thunderbird or Apple Mail - only through AmberChest. Without the master password they are lost.',
     encryptToggle: 'Store new messages encrypted',
     encryptMixed:
       'Messages archived so far stay unencrypted. Both kinds sit side by side without trouble.',

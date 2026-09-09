@@ -43,7 +43,7 @@ const COMMANDS = new Set(['backup', 'cancel']);
 export class MqttBridge extends EventEmitter {
   private client: MqttClient | null = null;
   private timer: NodeJS.Timeout | null = null;
-  private topics: Topics = buildTopics('mailarchiver');
+  private topics: Topics = buildTopics('amberchest');
   private slugs = new Map<string, string>();
   private published: DiscoveryMessage[] = [];
   private connected = false;

@@ -9,10 +9,10 @@ import {
   WrongPasswordError,
   type ExportProgress,
   type LogEntry,
-  type MailArchiverApp,
+  type AmberChestApp,
   type SyncProgress,
   type ImapConnectionOptions,
-} from '@mail-archiver/core';
+} from '@amberchest/core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
@@ -33,7 +33,7 @@ const connectionSchema = z.object({
 });
 
 export interface RouteOptions {
-  app: MailArchiverApp;
+  app: AmberChestApp;
   auth: AuthGuard;
   /**
    * Hands a file to the operating system. Only the desktop shell can do this,
@@ -251,7 +251,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     if (value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return null;
 
     const name = segments[segments.length - 1] ?? '';
-    if (!name.endsWith('.eml') && !name.startsWith('.mailarchiver')) return null;
+    if (!name.endsWith('.eml') && !name.startsWith('.amberchest')) return null;
     return segments;
   };
 
@@ -360,7 +360,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const result = await app.notifier.trySend({
       event: 'test',
       level: 'info',
-      title: 'Mail Archiver: test',
+      title: 'AmberChest: test',
       message: 'If you are reading this, the notification works.',
     });
     return result;
@@ -504,7 +504,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
     try {
       await app.oauth.completeAuthorization(query.code, query.state);
-      return done('Connected', 'You can close this tab and go back to Mail Archiver.');
+      return done('Connected', 'You can close this tab and go back to AmberChest.');
     } catch (error) {
       return done('Not connected', (error as Error).message);
     }

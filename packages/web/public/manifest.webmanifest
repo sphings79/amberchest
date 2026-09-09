@@ -1,6 +1,6 @@
 {
-  "name": "Mail Archiver",
-  "short_name": "Mail Archiver",
+  "name": "AmberChest",
+  "short_name": "AmberChest",
   "description": "Backs up IMAP mailboxes to local files, without deleting anything on the server.",
   "start_url": "./",
   "scope": "./",

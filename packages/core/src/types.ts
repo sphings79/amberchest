@@ -1,5 +1,5 @@
 /**
- * Shared domain types for Mail Archiver.
+ * Shared domain types for AmberChest.
  *
  * These types are used by the core engine, the HTTP API and the web frontend.
  */

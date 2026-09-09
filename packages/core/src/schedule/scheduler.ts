@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events';
-import type { MailArchiverApp } from '../app.js';
+import type { AmberChestApp } from '../app.js';
 import { logger } from '../util/logger.js';
 import { matches, nextRun, parseCron, type CronFields } from './cron.js';
 
 export interface SchedulerOptions {
-  app: MailArchiverApp;
+  app: AmberChestApp;
   expression: string;
   /** Also export attachments after each scheduled backup. */
   exportAttachments?: boolean;

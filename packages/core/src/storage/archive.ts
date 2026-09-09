@@ -9,7 +9,7 @@ import { appendJournal, type JournalRecord } from './journal.js';
  * Layout on disk:
  *
  *   <archive>/<account>/<folder>/<message>.eml
- *   <archive>/<account>/<folder>/.mailarchiver.jsonl
+ *   <archive>/<account>/<folder>/.amberchest.jsonl
  *   <archive>/<account>/_deleted/<folder>/<message>.eml
  */
 export class ArchiveLayout {
@@ -225,7 +225,7 @@ export async function listArchiveFiles(
         continue;
       }
       if (!entry.isFile()) continue;
-      if (!entry.name.endsWith('.eml') && !entry.name.startsWith('.mailarchiver')) continue;
+      if (!entry.name.endsWith('.eml') && !entry.name.startsWith('.amberchest')) continue;
 
       const info = await stat(full).catch(() => null);
       if (info) found.push({ path: relative(accountDir, full).split(sep).join('/'), size: info.size });

@@ -1,4 +1,4 @@
-import type { AppSettings } from '@mail-archiver/core';
+import type { AppSettings } from '@amberchest/core';
 import { Bot, Check, Copy, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,10 +53,10 @@ export function McpSettings({
   const configSnippet = JSON.stringify(
     {
       mcpServers: {
-        'mail-archiver': {
+        'amberchest': {
           command: 'node',
-          args: ['/pfad/zu/mail-archiver/packages/server/dist/mcp-stdio.js'],
-          env: { MAIL_ARCHIVER_MASTER_PASSWORD: '••••••••' },
+          args: ['/pfad/zu/amberchest/packages/server/dist/mcp-stdio.js'],
+          env: { AMBERCHEST_MASTER_PASSWORD: '••••••••' },
         },
       },
     },

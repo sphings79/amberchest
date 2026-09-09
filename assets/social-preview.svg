@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Mail Archiver — The Mail Backup Solution">
-  <title>Mail Archiver — The Mail Backup Solution</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="AmberChest — IMAP mail backup in plain .eml files">
+  <title>AmberChest — IMAP mail backup in plain .eml files</title>
 
   <defs>
     <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
@@ -30,8 +30,8 @@
       <path d="M93 101l17 11 17-11"/>
     </g>
 
-    <text x="168" y="106" fill="#e8eaf0" font-size="30" font-weight="700">Mail Archiver</text>
-    <text x="168" y="136" fill="#8a91a3" font-size="18">The Mail Backup Solution</text>
+    <text x="168" y="106" fill="#e8eaf0" font-size="30" font-weight="700">AmberChest</text>
+    <text x="168" y="136" fill="#8a91a3" font-size="18">IMAP mail backup in plain .eml files</text>
 
     <text x="72" y="238" fill="#ffffff" font-size="52" font-weight="700">Your mailbox,</text>
     <text x="72" y="298" fill="#ffffff" font-size="52" font-weight="700">on your own disk.</text>
@@ -79,7 +79,7 @@
     <circle cx="724" cy="116" r="6" fill="#ff5f57"/>
     <circle cx="744" cy="116" r="6" fill="#febc2e"/>
     <circle cx="764" cy="116" r="6" fill="#28c840"/>
-    <text x="790" y="121" fill="#6b7386" font-size="13">Mail Archiver</text>
+    <text x="790" y="121" fill="#6b7386" font-size="13">AmberChest</text>
     <line x1="700" y1="136" x2="1224" y2="136" stroke="#262c3a"/>
 
     <!-- window sidebar -->

@@ -15,7 +15,7 @@ import type {
   SearchResult,
   TransferProgress,
   VerifyProgress,
-} from '@mail-archiver/core';
+} from '@amberchest/core';
 
 export type {
   AccountOverview,
@@ -151,7 +151,7 @@ import {
   type Connection,
 } from './connections.js';
 
-const TOKEN_KEY = 'mail-archiver-token';
+const TOKEN_KEY = 'amberchest-token';
 
 /**
  * The desktop app opens the UI with `?token=...`; the container hands out a

@@ -9,7 +9,7 @@ import { deflateRawSync } from 'node:zlib';
 /**
  * Minimal ZIP writer.
  *
- * Everything Mail Archiver needs to bundle files is here: deflate, UTF-8 file
+ * Everything AmberChest needs to bundle files is here: deflate, UTF-8 file
  * names and ZIP64 for archives beyond 4 GB is deliberately *not* supported -
  * an export that large should use the folder tree instead. Writing this by
  * hand keeps another dependency out of the tree.

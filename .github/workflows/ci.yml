@@ -15,7 +15,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Build first: typecheck resolves @mail-archiver/* through their built
+      # Build first: typecheck resolves @amberchest/* through their built
       # type declarations.
       - run: npm run build
       - run: npm run typecheck

@@ -8,7 +8,7 @@ export type AuthMode = 'none' | 'token' | 'password';
  *
  * The desktop app runs on 127.0.0.1 and hands the frontend a random token that
  * only exists for the lifetime of the process. The container asks for the
- * password from `MAIL_ARCHIVER_UI_PASSWORD` and issues session tokens.
+ * password from `AMBERCHEST_UI_PASSWORD` and issues session tokens.
  */
 export class AuthGuard {
   private readonly sessions = new Set<string>();
@@ -21,7 +21,7 @@ export class AuthGuard {
   }
 
   static fromEnvironment(env: NodeJS.ProcessEnv = process.env): AuthGuard {
-    const password = env.MAIL_ARCHIVER_UI_PASSWORD;
+    const password = env.AMBERCHEST_UI_PASSWORD;
     if (password) return new AuthGuard('password', password);
     return new AuthGuard('none', null);
   }

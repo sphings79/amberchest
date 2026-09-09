@@ -1,4 +1,4 @@
-import type { AccountOverview, Finding, VerifyProgress } from '@mail-archiver/core';
+import type { AccountOverview, Finding, VerifyProgress } from '@amberchest/core';
 import { CircleAlert, CircleCheck, FileQuestion, ShieldCheck, Square, TableOfContents } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -21,43 +21,43 @@ describe('applyAddonOptions', () => {
     });
 
     expect(applyAddonOptions(path, env)).toBe(true);
-    expect(env.MAIL_ARCHIVER_MASTER_PASSWORD).toBe('secret');
-    expect(env.MAIL_ARCHIVER_CRON).toBe('0 3 * * *');
-    expect(env.MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS).toBe('true');
-    expect(env.MAIL_ARCHIVER_LOG_LEVEL).toBe('debug');
+    expect(env.AMBERCHEST_MASTER_PASSWORD).toBe('secret');
+    expect(env.AMBERCHEST_CRON).toBe('0 3 * * *');
+    expect(env.AMBERCHEST_CRON_EXPORT_ATTACHMENTS).toBe('true');
+    expect(env.AMBERCHEST_LOG_LEVEL).toBe('debug');
     // Paths that the user did not set get the add-on defaults.
-    expect(env.MAIL_ARCHIVER_CONFIG_DIR).toBe('/data/config');
-    expect(env.MAIL_ARCHIVER_ARCHIVE_DIR).toBe('/share/mail-archive');
+    expect(env.AMBERCHEST_CONFIG_DIR).toBe('/data/config');
+    expect(env.AMBERCHEST_ARCHIVE_DIR).toBe('/share/mail-archive');
   });
 
   it('locks the interface to the supervisor when no password was set', () => {
     const env: NodeJS.ProcessEnv = {};
     applyAddonOptions(optionsFile({ master_password: 'secret' }), env);
-    expect(env.MAIL_ARCHIVER_INGRESS_ONLY).toBe('true');
+    expect(env.AMBERCHEST_INGRESS_ONLY).toBe('true');
   });
 
   it('leaves the port open when the user chose a password', () => {
     const env: NodeJS.ProcessEnv = {};
     applyAddonOptions(optionsFile({ master_password: 'secret', ui_password: 'ui' }), env);
-    expect(env.MAIL_ARCHIVER_UI_PASSWORD).toBe('ui');
-    expect(env.MAIL_ARCHIVER_INGRESS_ONLY).toBeUndefined();
+    expect(env.AMBERCHEST_UI_PASSWORD).toBe('ui');
+    expect(env.AMBERCHEST_INGRESS_ONLY).toBeUndefined();
   });
 
   it('never overwrites a password that is already in the environment', () => {
-    const env: NodeJS.ProcessEnv = { MAIL_ARCHIVER_MASTER_PASSWORD: 'from-env' };
+    const env: NodeJS.ProcessEnv = { AMBERCHEST_MASTER_PASSWORD: 'from-env' };
     applyAddonOptions(optionsFile({ master_password: 'from-options' }), env);
-    expect(env.MAIL_ARCHIVER_MASTER_PASSWORD).toBe('from-env');
+    expect(env.AMBERCHEST_MASTER_PASSWORD).toBe('from-env');
   });
 
   it('overrules the paths baked into the image', () => {
     // /config and /archive are gone after an add-on update; /data is not.
     const env: NodeJS.ProcessEnv = {
-      MAIL_ARCHIVER_CONFIG_DIR: '/config',
-      MAIL_ARCHIVER_ARCHIVE_DIR: '/archive',
+      AMBERCHEST_CONFIG_DIR: '/config',
+      AMBERCHEST_ARCHIVE_DIR: '/archive',
     };
     applyAddonOptions(optionsFile({ archive_path: '/share/mail' }), env);
-    expect(env.MAIL_ARCHIVER_CONFIG_DIR).toBe('/data/config');
-    expect(env.MAIL_ARCHIVER_ARCHIVE_DIR).toBe('/share/mail');
+    expect(env.AMBERCHEST_CONFIG_DIR).toBe('/data/config');
+    expect(env.AMBERCHEST_ARCHIVE_DIR).toBe('/share/mail');
   });
 
   it('does nothing outside an add-on', () => {

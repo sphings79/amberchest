@@ -75,11 +75,11 @@ describe('accountSlug', () => {
 
 describe('topics', () => {
   it('puts the account into the path', () => {
-    const topics = buildTopics('mailarchiver');
-    expect(topics.status).toBe('mailarchiver/status');
-    expect(topics.accountState('privat')).toBe('mailarchiver/account/privat/state');
-    expect(topics.accountCommand('privat')).toBe('mailarchiver/account/privat/set');
-    expect(topics.accountCommandFilter).toBe('mailarchiver/account/+/set');
+    const topics = buildTopics('amberchest');
+    expect(topics.status).toBe('amberchest/status');
+    expect(topics.accountState('privat')).toBe('amberchest/account/privat/state');
+    expect(topics.accountCommand('privat')).toBe('amberchest/account/privat/set');
+    expect(topics.accountCommandFilter).toBe('amberchest/account/+/set');
   });
 
   it('tolerates slashes around the base topic', () => {
@@ -87,16 +87,16 @@ describe('topics', () => {
   });
 
   it('reads the account back out of a command topic', () => {
-    expect(slugFromCommandTopic('mailarchiver/account/privat/set')).toBe('privat');
-    expect(slugFromCommandTopic('mailarchiver/state')).toBeNull();
+    expect(slugFromCommandTopic('amberchest/account/privat/set')).toBe('privat');
+    expect(slugFromCommandTopic('amberchest/state')).toBeNull();
   });
 });
 
 describe('discovery', () => {
   const options = {
     prefix: 'homeassistant',
-    baseTopic: 'mailarchiver',
-    topics: buildTopics('mailarchiver'),
+    baseTopic: 'amberchest',
+    topics: buildTopics('amberchest'),
     version: '1.0.0',
     allowCommands: true,
   };
@@ -104,8 +104,8 @@ describe('discovery', () => {
   it('describes the two instance sensors', () => {
     const messages = hubDiscovery(options);
     expect(messages.map((message) => message.topic)).toEqual([
-      'homeassistant/sensor/mailarchiver_total_size/config',
-      'homeassistant/sensor/mailarchiver_next_run/config',
+      'homeassistant/sensor/amberchest_total_size/config',
+      'homeassistant/sensor/amberchest_next_run/config',
     ]);
   });
 
@@ -116,7 +116,7 @@ describe('discovery', () => {
       const payload = message.payload as Record<string, unknown>;
       const topic = (payload.state_topic ?? payload.command_topic) as string;
       expect(topic).toContain('/account/privat/');
-      expect(payload.unique_id as string).toContain('mailarchiver_1122');
+      expect(payload.unique_id as string).toContain('amberchest_1122');
     }
   });
 

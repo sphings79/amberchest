@@ -1,4 +1,4 @@
-import type { AccountOverview, SyncProgress } from '@mail-archiver/core';
+import type { AccountOverview, SyncProgress } from '@amberchest/core';
 import {
   ArrowRightLeft,
   CalendarClock,

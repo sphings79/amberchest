@@ -40,7 +40,7 @@ jobs:
       - run: npm run build
       # The main process is not part of the root build, and without it
       # electron-builder packages an app.asar with no entry point.
-      - run: npm run build --workspace @mail-archiver/desktop
+      - run: npm run build --workspace @amberchest/desktop
 
       - name: Package
         working-directory: packages/desktop
@@ -50,7 +50,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: mail-archiver-${{ matrix.artifact }}
+          name: amberchest-${{ matrix.artifact }}
           path: |
             release/*.dmg
             release/*.exe
@@ -84,8 +84,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mail-archiver:latest
-            ghcr.io/${{ github.repository_owner }}/mail-archiver:${{ steps.meta.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/amberchest:latest
+            ghcr.io/${{ github.repository_owner }}/amberchest:${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,7 +102,7 @@ jobs:
         with:
           # Only our own uploads: the build step for the container image adds a
           # .dockerbuild artifact that this job cannot download.
-          pattern: mail-archiver-*
+          pattern: amberchest-*
           path: artifacts
           merge-multiple: true
 

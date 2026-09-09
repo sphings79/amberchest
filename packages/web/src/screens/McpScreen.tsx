@@ -1,4 +1,4 @@
-import type { AppSettings } from '@mail-archiver/core';
+import type { AppSettings } from '@amberchest/core';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';

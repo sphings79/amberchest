@@ -1,4 +1,4 @@
-import type { AccountOverview } from '@mail-archiver/core';
+import type { AccountOverview } from '@amberchest/core';
 import { AlertTriangle, PlugZap, Upload } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

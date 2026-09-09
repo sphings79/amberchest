@@ -1,8 +1,8 @@
 {
-  "name": "mail-archiver",
+  "name": "amberchest",
   "version": "1.2.1",
   "private": true,
-  "description": "Mail Archiver - The Mail Backup Solution",
+  "description": "AmberChest - IMAP mail backup in plain .eml files",
   "license": "AGPL-3.0-or-later",
   "author": "sphings79",
   "type": "module",
@@ -16,13 +16,13 @@
     "packages/desktop"
   ],
   "scripts": {
-    "build": "npm run build --workspace @mail-archiver/core && npm run build --workspace @mail-archiver/server && npm run build --workspace @mail-archiver/web",
+    "build": "npm run build --workspace @amberchest/core && npm run build --workspace @amberchest/server && npm run build --workspace @amberchest/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "dev": "npm run dev --workspace @mail-archiver/desktop",
-    "dev:server": "npm run dev --workspace @mail-archiver/server",
-    "dev:web": "npm run dev --workspace @mail-archiver/web",
-    "dist:mac": "npm run build && npm run dist --workspace @mail-archiver/desktop"
+    "dev": "npm run dev --workspace @amberchest/desktop",
+    "dev:server": "npm run dev --workspace @amberchest/server",
+    "dev:web": "npm run dev --workspace @amberchest/web",
+    "dist:mac": "npm run build && npm run dist --workspace @amberchest/desktop"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

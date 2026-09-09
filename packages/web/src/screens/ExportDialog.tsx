@@ -1,4 +1,4 @@
-import type { BundleFormat, SearchField } from '@mail-archiver/core';
+import type { BundleFormat, SearchField } from '@amberchest/core';
 import { Download, FileArchive, FileText, Files } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

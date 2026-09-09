@@ -4,7 +4,7 @@
 services:
   dovecot:
     image: dovecot/dovecot:2.3.21
-    container_name: mail-archiver-dovecot
+    container_name: amberchest-dovecot
     ports:
       - "127.0.0.1:11143:143"
     volumes:

@@ -1,8 +1,8 @@
-# Mail Archiver container: the same engine and the same web interface as the
+# AmberChest container: the same engine and the same web interface as the
 # desktop app, plus a scheduler.
 #
 # Build for both architectures:
-#   docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t mail-archiver .
+#   docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t amberchest .
 
 # ---------------------------------------------------------------- build stage
 FROM node:22-alpine AS build
@@ -22,9 +22,9 @@ COPY packages/desktop/package.json packages/desktop/
 # binaries for x64 and arm64 that node-gyp-build picks up at runtime, so the
 # image needs no compiler.
 RUN npm ci --ignore-scripts \
-           --workspace @mail-archiver/core \
-           --workspace @mail-archiver/server \
-           --workspace @mail-archiver/web \
+           --workspace @amberchest/core \
+           --workspace @amberchest/server \
+           --workspace @amberchest/web \
            --include-workspace-root
 
 COPY tsconfig.base.json ./
@@ -32,17 +32,17 @@ COPY packages/core packages/core
 COPY packages/server packages/server
 COPY packages/web packages/web
 
-RUN npm run build --workspace @mail-archiver/core \
- && npm run build --workspace @mail-archiver/server \
- && npm run build --workspace @mail-archiver/web
+RUN npm run build --workspace @amberchest/core \
+ && npm run build --workspace @amberchest/server \
+ && npm run build --workspace @amberchest/web
 
 # Reinstall without development dependencies. The frontend build is done at
 # this point, so react, vite, lucide and TypeScript are no longer needed - they
 # account for more than half of node_modules.
 RUN rm -rf node_modules packages/*/node_modules \
  && npm ci --omit=dev --ignore-scripts \
-           --workspace @mail-archiver/core \
-           --workspace @mail-archiver/server \
+           --workspace @amberchest/core \
+           --workspace @amberchest/server \
            --include-workspace-root
 
 # --------------------------------------------------------------- runtime stage
@@ -53,11 +53,11 @@ FROM node:22-alpine
 # su-exec drops privileges after the entrypoint fixed the volume ownership.
 RUN apk add --no-cache chromium ca-certificates tzdata su-exec
 
-ENV MAIL_ARCHIVER_CHROMIUM=/usr/bin/chromium-browser \
-    MAIL_ARCHIVER_CONFIG_DIR=/config \
-    MAIL_ARCHIVER_ARCHIVE_DIR=/archive \
-    MAIL_ARCHIVER_HOST=0.0.0.0 \
-    MAIL_ARCHIVER_PORT=8484 \
+ENV AMBERCHEST_CHROMIUM=/usr/bin/chromium-browser \
+    AMBERCHEST_CONFIG_DIR=/config \
+    AMBERCHEST_ARCHIVE_DIR=/archive \
+    AMBERCHEST_HOST=0.0.0.0 \
+    AMBERCHEST_PORT=8484 \
     NODE_ENV=production
 
 WORKDIR /app
@@ -84,6 +84,6 @@ ENV PUID=1000 \
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.MAIL_ARCHIVER_PORT||8484)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.AMBERCHEST_PORT||8484)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "packages/server/dist/standalone.js"]

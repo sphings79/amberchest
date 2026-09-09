@@ -1,4 +1,4 @@
-import type { AppSettings } from '@mail-archiver/core';
+import type { AppSettings } from '@amberchest/core';
 import { Bell, Check, HardDrive, Send, TriangleAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -44,20 +44,20 @@ export function applyAddonOptions(
     if (value && !env[key]) env[key] = value;
   };
 
-  set('MAIL_ARCHIVER_MASTER_PASSWORD', options.master_password);
-  set('MAIL_ARCHIVER_UI_PASSWORD', options.ui_password);
-  set('MAIL_ARCHIVER_CRON', options.cron);
-  set('MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS', options.cron_export_attachments ? 'true' : undefined);
+  set('AMBERCHEST_MASTER_PASSWORD', options.master_password);
+  set('AMBERCHEST_UI_PASSWORD', options.ui_password);
+  set('AMBERCHEST_CRON', options.cron);
+  set('AMBERCHEST_CRON_EXPORT_ATTACHMENTS', options.cron_export_attachments ? 'true' : undefined);
   // The paths are the exception to "the environment wins": the image points
   // them at /config and /archive, and neither of those survives an add-on
   // update. What the supervisor persists is /data and the shared folders.
-  env.MAIL_ARCHIVER_CONFIG_DIR = options.config_path || '/data/config';
-  env.MAIL_ARCHIVER_ARCHIVE_DIR = options.archive_path || '/share/mail-archive';
-  set('MAIL_ARCHIVER_LOG_LEVEL', options.log_level);
+  env.AMBERCHEST_CONFIG_DIR = options.config_path || '/data/config';
+  env.AMBERCHEST_ARCHIVE_DIR = options.archive_path || '/share/mail-archive';
+  set('AMBERCHEST_LOG_LEVEL', options.log_level);
 
   // Without a password of its own the interface is reachable through ingress
   // only, and Home Assistant has already authenticated whoever gets there.
-  if (!env.MAIL_ARCHIVER_UI_PASSWORD) env.MAIL_ARCHIVER_INGRESS_ONLY = 'true';
+  if (!env.AMBERCHEST_UI_PASSWORD) env.AMBERCHEST_INGRESS_ONLY = 'true';
 
   return true;
 }

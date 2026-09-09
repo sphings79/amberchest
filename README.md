@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="assets/icon.svg" width="96" height="96" alt="Mail Archiver logo">
+<img src="assets/icon.svg" width="96" height="96" alt="AmberChest logo">
 
-# Mail Archiver — The Mail Backup Solution
+# AmberChest — IMAP mail backup in plain .eml files
 
 **Back up IMAP mailboxes to plain `.eml` files you own.** Self-hosted email
 archiving for macOS, Windows, Linux and Docker — read-only, incremental, and
@@ -11,11 +11,11 @@ with a folder tree that mirrors your mailbox.
 [![Licence: AGPL v3](https://img.shields.io/badge/licence-AGPL--3.0-7c5cff?style=flat-square)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Docker-2b3040?style=flat-square)](#install)
 [![Built with TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6?style=flat-square)](https://www.typescriptlang.org/)
-[![Stars](https://img.shields.io/github/stars/sphings79/mail-archiver?style=flat-square&color=f0b429)](https://github.com/sphings79/mail-archiver/stargazers)
+[![Stars](https://img.shields.io/github/stars/sphings79/amberchest?style=flat-square&color=f0b429)](https://github.com/sphings79/amberchest/stargazers)
 
 [Deutsche Version](README.de.md) · [Features](#features) · [Install](#install) · [Desktop or container?](#desktop-or-container) · [Docker](#docker) · [OAuth](#oauth-for-gmail-and-microsoft-365) · [Checking the archive](#checking-the-archive) · [Statistics](#statistics-and-the-register) · [Home Assistant](#home-assistant) · [FAQ](#faq)
 
-**Also part of this project:** [Home Assistant integration](https://github.com/sphings79/mail-archiver-home-assistant) · [Home Assistant App (Add-on)](https://github.com/sphings79/mail-archiver-ha-app)
+**Also part of this project:** [Home Assistant integration](https://github.com/sphings79/amberchest-home-assistant) · [Home Assistant App (Add-on)](https://github.com/sphings79/amberchest-ha-app)
 
 </div>
 
@@ -27,7 +27,7 @@ Your provider can lose your mail. An account can be closed, a password can be
 stolen, a sync can go wrong. A backup that lives on your own disk, in a format
 every mail client can read, is the only copy that is really yours.
 
-Mail Archiver downloads your mailbox and leaves it exactly as it was: **nothing
+AmberChest downloads your mailbox and leaves it exactly as it was: **nothing
 is deleted on the server, nothing is marked as read.** Folders are opened
 read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
 that exists precisely so a client can read a message without touching its
@@ -213,9 +213,9 @@ to the Docker guide.</em>
 
 | | What it is |
 | --- | --- |
-| **Mail Archiver** (here) | The application: desktop app for macOS, Windows and Linux, and a Docker container with the same interface |
-| [**Mail Archiver Integration**](https://github.com/sphings79/mail-archiver-home-assistant) | Home Assistant integration from HACS: a device per mailbox, sensors, a backup button and a Lovelace card |
-| [**Home Assistant App (Add-on)**](https://github.com/sphings79/mail-archiver-ha-app) | Runs Mail Archiver on Home Assistant OS, in the sidebar through ingress |
+| **AmberChest** (here) | The application: desktop app for macOS, Windows and Linux, and a Docker container with the same interface |
+| [**AmberChest Integration**](https://github.com/sphings79/amberchest-home-assistant) | Home Assistant integration from HACS: a device per mailbox, sensors, a backup button and a Lovelace card |
+| [**Home Assistant App (Add-on)**](https://github.com/sphings79/amberchest-ha-app) | Runs AmberChest on Home Assistant OS, in the sidebar through ingress |
 
 The application stands on its own; the other two are there if you run Home
 Assistant.
@@ -226,12 +226,12 @@ Builds for all three desktop platforms come from the same source.
 
 ### macOS (Apple Silicon)
 
-Download the DMG from the [releases](https://github.com/sphings79/mail-archiver/releases)
+Download the DMG from the [releases](https://github.com/sphings79/amberchest/releases)
 page, open it and drag the app into `Applications`.
 
 The app is signed, but **not notarised** — there is no paid Apple developer
 account behind this project. macOS therefore refuses the first launch with
-*"Apple could not verify Mail Archiver is free of malware"*.
+*"Apple could not verify AmberChest is free of malware"*.
 
 Since macOS 15 the right-click *Open* trick is gone. Try to open the app once,
 let it fail, then go to **System Settings → Privacy & Security**, scroll to the
@@ -241,7 +241,7 @@ after.
 The same thing from a terminal, if you prefer:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/Mail Archiver.app"
+xattr -dr com.apple.quarantine "/Applications/AmberChest.app"
 ```
 
 > If macOS says the app is **damaged** instead, you have version 1.2.0 or
@@ -259,7 +259,7 @@ install anything. The build is unsigned, so SmartScreen shows a warning:
 Use the AppImage (make it executable and run it) or install the `.deb`:
 
 ```bash
-sudo dpkg -i mail-archiver_1.2.1_amd64.deb
+sudo dpkg -i amberchest_1.2.1_amd64.deb
 ```
 
 Both x64 and arm64 are built.
@@ -295,46 +295,46 @@ app, plus a scheduler. Intended usage on unRAID, Synology or any Docker host:
 
 ```bash
 docker run -d \
-  --name mail-archiver \
+  --name amberchest \
   -p 8484:8484 \
-  -v /mnt/user/appdata/mail-archiver:/config \
+  -v /mnt/user/appdata/amberchest:/config \
   -v /mnt/user/backup/mail:/archive \
-  -e MAIL_ARCHIVER_MASTER_PASSWORD='your-master-password' \
-  -e MAIL_ARCHIVER_UI_PASSWORD='password-for-the-web-interface' \
-  -e MAIL_ARCHIVER_CRON='0 3 * * *' \
+  -e AMBERCHEST_MASTER_PASSWORD='your-master-password' \
+  -e AMBERCHEST_UI_PASSWORD='password-for-the-web-interface' \
+  -e AMBERCHEST_CRON='0 3 * * *' \
   -e TZ=Europe/Berlin \
-  ghcr.io/sphings79/mail-archiver:latest
+  ghcr.io/sphings79/amberchest:latest
 ```
 
 With Docker Compose:
 
 ```yaml
 services:
-  mail-archiver:
-    image: ghcr.io/sphings79/mail-archiver:latest
-    container_name: mail-archiver
+  amberchest:
+    image: ghcr.io/sphings79/amberchest:latest
+    container_name: amberchest
     ports:
       - "8484:8484"
     volumes:
       - ./config:/config
       - /mnt/backup/mail:/archive
     environment:
-      MAIL_ARCHIVER_MASTER_PASSWORD: your-master-password
-      MAIL_ARCHIVER_UI_PASSWORD: password-for-the-web-interface
-      MAIL_ARCHIVER_CRON: "0 3 * * *"
+      AMBERCHEST_MASTER_PASSWORD: your-master-password
+      AMBERCHEST_UI_PASSWORD: password-for-the-web-interface
+      AMBERCHEST_CRON: "0 3 * * *"
       TZ: Europe/Berlin
     restart: unless-stopped
 ```
 
 | Variable | Meaning |
 | --- | --- |
-| `MAIL_ARCHIVER_MASTER_PASSWORD` | Unlocks the encrypted configuration on start |
-| `MAIL_ARCHIVER_UI_PASSWORD` | Password for the web interface |
-| `MAIL_ARCHIVER_CRON` | Schedule, standard cron expression |
-| `MAIL_ARCHIVER_PORT` | Port inside the container, default 8484 |
-| `MAIL_ARCHIVER_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
+| `AMBERCHEST_MASTER_PASSWORD` | Unlocks the encrypted configuration on start |
+| `AMBERCHEST_UI_PASSWORD` | Password for the web interface |
+| `AMBERCHEST_CRON` | Schedule, standard cron expression |
+| `AMBERCHEST_PORT` | Port inside the container, default 8484 |
+| `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
 | `PUID` / `PGID` | User and group the volumes belong to, default 1000 |
-| `MAIL_ARCHIVER_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
+| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
 | `TZ` | Time zone the schedule follows |
 
 The web interface answers on `http://<host>:8484`. It works behind a reverse
@@ -343,7 +343,7 @@ proxy, both on a subdomain and on a sub-path. Images are built for
 
 ## OAuth for Gmail and Microsoft 365
 
-Google and Microsoft no longer accept a password for IMAP. Mail Archiver can
+Google and Microsoft no longer accept a password for IMAP. AmberChest can
 sign in with a token instead, and it refreshes that token by itself, so a
 nightly backup keeps running without anybody at the keyboard.
 
@@ -358,7 +358,7 @@ registers their own client once, under **Settings → OAuth clients**.
    applications** and allow public client flows
 3. Copy the **Application (client) ID** into the settings; leave the secret
    empty
-4. In the account, pick **OAuth**, then **Get a code**: Mail Archiver shows a
+4. In the account, pick **OAuth**, then **Get a code**: AmberChest shows a
    short code that you type in on any device
 
 Microsoft supports the device flow, so nothing has to be reachable from
@@ -379,7 +379,7 @@ Where the browser lands afterwards depends on the redirect you choose:
 | Redirect | Needs | How it feels |
 | --- | --- | --- |
 | Loopback, desktop app | nothing | fully automatic; the app catches the redirect |
-| Loopback, container | nothing | the browser lands on a page that does not load — copy that address back into Mail Archiver |
+| Loopback, container | nothing | the browser lands on a page that does not load — copy that address back into AmberChest |
 | Public address | a reachable HTTPS address, registered as a **Web** client | the provider redirects straight back into the interface |
 
 While the project is in testing mode, Google expires the refresh token after
@@ -395,7 +395,7 @@ separately and gets its own refresh token. Two things to watch:
 - While the Google project is in testing mode, **every** Google account has to
   be listed under *Test users*, one by one.
 - If you are signed into several accounts in the same browser, the consent
-  screen asks which one. Mail Archiver preselects the address of the account
+  screen asks which one. AmberChest preselects the address of the account
   you are connecting and logs in once right afterwards, so a token that ended
   up belonging to the wrong mailbox is caught immediately.
 
@@ -480,7 +480,7 @@ is the address **Move** wants, together with the interface password. Mapping the
 port without setting the password changes nothing: the add-on keeps refusing,
 and says so in its log.
 
-**[→ The whole thing step by step, with pictures](https://github.com/sphings79/mail-archiver-ha-app/blob/main/docs/remote-access.md)**
+**[→ The whole thing step by step, with pictures](https://github.com/sphings79/amberchest-ha-app/blob/main/docs/remote-access.md)**
 
 The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
 over an archive directory that is already in place — which is how an index
@@ -546,7 +546,7 @@ button. An extra header field covers services that want a token.
 {
   "event": "backupFailed",
   "level": "error",
-  "title": "Mail Archiver: backup of Privat failed",
+  "title": "AmberChest: backup of Privat failed",
   "message": "Connection refused - check host and port",
   "text": "…",
   "at": "2026-09-09T02:00:11.000Z",
@@ -573,7 +573,7 @@ holding more than the server is the point of the setting, not a fault.
 
 ## AI access over MCP
 
-Mail Archiver can expose the archive to an AI assistant through the Model
+AmberChest can expose the archive to an AI assistant through the Model
 Context Protocol — searching, reading, and, if you allow it, operating the
 application. It is **off by default**, and each permission group has its own
 switch:
@@ -594,10 +594,10 @@ Passwords are never readable through MCP — they can only be set.
 ```json
 {
   "mcpServers": {
-    "mail-archiver": {
+    "amberchest": {
       "command": "node",
-      "args": ["/path/to/mail-archiver/packages/server/dist/mcp-stdio.js"],
-      "env": { "MAIL_ARCHIVER_MASTER_PASSWORD": "your-master-password" }
+      "args": ["/path/to/amberchest/packages/server/dist/mcp-stdio.js"],
+      "env": { "AMBERCHEST_MASTER_PASSWORD": "your-master-password" }
     }
   }
 }
@@ -609,7 +609,7 @@ settings, copy the generated token and point the client at `POST /mcp` with
 
 ## Home Assistant
 
-Mail Archiver publishes the state of every account to an MQTT broker, so Home
+AmberChest publishes the state of every account to an MQTT broker, so Home
 Assistant can show when a mailbox was last backed up — and start a backup from
 a button or an automation. Switch it on under **Home Assistant** in the
 sidebar, enter the broker address, done: the entities are created through MQTT
@@ -618,10 +618,10 @@ discovery, nothing has to be written into `configuration.yaml`.
 The account is part of the topic, so several mailboxes stay apart:
 
 ```
-mailarchiver/status                       online / offline
-mailarchiver/state                        totals and the next scheduled run
-mailarchiver/account/<account>/state      one JSON document per mailbox
-mailarchiver/account/<account>/set        backup | cancel
+amberchest/status                       online / offline
+amberchest/state                        totals and the next scheduled run
+amberchest/account/<account>/state      one JSON document per mailbox
+amberchest/account/<account>/set        backup | cancel
 ```
 
 Per mailbox you get a device with four entities plus a button:
@@ -644,7 +644,7 @@ automation:
   - alias: Mail backup failed
     triggers:
       - trigger: mqtt
-        topic: mailarchiver/account/privat/state
+        topic: amberchest/account/privat/state
         value_template: "{{ value_json.last_backup_status }}"
         payload: failed
     actions:
@@ -659,8 +659,8 @@ Two companion projects go beyond MQTT:
 
 | Project | What it is |
 | --- | --- |
-| [Mail Archiver Integration](https://github.com/sphings79/mail-archiver-home-assistant) | A native Home Assistant integration, installable through HACS. Talks to this instance directly, brings its own Lovelace card, needs no MQTT broker. |
-| [Home Assistant App (Add-on)](https://github.com/sphings79/mail-archiver-ha-app) | Runs Mail Archiver as an add-on on Home Assistant OS. Appears in the sidebar through ingress, so it also works in the Home Assistant app on your phone. |
+| [AmberChest Integration](https://github.com/sphings79/amberchest-home-assistant) | A native Home Assistant integration, installable through HACS. Talks to this instance directly, brings its own Lovelace card, needs no MQTT broker. |
+| [Home Assistant App (Add-on)](https://github.com/sphings79/amberchest-ha-app) | Runs AmberChest as an add-on on Home Assistant OS. Appears in the sidebar through ingress, so it also works in the Home Assistant app on your phone. |
 
 ## On your phone
 
@@ -672,10 +672,10 @@ just like an app. Behind a reverse proxy with HTTPS this works from anywhere;
 ## Where things are stored
 
 ```
-~/Mail Archive/                          base folder, one directory per account
+~/AmberChest Archive/                          base folder, one directory per account
 └── you@example.com/
     ├── INBOX/
-    │   ├── .mailarchiver.jsonl          metadata journal for this folder
+    │   ├── .amberchest.jsonl          metadata journal for this folder
     │   ├── 2024-01-15_143022_10432_Invoice-January.eml
     │   └── Projects/                    subfolders mirror the IMAP hierarchy
     ├── Sent/
@@ -686,7 +686,7 @@ just like an app. Behind a reverse proxy with HTTPS this works from anywhere;
 - The file name carries the UTC timestamp, the IMAP UID and a shortened
   subject; the file modification time is set to the message date, so the
   archive sorts correctly in any file browser.
-- `.mailarchiver.jsonl` records every add, flag change and removal. If the
+- `.amberchest.jsonl` records every add, flag change and removal. If the
   SQLite index is ever lost, the archive can be rebuilt from the files alone.
 - Folder names keep their umlauts and are normalised to NFC, so the same
   mailbox produces the same paths on macOS, Windows and Linux.
@@ -779,7 +779,7 @@ A Dovecot container with a deliberately awkward test mailbox (umlauts,
 ampersands, nested folders, special use folders, a message with an attachment):
 
 ```bash
-docker run -d --name mail-archiver-dovecot -p 127.0.0.1:11143:143 \
+docker run -d --name amberchest-dovecot -p 127.0.0.1:11143:143 \
   -v "$PWD/dev/dovecot/dovecot.conf:/etc/dovecot/dovecot.conf:ro" \
   dovecot/dovecot:2.3.21
 node dev/seed-testserver.mjs
@@ -821,16 +821,16 @@ python3 dev/make-icon.py packages/desktop/build/icon.png
 
 ## Support the project
 
-If Mail Archiver saves your mailbox one day, two things help a lot:
+If AmberChest saves your mailbox one day, two things help a lot:
 
-⭐ **[Star the repository](https://github.com/sphings79/mail-archiver)** —
+⭐ **[Star the repository](https://github.com/sphings79/amberchest)** —
 the cheapest way to help other people find it.
 
 ☕ **[Buy me a coffee](https://buymeacoffee.com/sphings)** — development
 happens in evenings and weekends.
 
 Bug reports and feature requests are welcome in the
-[issues](https://github.com/sphings79/mail-archiver/issues).
+[issues](https://github.com/sphings79/amberchest/issues).
 
 ## Licence
 

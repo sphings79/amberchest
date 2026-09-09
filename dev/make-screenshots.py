@@ -70,8 +70,8 @@ def titlebar() -> str:
     <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
     <circle cx="44" cy="22" r="6" fill="#febc2e"/>
     <circle cx="64" cy="22" r="6" fill="#28c840"/>
-    <text x="94" y="26" fill="{MUTED}" font-size="12.5" font-weight="500">Mail Archiver</text>
-    <text x="184" y="26" fill="{FAINT}" font-size="12.5">The Mail Backup Solution</text>
+    <text x="94" y="26" fill="{MUTED}" font-size="12.5" font-weight="500">AmberChest</text>
+    <text x="184" y="26" fill="{FAINT}" font-size="12.5">IMAP mail backup in plain .eml files</text>
 """
 
 
@@ -136,8 +136,8 @@ def sidebar(active: str, height: int = H, accounts: int = 2) -> str:
       <rect x="27" y="76" width="18" height="14" rx="2.5"/>
       <path d="M27 79.5 36 85l9-5.5" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <text x="64" y="82" fill="{TEXT}" font-size="13" font-weight="600">Mail Archiver</text>
-    <text x="64" y="96" fill="{FAINT}" font-size="9.5">The Mail Backup Solution</text>
+    <text x="64" y="82" fill="{TEXT}" font-size="13" font-weight="600">AmberChest</text>
+    <text x="64" y="96" fill="{FAINT}" font-size="9.5">IMAP mail backup in plain .eml files</text>
 """]
 
     y = 126
@@ -242,8 +242,8 @@ def tail() -> str:
 
 def browser() -> str:
     out = [
-        head(H, "Mail Archiver mailbox browser with the folder tree and the message list",
-             "Mail Archiver — Postfach",
+        head(H, "AmberChest mailbox browser with the folder tree and the message list",
+             "AmberChest — Postfach",
              "The mailbox browser: accounts and folders on the left, the messages of the selected folder on the right."),
         titlebar(),
         sidebar("Postfach"),
@@ -321,8 +321,8 @@ def browser() -> str:
 
 def search() -> str:
     out = [
-        head(H, "Mail Archiver search screen with the extended filters open",
-             "Mail Archiver — Suche",
+        head(H, "AmberChest search screen with the extended filters open",
+             "AmberChest — Suche",
              "Full text search with the filter panel open: field, sender, recipient, dates, size, read state and sort order."),
         titlebar(),
         sidebar("Suche"),
@@ -384,8 +384,8 @@ def search() -> str:
 
 def homeassistant() -> str:
     out = [
-        head(H, "Mail Archiver Home Assistant screen with the MQTT settings",
-             "Mail Archiver — Home Assistant",
+        head(H, "AmberChest Home Assistant screen with the MQTT settings",
+             "AmberChest — Home Assistant",
              "The Home Assistant screen: MQTT broker, topics, switches for discovery and commands, and the pointer to the integration."),
         titlebar(),
         sidebar("Home Assistant"),
@@ -404,18 +404,18 @@ def homeassistant() -> str:
     out.append(toggle(292, 232, True, "MQTT aktivieren"))
 
     out.append(field(292, 274, 672, "BROKER", "mqtt://192.168.1.10:1883"))
-    out.append(field(292, 334, 328, "BENUTZER", "mailarchiver"))
+    out.append(field(292, 334, 328, "BENUTZER", "amberchest"))
     out.append(field(636, 334, 328, "PASSWORT", "••••••••••"))
-    out.append(field(292, 394, 328, "BASIS-TOPIC", "mailarchiver"))
+    out.append(field(292, 394, 328, "BASIS-TOPIC", "amberchest"))
     out.append(field(636, 394, 328, "SENDEINTERVALL", "1 min"))
 
     out.append(card(292, 454, 672, 96, "#11141b", "none", 12))
     out.append(text(310, 476, "Topics", FAINT, 9.5, spacing="0.6"))
     lines = [
-        "mailarchiver/status",
-        "mailarchiver/state",
-        "mailarchiver/account/privat/state",
-        "mailarchiver/account/privat/set",
+        "amberchest/status",
+        "amberchest/state",
+        "amberchest/account/privat/state",
+        "amberchest/account/privat/set",
     ]
     y = 494
     for line in lines:
@@ -448,8 +448,8 @@ def homeassistant() -> str:
 
 def statistics() -> str:
     out = [
-        head(H, "Mail Archiver statistics screen with messages per year and top senders",
-             "Mail Archiver — Statistik",
+        head(H, "AmberChest statistics screen with messages per year and top senders",
+             "AmberChest — Statistik",
              "The statistics screen: messages per year, the most frequent senders and the largest folders."),
         titlebar(),
         sidebar("Statistik"),
@@ -509,8 +509,8 @@ def statistics() -> str:
 
 def verify() -> str:
     out = [
-        head(H, "Mail Archiver checking an archive, with three findings",
-             "Mail Archiver — Archiv prüfen",
+        head(H, "AmberChest checking an archive, with three findings",
+             "AmberChest — Archiv prüfen",
              "The archive check: every file against its checksum, and the folders against the server."),
         titlebar(),
         sidebar("Konten"),
@@ -568,8 +568,8 @@ def verify() -> str:
 
 def transfer() -> str:
     out = [
-        head(H, "Mail Archiver moving an archive to another instance",
-             "Mail Archiver — Archiv umziehen",
+        head(H, "AmberChest moving an archive to another instance",
+             "AmberChest — Archiv umziehen",
              "Moving an archive: the files are sent to another instance, which rebuilds its index."),
         titlebar(),
         sidebar("Konten"),
@@ -602,8 +602,8 @@ def transfer() -> str:
 
 def oauth() -> str:
     out = [
-        head(H, "Mail Archiver connecting a mailbox with OAuth using a device code",
-             "Mail Archiver — OAuth",
+        head(H, "AmberChest connecting a mailbox with OAuth using a device code",
+             "AmberChest — OAuth",
              "Connecting an account with OAuth: a provider is picked, a device code is shown and the archiver waits for the confirmation."),
         titlebar(),
         sidebar("Konten"),
@@ -649,8 +649,8 @@ def oauth() -> str:
 
 def notifications() -> str:
     out = [
-        head(H, "Mail Archiver settings for notifications and the disk space guard",
-             "Mail Archiver — Benachrichtigungen",
+        head(H, "AmberChest settings for notifications and the disk space guard",
+             "AmberChest — Benachrichtigungen",
              "The notification settings: a webhook address, the format, which events are sent, and the two disk space thresholds."),
         titlebar(),
         sidebar("Einstellungen"),

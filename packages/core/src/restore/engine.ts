@@ -72,7 +72,7 @@ export interface RestoreOptions {
 /**
  * Uploads archived messages back to an IMAP server.
  *
- * This is the only part of Mail Archiver that writes to a mail server. It only
+ * This is the only part of AmberChest that writes to a mail server. It only
  * ever appends: nothing existing is deleted, moved or modified, and messages
  * that are already there are skipped rather than duplicated.
  */
