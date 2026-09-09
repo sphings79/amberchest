@@ -2,7 +2,16 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { Account, AppConfig, AppSettings, AttachmentSettings, PublicAccount } from '../types.js';
+import type {
+  Account,
+  AppConfig,
+  AppSettings,
+  AttachmentSettings,
+  OAuthClient,
+  PublicAccount,
+  PublicOAuthClient,
+  PublicSettings,
+} from '../types.js';
 import {
   decryptJson,
   deriveKey,
@@ -45,6 +54,43 @@ export function toPublicAccount(account: Account): PublicAccount {
         }
       : null,
   };
+}
+
+/**
+ * The settings with every secret taken out.
+ *
+ * Same line as toPublicAccount draws for an account, for the same reason: what
+ * leaves the process must not carry a credential. The values are replaced by a
+ * flag rather than by a mask, so nothing can mistake a placeholder for a real
+ * value and write it back.
+ *
+ * The MCP token is the sharp one. Reading is the permission group that is on
+ * whenever MCP is enabled at all, so handing out the token there would let a
+ * client with read access take every other permission that is switched on.
+ */
+export function toPublicSettings(settings: AppSettings): PublicSettings {
+  const { token, ...mcp } = settings.mcp;
+  const { password, ...mqtt } = settings.mqtt;
+  const { authHeader, ...notifications } = settings.notifications;
+  const { google, microsoft, custom, ...oauth } = settings.oauth;
+
+  return {
+    ...settings,
+    mcp: { ...mcp, hasToken: token.length > 0 },
+    mqtt: { ...mqtt, hasPassword: password.length > 0 },
+    notifications: { ...notifications, hasAuthHeader: authHeader.length > 0 },
+    oauth: {
+      ...oauth,
+      google: toPublicOAuthClient(google),
+      microsoft: toPublicOAuthClient(microsoft),
+      custom: toPublicOAuthClient(custom),
+    },
+  };
+}
+
+function toPublicOAuthClient(client: OAuthClient): PublicOAuthClient {
+  const { clientSecret, ...rest } = client;
+  return { ...rest, hasClientSecret: clientSecret.length > 0 };
 }
 
 /**

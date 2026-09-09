@@ -235,6 +235,26 @@ export interface AppSettings {
   encryptArchive: boolean;
 }
 
+/**
+ * What the settings look like once the secrets are gone.
+ *
+ * Every credential becomes a flag: enough to render "a token is set" without
+ * handing the token itself to whoever asked. Produced by toPublicSettings.
+ */
+export type PublicOAuthClient = Omit<OAuthClient, 'clientSecret'> & { hasClientSecret: boolean };
+
+export interface PublicSettings
+  extends Omit<AppSettings, 'mcp' | 'mqtt' | 'notifications' | 'oauth'> {
+  mcp: Omit<McpSettings, 'token'> & { hasToken: boolean };
+  mqtt: Omit<MqttSettings, 'password'> & { hasPassword: boolean };
+  notifications: Omit<NotificationSettings, 'authHeader'> & { hasAuthHeader: boolean };
+  oauth: Omit<OAuthSettings, 'google' | 'microsoft' | 'custom'> & {
+    google: PublicOAuthClient;
+    microsoft: PublicOAuthClient;
+    custom: PublicOAuthClient;
+  };
+}
+
 export interface AppConfig {
   version: number;
   settings: AppSettings;

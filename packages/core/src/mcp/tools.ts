@@ -1,6 +1,7 @@
 import type { AmberChestApp } from '../app.js';
 import type { BundleFormat } from '../export/bundle.js';
 import type { SearchField, SearchSort } from '../search/search.js';
+import { toPublicSettings } from '../config/store.js';
 import { logger } from '../util/logger.js';
 
 /**
@@ -278,10 +279,13 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: 'get_settings',
-    description: 'Returns the application settings: archive path, language, theme, search options.',
+    description:
+      'Returns the application settings without any secrets: archive path, language, theme, ' +
+      'search, storage and the switches for MCP, MQTT, OAuth and notifications. Tokens, ' +
+      'passwords and client secrets are reported as a hasX flag, never as a value.',
     permission: 'read',
     inputSchema: objectSchema({}),
-    handler: (app) => app.getSettings(),
+    handler: (app) => toPublicSettings(app.getSettings()),
   },
 
   // ---------------------------------------------------------------- backup
@@ -460,7 +464,7 @@ export const TOOLS: ToolDefinition[] = [
       if (str(args, 'language')) patch.language = str(args, 'language');
       if (str(args, 'theme')) patch.theme = str(args, 'theme');
       if (str(args, 'accent_color')) patch.accentColor = str(args, 'accent_color');
-      return app.updateSettings(patch);
+      return toPublicSettings(await app.updateSettings(patch));
     },
   },
   {

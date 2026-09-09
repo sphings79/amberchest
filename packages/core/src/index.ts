@@ -1,6 +1,6 @@
 export * from './types.js';
 export { AmberChestApp, type AccountOverview } from './app.js';
-export { ConfigStore, ConfigLockedError, toPublicAccount } from './config/store.js';
+export { ConfigStore, ConfigLockedError, toPublicAccount, toPublicSettings } from './config/store.js';
 export { WrongPasswordError } from './config/crypto.js';
 export {
   accountInputSchema,
