@@ -53,7 +53,13 @@ export interface MessageRow {
   sha256: string | null;
   /** Set when the bytes live with another message of the same account. */
   linked_to: number | null;
-  state: 'active' | 'deleted';
+  /**
+   * active   - in the archive
+   * deleted  - gone from the server, kept here
+   * discarded - thrown out by a person; the file is gone and the next
+   *             backup must not fetch it again
+   */
+  state: 'active' | 'deleted' | 'discarded';
   deleted_at: string | null;
   created_at: string;
 }
@@ -209,6 +215,99 @@ export class ArchiveDatabase {
           WHERE id = ?`,
       )
       .run(state.uidvalidity ?? null, state.uidnext ?? null, state.lastSync ?? null, folderId);
+  }
+
+  /**
+   * Turns a message into a tombstone.
+   *
+   * The row stays so the next backup recognises the mail and leaves it alone,
+   * but everything that would make it look present goes: the indexed text -
+   * whose trigger takes it out of the search - and the attachment rows.
+   */
+  discardMessage(messageId: number): void {
+    this.transaction(() => {
+      this.db.prepare('DELETE FROM message_text WHERE message_id = ?').run(messageId);
+      this.db.prepare('DELETE FROM attachments WHERE message_id = ?').run(messageId);
+      this.db.prepare("UPDATE messages SET state = 'discarded' WHERE id = ?").run(messageId);
+    });
+  }
+
+  /**
+   * Forgets a tombstone, which lets the next backup fetch the mail again.
+   *
+   * The row goes rather than turning active: there is no file behind it, and
+   * an active row without a file is exactly what the archive check reports.
+   */
+  undiscardMessage(messageId: number): MessageRow | undefined {
+    const row = this.db.prepare("SELECT * FROM messages WHERE id = ? AND state = 'discarded'").get(messageId) as
+      | MessageRow
+      | undefined;
+    if (row) this.db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
+    return row;
+  }
+
+  /** The fingerprints this folder must not fetch again. */
+  discardedFingerprints(folderId: number): Set<string> {
+    const rows = this.db
+      .prepare("SELECT fingerprint FROM messages WHERE folder_id = ? AND state = 'discarded'")
+      .all(folderId) as Array<{ fingerprint: string }>;
+    return new Set(rows.map((row) => row.fingerprint));
+  }
+
+  /** The tombstones of an account, newest first, for the list that undoes them. */
+  listDiscarded(
+    accountId: string | null,
+    options: { search?: string; folderPath?: string; limit: number; offset: number },
+  ): { rows: Array<MessageRow & { folderPath: string }>; total: number } {
+    const where = ["m.state = 'discarded'"];
+    const params: unknown[] = [];
+    if (accountId) {
+      where.push('m.account_id = ?');
+      params.push(accountId);
+    }
+    if (options.folderPath) {
+      where.push('f.path = ?');
+      params.push(options.folderPath);
+    }
+    if (options.search) {
+      where.push('(m.subject LIKE ? OR m.from_addr LIKE ? OR m.to_addr LIKE ?)');
+      const like = `%${options.search}%`;
+      params.push(like, like, like);
+    }
+    const clause = where.join(' AND ');
+
+    const rows = this.db
+      .prepare(
+        `SELECT m.*, f.path AS folderPath
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE ${clause}
+          ORDER BY m.internal_date DESC
+          LIMIT ? OFFSET ?`,
+      )
+      .all(...params, options.limit, options.offset) as Array<MessageRow & { folderPath: string }>;
+
+    const { total } = this.db
+      .prepare(
+        `SELECT COUNT(*) AS total FROM messages m JOIN folders f ON f.id = m.folder_id WHERE ${clause}`,
+      )
+      .get(...params) as { total: number };
+
+    return { rows, total };
+  }
+
+  /** Forgets every tombstone of an account, or of one folder within it. */
+  undiscardAll(accountId: string, folderPath?: string): number {
+    const result = folderPath
+      ? this.db
+          .prepare(
+            `DELETE FROM messages WHERE state = 'discarded' AND account_id = ?
+               AND folder_id IN (SELECT id FROM folders WHERE account_id = ? AND path = ?)`,
+          )
+          .run(accountId, accountId, folderPath)
+      : this.db
+          .prepare("DELETE FROM messages WHERE state = 'discarded' AND account_id = ?")
+          .run(accountId);
+    return result.changes;
   }
 
   deleteFolder(folderId: number): void {

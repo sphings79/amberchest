@@ -38,6 +38,18 @@ export type {
   VerifyProgress,
 };
 
+/** A message somebody threw out of the archive. */
+export interface DiscardedMessage {
+  id: number;
+  account_id: string;
+  folderPath: string;
+  subject: string | null;
+  from_addr: string | null;
+  to_addr: string | null;
+  internal_date: string;
+  size: number;
+}
+
 /** A row of the two "largest messages" lists. */
 export interface LargestMessage {
   id: number;
@@ -441,6 +453,40 @@ export const api = {
     params.set('offset', String(query.offset ?? 0));
     return request<SearchResult>(`/search?${params.toString()}`);
   },
+  /** Throws a message out of the archive; the server keeps its copy. */
+  discardMessage: (accountId: string, messageId: number) =>
+    request<{ handedOver: boolean }>(`/accounts/${accountId}/messages/${messageId}/discard`, {
+      method: 'POST',
+    }),
+
+  discarded: (options: {
+    accountId?: string;
+    folder?: string;
+    q?: string;
+    limit: number;
+    offset: number;
+  }) => {
+    const query = new URLSearchParams({
+      limit: String(options.limit),
+      offset: String(options.offset),
+    });
+    if (options.accountId) query.set('account', options.accountId);
+    if (options.folder) query.set('folder', options.folder);
+    if (options.q) query.set('q', options.q);
+    return request<{ rows: DiscardedMessage[]; total: number }>(`/discarded?${query.toString()}`);
+  },
+
+  undiscardMessage: (accountId: string, messageId: number) =>
+    request<{ restored: boolean }>(`/accounts/${accountId}/discarded/${messageId}`, {
+      method: 'DELETE',
+    }),
+
+  undiscardAll: (accountId: string, folder?: string) =>
+    request<{ restored: number }>(
+      `/accounts/${accountId}/discarded${folder ? `?folder=${encodeURIComponent(folder)}` : ''}`,
+      { method: 'DELETE' },
+    ),
+
   message: (accountId: string, messageId: number) =>
     request<MessageContent>(`/accounts/${accountId}/messages/${messageId}`),
   openMessage: (accountId: string, messageId: number) =>

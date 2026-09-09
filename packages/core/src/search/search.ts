@@ -98,7 +98,10 @@ export function searchMessages(db: ArchiveDatabase, options: SearchOptions): Sea
   const where: string[] = [];
   const params: unknown[] = [];
 
-  if (!options.includeDeleted) where.push("m.state = 'active'");
+  // A discarded message is never a hit: the file behind it is gone, and
+  // "include deleted" means the ones the server lost, not the ones a person
+  // threw out on purpose.
+  where.push(options.includeDeleted ? "m.state IN ('active', 'deleted')" : "m.state = 'active'");
 
   if (options.accountId) {
     where.push('m.account_id = ?');

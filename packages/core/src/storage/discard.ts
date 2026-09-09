@@ -5,6 +5,7 @@ import type { Account } from '../types.js';
 import { logger } from '../util/logger.js';
 import { uniqueFileName } from '../util/paths.js';
 import { ArchiveLayout, listMessageFiles, moveMessageFile } from './archive.js';
+import { appendJournal } from './journal.js';
 
 export interface DiscardResult {
   /** Messages whose index entry is gone. */
@@ -118,4 +119,120 @@ async function handOver(
 
   db.promoteLink(heir.id, fileName, heir.folder_id);
   return true;
+}
+
+
+/**
+ * Throws one message out of the archive and remembers that it was on purpose.
+ *
+ * The file goes and the row stays as a tombstone, because the mail is still on
+ * the server: without the row the next backup would find nothing in the index
+ * and fetch it straight back. The journal gets the same decision, so a
+ * rebuilt index and an archive that has been moved keep it as well.
+ *
+ * As with a whole folder, a file another folder was only pointing at is handed
+ * over instead of deleted.
+ */
+export async function discardMessage(
+  db: ArchiveDatabase,
+  account: Account,
+  folder: FolderRow,
+  row: MessageRow,
+  archiveBaseDir: string,
+): Promise<{ handedOver: boolean }> {
+  const layout = new ArchiveLayout(archiveBaseDir);
+  const accountDir = layout.accountDir(account);
+  const folderDir = join(accountDir, folder.local_path);
+  const folders = db.listFolders(account.id);
+
+  let handedOver = false;
+  if (row.linked_to === null) {
+    handedOver = await handOver(db, row, folderDir, folder.local_path, accountDir, folders);
+    // Deleted without the usual "removed" record: the discard record below
+    // says the same thing and says why, and two entries for one decision only
+    // make the journal harder to read.
+    if (!handedOver) await rm(join(folderDir, row.file_name), { force: true });
+  }
+
+  db.discardMessage(row.id);
+
+  await appendJournal(folderDir, {
+    op: 'discard',
+    ts: new Date().toISOString(),
+    file: row.file_name,
+    uid: row.uid,
+    uidvalidity: row.uidvalidity,
+    messageId: row.message_id,
+    fingerprint: row.fingerprint,
+    internalDate: row.internal_date,
+    size: row.size,
+    subject: row.subject,
+    from: row.from_addr,
+    to: row.to_addr,
+  });
+
+  logger.info(`Discarded ${row.subject ?? row.file_name} from ${folder.path}`, {
+    accountId: account.id,
+  });
+  return { handedOver };
+}
+
+/** Takes the decision back, in the index and in the journal. */
+export async function undiscardMessage(
+  db: ArchiveDatabase,
+  account: Account,
+  archiveBaseDir: string,
+  messageId: number,
+): Promise<boolean> {
+  const folders = db.listFolders(account.id);
+  const row = db.undiscardMessage(messageId);
+  if (!row) return false;
+
+  const folder = folders.find((entry) => entry.id === row.folder_id);
+  if (folder) {
+    const layout = new ArchiveLayout(archiveBaseDir);
+    await appendJournal(join(layout.accountDir(account), folder.local_path), {
+      op: 'undiscard',
+      ts: new Date().toISOString(),
+      fingerprint: row.fingerprint,
+    });
+  }
+  return true;
+}
+
+
+/**
+ * Takes back every decision, or every one within a folder.
+ *
+ * Each tombstone gets its own journal record, the same as undoing one at a
+ * time: leaving them out would mean a rebuilt index restores exactly what was
+ * just released.
+ */
+export async function undiscardAll(
+  db: ArchiveDatabase,
+  account: Account,
+  archiveBaseDir: string,
+  folderPath?: string,
+): Promise<number> {
+  const layout = new ArchiveLayout(archiveBaseDir);
+  const accountDir = layout.accountDir(account);
+  const folders = db.listFolders(account.id);
+  const { rows } = db.listDiscarded(account.id, {
+    folderPath,
+    limit: Number.MAX_SAFE_INTEGER,
+    offset: 0,
+  });
+
+  const ts = new Date().toISOString();
+  for (const row of rows) {
+    const folder = folders.find((entry) => entry.id === row.folder_id);
+    if (!folder) continue;
+    await appendJournal(join(accountDir, folder.local_path), {
+      op: 'undiscard',
+      ts,
+      fingerprint: row.fingerprint,
+    });
+  }
+
+  return db.undiscardAll(account.id, folderPath);
 }

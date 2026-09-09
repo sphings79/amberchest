@@ -31,6 +31,8 @@ export interface AdoptStats {
   messagesRebuilt: number;
   /** Described by the journal, but the file is not on disk. */
   messagesMissing: number;
+  /** Tombstones rebuilt, so what somebody threw out stays thrown out. */
+  messagesDiscarded: number;
   /** Already in the index; adoption never creates a second row. */
   messagesSkipped: number;
   /** Rows for messages whose file lives in another folder. */
@@ -106,6 +108,7 @@ export class AdoptEngine extends EventEmitter {
     foldersAdopted: 0,
     messagesFound: 0,
     messagesAdopted: 0,
+    messagesDiscarded: 0,
     messagesRebuilt: 0,
     messagesMissing: 0,
     messagesSkipped: 0,
@@ -231,6 +234,8 @@ export class AdoptEngine extends EventEmitter {
 
     const known = new Map<string, AdoptedMessage>();
     const removed = new Set<string>();
+    /** Messages a person threw out, by fingerprint, last decision wins. */
+    const discarded = new Map<string, Extract<JournalRecord, { op: 'discard' }>>();
     // Messages this folder shows although the file lives elsewhere.
     const links: Array<{ target: string; message: AdoptedMessage }> = [];
 
@@ -274,7 +279,36 @@ export class AdoptEngine extends EventEmitter {
         // The file left this folder; wherever it went keeps its own journal.
         removed.add(record.file);
         known.delete(record.file);
+      } else if (record.op === 'discard') {
+        // Thrown out on purpose. The file is not here and must not come back,
+        // so the tombstone is rebuilt with it.
+        removed.add(record.file);
+        known.delete(record.file);
+        discarded.set(record.fingerprint, record);
+      } else if (record.op === 'undiscard') {
+        discarded.delete(record.fingerprint);
       }
+    }
+
+    for (const record of discarded.values()) {
+      if (this.options.db.findByFingerprint(this.account.id, record.fingerprint).length > 0) continue;
+      const id = this.options.db.insertMessage({
+        accountId: this.account.id,
+        folderId: folder.id,
+        uid: record.uid,
+        uidvalidity: record.uidvalidity,
+        messageId: record.messageId,
+        fingerprint: record.fingerprint,
+        internalDate: record.internalDate,
+        size: record.size,
+        subject: record.subject,
+        fromAddr: record.from,
+        toAddr: record.to,
+        flags: [],
+        fileName: record.file,
+      });
+      this.options.db.discardMessage(id);
+      this.stats.messagesDiscarded += 1;
     }
 
     const onDisk = await this.messageFiles(folderDir);

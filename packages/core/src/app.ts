@@ -1,5 +1,11 @@
 import { ConfigStore, toPublicAccount } from './config/store.js';
-import { discardFolder, type DiscardResult } from './storage/discard.js';
+import {
+  discardFolder,
+  discardMessage,
+  undiscardAll,
+  undiscardMessage,
+  type DiscardResult,
+} from './storage/discard.js';
 import type { AccountInput } from './config/schema.js';
 import { ArchiveDatabase, type LargestMessage } from './db/database.js';
 import {
@@ -397,6 +403,42 @@ export class AmberChestApp {
     offset: number,
   ): LargestMessage[] {
     return this.db.largestMessages(accountId, by, limit, offset);
+  }
+
+  /**
+   * Throws one message out of the archive, on purpose and for good.
+   *
+   * Nothing is touched on the server; the mail stays there. What changes is
+   * that this archive stops wanting it, which needs the tombstone - see
+   * discardMessage.
+   */
+  async discardMessage(accountId: string, messageId: number): Promise<{ handedOver: boolean }> {
+    const account = this.requireAccount(accountId);
+    const row = this.db.getMessage(messageId);
+    if (!row || row.account_id !== accountId) throw new Error('No such message');
+    const folder = this.db.listFolders(accountId).find((entry) => entry.id === row.folder_id);
+    if (!folder) throw new Error('No such folder');
+    return discardMessage(this.db, account, folder, row, this.config.getSettings().archivePath);
+  }
+
+  /** What was thrown out, so it can be looked at and taken back. */
+  listDiscarded(
+    accountId: string | null,
+    options: { search?: string; folderPath?: string; limit: number; offset: number },
+  ): ReturnType<ArchiveDatabase['listDiscarded']> {
+    return this.db.listDiscarded(accountId, options);
+  }
+
+  /** Lets the next backup fetch one message again. */
+  async undiscardMessage(accountId: string, messageId: number): Promise<boolean> {
+    const account = this.requireAccount(accountId);
+    return undiscardMessage(this.db, account, this.config.getSettings().archivePath, messageId);
+  }
+
+  /** Lets the next backup fetch everything that was thrown out again. */
+  undiscardAll(accountId: string, folderPath?: string): Promise<number> {
+    const account = this.requireAccount(accountId);
+    return undiscardAll(this.db, account, this.config.getSettings().archivePath, folderPath);
   }
 
   getAttachmentSettings(accountId: string): AttachmentSettings {

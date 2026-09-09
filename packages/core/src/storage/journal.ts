@@ -74,6 +74,36 @@ export type JournalRecord =
       /** Where the file went: another folder, the _deleted tree, or nowhere. */
       reason: 'moved' | 'deleted' | 'purged';
       target?: string;
+    }
+  | {
+      /**
+       * Thrown out by a person, not by the server.
+       *
+       * Its own record rather than another `remove` reason, because it has to
+       * carry what recognises the message: the file is gone, and the next
+       * backup would otherwise see the mail on the server, find nothing in the
+       * index, and fetch it again. Everything needed to say "this one, no"
+       * therefore travels with it - which also means a rebuilt index and an
+       * archive that was moved keep the decision.
+       */
+      op: 'discard';
+      ts: string;
+      file: string;
+      uid: number;
+      uidvalidity: number;
+      messageId: string | null;
+      fingerprint: string;
+      internalDate: string;
+      size: number;
+      subject: string | null;
+      from: string | null;
+      to: string | null;
+    }
+  | {
+      /** Takes the decision back, so the next backup fetches the mail again. */
+      op: 'undiscard';
+      ts: string;
+      fingerprint: string;
     };
 
 export function journalPath(folderDir: string): string {

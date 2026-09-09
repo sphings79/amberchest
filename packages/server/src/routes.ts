@@ -351,6 +351,64 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
   // ------------------------------------------------------------- statistics
 
+  // ---------------------------------------------------------- discarded mail
+
+  server.get('/api/discarded', { preHandler: requireUnlocked }, async (request, reply) => {
+    const parsed = z
+      .object({
+        account: z.string().optional(),
+        folder: z.string().optional(),
+        q: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(500).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
+      })
+      .safeParse(request.query);
+    if (!parsed.success) return fail(reply, 400, 'Invalid parameters');
+    const { account, folder, q, limit, offset } = parsed.data;
+    return app.listDiscarded(account ?? null, {
+      ...(folder ? { folderPath: folder } : {}),
+      ...(q ? { search: q } : {}),
+      limit,
+      offset,
+    });
+  });
+
+  server.post(
+    '/api/accounts/:id/messages/:messageId/discard',
+    { preHandler: requireUnlocked },
+    async (request, reply) => {
+      const { id, messageId } = request.params as { id: string; messageId: string };
+      try {
+        return await app.discardMessage(id, Number(messageId));
+      } catch (error) {
+        return fail(reply, 404, (error as Error).message);
+      }
+    },
+  );
+
+  server.delete(
+    '/api/accounts/:id/discarded/:messageId',
+    { preHandler: requireUnlocked },
+    async (request, reply) => {
+      const { id, messageId } = request.params as { id: string; messageId: string };
+      try {
+        return { restored: await app.undiscardMessage(id, Number(messageId)) };
+      } catch (error) {
+        return fail(reply, 404, (error as Error).message);
+      }
+    },
+  );
+
+  server.delete('/api/accounts/:id/discarded', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const query = request.query as { folder?: string };
+    try {
+      return { restored: await app.undiscardAll(id, query.folder) };
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
   server.get('/api/statistics/largest', { preHandler: requireUnlocked }, async (request, reply) => {
     const parsed = z
       .object({

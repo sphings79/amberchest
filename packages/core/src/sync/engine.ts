@@ -325,6 +325,16 @@ export class SyncEngine extends EventEmitter {
     const byFingerprint = new Map<string, MessageRow>();
     for (const row of localRows) byFingerprint.set(row.fingerprint, row);
 
+    /*
+     * Messages somebody threw out of the archive on purpose.
+     *
+     * They are still on the server, so without this they would be downloaded
+     * again on the next run and the deletion would mean nothing. Recognised by
+     * fingerprint, which is what survives a UIDVALIDITY change - the same key
+     * a move is recognised by.
+     */
+    const discarded = this.db.discardedFingerprints(folder.id);
+
     const newUids: number[] = [];
     const seenRowIds = new Set<number>();
 
@@ -336,6 +346,7 @@ export class SyncEngine extends EventEmitter {
         : byUid.get(message.uid) ?? byFingerprint.get(message.fingerprint);
 
       if (!existing) {
+        if (discarded.has(message.fingerprint)) continue;
         newUids.push(message.uid);
         continue;
       }

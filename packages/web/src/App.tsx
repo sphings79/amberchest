@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Lock,
   ScrollText,
+  Trash2,
   Search as SearchIcon,
   Settings as SettingsIcon,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { SupportLinks } from './components/SupportLinks.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Button, cx } from './components/ui.js';
 import { Browser } from './screens/Browser.js';
+import { Discarded } from './screens/Discarded.js';
 import { Dashboard } from './screens/Dashboard.js';
 import { GateScreen } from './screens/GateScreen.js';
 import { HomeAssistant } from './screens/HomeAssistant.js';
@@ -35,6 +37,7 @@ type View =
   | 'browser'
   | 'search'
   | 'statistics'
+  | 'discarded'
   | 'settings'
   | 'mcp'
   | 'homeassistant'
@@ -92,6 +95,7 @@ export function App(): ReactNode {
     { id: 'browser', label: t('nav.browser'), icon: <FolderTree size={16} /> },
     { id: 'search', label: t('nav.search'), icon: <SearchIcon size={16} /> },
     { id: 'statistics', label: t('nav.statistics'), icon: <BarChart3 size={16} /> },
+    { id: 'discarded', label: t('nav.discarded'), icon: <Trash2 size={16} /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon size={16} /> },
     { id: 'mcp', label: t('nav.mcp'), icon: <Bot size={16} /> },
     { id: 'homeassistant', label: t('nav.homeAssistant'), icon: <HouseWifi size={16} /> },
@@ -189,6 +193,7 @@ export function App(): ReactNode {
             {view === 'overview' && <Overview onGoToAccounts={() => setView('accounts')} />}
             {view === 'accounts' && <Dashboard />}
             {view === 'browser' && <Browser />}
+            {view === 'discarded' && <Discarded />}
             {view === 'search' && <Search />}
             {view === 'statistics' && <Statistics />}
             {view === 'settings' && <Settings />}

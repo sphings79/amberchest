@@ -210,6 +210,21 @@ export function Browser(): ReactNode {
           setShowFilters(true);
         },
       },
+      {
+        key: 'discard',
+        label: t('menu.discardMessage'),
+        icon: <Trash2 size={14} />,
+        danger: true,
+        onSelect: () => {
+          void api
+            .discardMessage(hit.accountId, hit.messageId)
+            .then(() => {
+              setNotice(t('menu.discarded'));
+              void loadMessages(0);
+            })
+            .catch((cause: Error) => setNotice(cause.message));
+        },
+      },
     ];
 
     // Only the desktop app can hand a file to the system mail client.
