@@ -45,6 +45,8 @@ export function applyAddonOptions(
     if (value && !env[key]) env[key] = value;
   };
 
+  // Lets the server know it runs inside Home Assistant's frame.
+  env.AMBERCHEST_ADDON = 'true';
   set('AMBERCHEST_MASTER_PASSWORD', options.master_password);
   set('AMBERCHEST_UI_PASSWORD', options.ui_password);
   set('AMBERCHEST_UI_PASSWORD_READONLY', options.ui_password_readonly);

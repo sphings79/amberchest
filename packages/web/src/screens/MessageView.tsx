@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, downloadUrl, isDesktop } from '../api/client.js';
+import { api, isDesktop, saveFile } from '../api/client.js';
 import { Badge, Button, Modal, cx } from '../components/ui.js';
 import { formatBytes } from './Overview.js';
 
@@ -181,19 +181,27 @@ export function MessageView({
               {dark ? t('message.showLight') : t('message.showDark')}
             </Button>
 
-            <a href={downloadUrl(`/accounts/${accountId}/messages/${messageId}/raw`)} download>
-              <Button>
-                <Download size={15} />
-                {t('message.download')}
-              </Button>
-            </a>
+            <Button
+              onClick={() =>
+                void saveFile(`/accounts/${accountId}/messages/${messageId}/raw`).catch((cause: Error) =>
+                  setError(cause.message),
+                )
+              }
+            >
+              <Download size={15} />
+              {t('message.download')}
+            </Button>
 
-            <a href={downloadUrl(`/accounts/${accountId}/messages/${messageId}/pdf`)} download>
-              <Button>
-                <FileText size={15} />
-                {t('export.asPdf')}
-              </Button>
-            </a>
+            <Button
+              onClick={() =>
+                void saveFile(`/accounts/${accountId}/messages/${messageId}/pdf`).catch((cause: Error) =>
+                  setError(cause.message),
+                )
+              }
+            >
+              <FileText size={15} />
+              {t('export.asPdf')}
+            </Button>
 
             {isDesktop && (
               <Button onClick={() => void openExternally()} title={t('message.openHint')}>
@@ -229,12 +237,15 @@ export function MessageView({
               </span>
               <div className="flex flex-wrap gap-2">
                 {message.attachments.map((attachment) => (
-                  <a
+                  <button
                     key={attachment.index}
-                    href={downloadUrl(
-                      `/accounts/${accountId}/messages/${messageId}/attachments/${attachment.index}`,
-                    )}
-                    download={attachment.name}
+                    type="button"
+                    onClick={() =>
+                      void saveFile(
+                        `/accounts/${accountId}/messages/${messageId}/attachments/${attachment.index}`,
+                        attachment.name,
+                      ).catch((cause: Error) => setError(cause.message))
+                    }
                     className="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition hover:brightness-110"
                     style={{ background: 'var(--surface-2)' }}
                   >
@@ -242,7 +253,7 @@ export function MessageView({
                     <span className="max-w-[220px] truncate">{attachment.name}</span>
                     <span style={{ color: 'var(--text-faint)' }}>{formatBytes(attachment.size)}</span>
                     {attachment.inline && <Badge>inline</Badge>}
-                  </a>
+                  </button>
                 ))}
               </div>
             </div>

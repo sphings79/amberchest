@@ -331,6 +331,7 @@ services:
 | `AMBERCHEST_MASTER_PASSWORD` | Unlocks the encrypted configuration on start |
 | `AMBERCHEST_UI_PASSWORD` | Password for the web interface |
 | `AMBERCHEST_UI_PASSWORD_READONLY` | Optional second password for a read-only login, see below |
+| `AMBERCHEST_TRUSTED_PROXIES` | Which proxies may say who the client is, see below. Default: private networks |
 | `AMBERCHEST_CRON` | Schedule, standard cron expression |
 | `AMBERCHEST_PORT` | Port inside the container, default 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
@@ -344,6 +345,20 @@ attachments and export files. It cannot change settings or accounts, run a
 backup, restore, discard messages or see the log. It needs
 `AMBERCHEST_UI_PASSWORD` next to it and has to differ from it. The MCP token is
 separate and is not affected by this.
+
+Guessing the interface password is slowed down: five wrong tries lock that
+client address out for 15 minutes, twice as long each time it comes back, and
+failures are written to the log. Logins end after 12 hours (the read-only one
+after 7 days). The session token only ever travels in a header; downloads and
+the live event stream use a one-time ticket that is worthless after a minute.
+
+The client address comes from `X-Forwarded-For` only when the request arrives
+from a private or loopback address, which is where a reverse proxy in front of
+the container normally sits. Reaching the port directly, the address cannot be
+forged. If your proxy has a public address, list it in
+`AMBERCHEST_TRUSTED_PROXIES` (comma separated addresses or CIDR ranges, a
+number of hops, or `none`); otherwise all visitors look alike and one wrong
+guesser can lock everybody out.
 
 The web interface answers on `http://<host>:8484`. It works behind a reverse
 proxy, both on a subdomain and on a sub-path. Images are built for

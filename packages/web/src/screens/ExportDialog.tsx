@@ -2,7 +2,7 @@ import type { BundleFormat, SearchField } from '@amberchest/core';
 import { Download, FileArchive, FileText, Files } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, downloadUrl } from '../api/client.js';
+import { api, saveFile } from '../api/client.js';
 import { Button, Modal, ProgressBar, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { formatBytes } from './Overview.js';
@@ -92,12 +92,17 @@ export function ExportDialog({
       onClose={onClose}
       footer={
         progress?.phase === 'done' ? (
-          <a href={downloadUrl(`/exports/${bundleId}/download`)} download>
-            <Button variant="primary">
-              <Download size={15} />
-              {t('export.download')}
-            </Button>
-          </a>
+          <Button
+            variant="primary"
+            onClick={() =>
+              void saveFile(`/exports/${bundleId}/download`).catch((cause: Error) =>
+                setError(cause.message),
+              )
+            }
+          >
+            <Download size={15} />
+            {t('export.download')}
+          </Button>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose}>

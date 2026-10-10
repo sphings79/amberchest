@@ -346,6 +346,7 @@ services:
 | `AMBERCHEST_MASTER_PASSWORD` | Entsperrt beim Start die verschlüsselte Konfiguration |
 | `AMBERCHEST_UI_PASSWORD` | Passwort für die Weboberfläche |
 | `AMBERCHEST_UI_PASSWORD_READONLY` | Optionales zweites Passwort für einen Nur-Lese-Zugang, siehe unten |
+| `AMBERCHEST_TRUSTED_PROXIES` | Welche Proxys die Client-Adresse angeben dürfen, siehe unten. Standard: private Netze |
 | `AMBERCHEST_CRON` | Zeitplan als gewöhnlicher Cron-Ausdruck |
 | `AMBERCHEST_PORT` | Port im Container, Standard 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Nach jedem Lauf auch Anhänge exportieren |
@@ -359,6 +360,21 @@ PDF, Anhänge und Export-Dateien herunterladen. Einstellungen und Konten ändern
 Sicherung starten, Wiederherstellen, Nachrichten aussortieren und das Protokoll
 sehen kann er nicht. Er braucht `AMBERCHEST_UI_PASSWORD` daneben und muss sich
 davon unterscheiden. Das MCP-Token ist davon getrennt und nicht betroffen.
+
+Das Raten des Passworts der Oberfläche wird gebremst: Fünf Fehlversuche sperren
+die Client-Adresse für 15 Minuten, bei jeder Wiederholung doppelt so lange,
+und Fehlversuche stehen im Protokoll. Anmeldungen laufen nach 12 Stunden ab
+(die Nur-Lese-Anmeldung nach 7 Tagen). Das Sitzungs-Token wandert nur im
+Header; Downloads und der Live-Ereignisstrom nutzen ein Einmal-Ticket, das nach
+einer Minute wertlos ist.
+
+Die Client-Adresse kommt aus `X-Forwarded-For` nur dann, wenn die Anfrage von
+einer privaten oder Loopback-Adresse kommt, dort sitzt normalerweise der
+Reverse Proxy vor dem Container. Wer den Port direkt erreicht, kann seine
+Adresse nicht fälschen. Hat dein Proxy eine öffentliche Adresse, trage sie in
+`AMBERCHEST_TRUSTED_PROXIES` ein (kommagetrennte Adressen oder CIDR-Bereiche,
+eine Anzahl Hops oder `none`); sonst sehen alle Besucher gleich aus, und ein
+einzelner Rater kann alle aussperren.
 
 Die Weboberfläche antwortet dann auf `http://<host>:8484`. Sie funktioniert
 hinter einem Reverse Proxy, sowohl auf einer Subdomain als auch auf einem

@@ -136,8 +136,21 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     let closed = false;
     let retry: number | undefined;
 
-    const connect = (): void => {
-      const socket = new WebSocket(eventsUrl());
+    const connect = async (): Promise<void> => {
+      if (closed) return;
+
+      // The ticket is single use, so every reconnect asks for a fresh one.
+      let url: string;
+      try {
+        url = await eventsUrl();
+      } catch {
+        // Most likely the session ran out: let the gate screen take over.
+        void refreshState();
+        return;
+      }
+      if (closed) return;
+
+      const socket = new WebSocket(url);
       socketRef.current = socket;
 
       socket.onmessage = (event) => {
@@ -179,17 +192,17 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       socket.onclose = () => {
         if (closed) return;
-        retry = window.setTimeout(connect, 2000);
+        retry = window.setTimeout(() => void connect(), 2000);
       };
     };
 
-    connect();
+    void connect();
     return () => {
       closed = true;
       if (retry) window.clearTimeout(retry);
       socketRef.current?.close();
     };
-  }, [server?.authenticated, refreshAccounts]);
+  }, [server?.authenticated, refreshAccounts, refreshState]);
 
   const value = useMemo<AppState>(
     () => ({

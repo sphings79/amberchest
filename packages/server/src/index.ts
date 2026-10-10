@@ -6,7 +6,9 @@ import type { AmberChestApp } from '@amberchest/core';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { isIngressAddress } from './addon.js';
 import { AuthGuard } from './auth.js';
+import type { LoginLimiter } from './login-limiter.js';
 import { registerRoutes } from './routes.js';
+import { trustProxyFromEnvironment, type TrustProxy } from './trust-proxy.js';
 
 export interface ServerOptions {
   app: AmberChestApp;
@@ -17,6 +19,13 @@ export interface ServerOptions {
   port?: number;
   /** Desktop only: hands a file to the operating system. */
   openFile?: ((path: string) => Promise<void>) | undefined;
+  /**
+   * Which proxies may say who the client is. Defaults to the environment, and
+   * from there to loopback and private networks; see trust-proxy.ts.
+   */
+  trustProxy?: TrustProxy | undefined;
+  /** Replaces the login limiter; tests use this to control the clock. */
+  limiter?: LoginLimiter | undefined;
 }
 
 export interface RunningServer {
@@ -29,8 +38,10 @@ export interface RunningServer {
 export async function createServer(options: ServerOptions): Promise<FastifyInstance> {
   const server = Fastify({
     logger: false,
-    // Behind a reverse proxy the real client address comes from headers.
-    trustProxy: true,
+    // Behind a reverse proxy the real client address comes from headers - but
+    // only from a proxy of ours, or the address is whatever the client says.
+    trustProxy:
+      options.trustProxy ?? trustProxyFromEnvironment(process.env.AMBERCHEST_TRUSTED_PROXIES),
     // A transferred message file is the largest body this ever sees.
     bodyLimit: 128 * 1024 * 1024,
   });
@@ -65,6 +76,21 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
   }
 
   /*
+   * Headers every answer carries.
+   *
+   * Nothing from the API belongs in a cache, mail least of all. The frame
+   * header keeps the interface out of other sites' pages; the add-on is left
+   * alone, because Home Assistant shows it in a frame of its own.
+   */
+  const asAddon = process.env.AMBERCHEST_ADDON === 'true';
+  server.addHook('onSend', async (request, reply) => {
+    reply.header('x-content-type-options', 'nosniff');
+    reply.header('referrer-policy', 'no-referrer');
+    if (!asAddon) reply.header('x-frame-options', 'SAMEORIGIN');
+    if (request.url.startsWith('/api/')) reply.header('cache-control', 'no-store');
+  });
+
+  /*
    * Cross origin access for the remote mode.
    *
    * Authentication is a bearer token, never a cookie, so a foreign page cannot
@@ -96,6 +122,7 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
     app: options.app,
     auth: options.auth,
     openFile: options.openFile,
+    limiter: options.limiter,
   });
 
   if (options.webRoot && existsSync(options.webRoot)) {

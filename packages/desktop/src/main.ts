@@ -211,7 +211,7 @@ async function start(): Promise<void> {
   migrateLegacyConfigDir();
 
   core = new AmberChestApp({ pdfRenderer: renderPdf });
-  // A random token per launch; the window receives it in the URL and keeps it
+  // A random token per launch; the window receives it in the URL fragment and keeps it
   // in sessionStorage. Nothing on the machine can talk to the API without it.
   const auth = AuthGuard.withToken();
 
@@ -233,8 +233,9 @@ async function start(): Promise<void> {
   console.log(`AmberChest ready on ${running.url}`);
   // `desktop=1` makes the UI render its own title bar - only where the window
   // has none of its own.
-  const chrome = process.platform === 'darwin' ? '&desktop=1' : '';
-  await createWindow(`${running.url}/?token=${auth.token ?? ''}${chrome}`);
+  const chrome = process.platform === 'darwin' ? '?desktop=1' : '';
+  // The token goes in the fragment, which is never sent anywhere.
+  await createWindow(`${running.url}/${chrome}#token=${auth.token ?? ''}`);
 }
 
 void app.whenReady().then(async () => {

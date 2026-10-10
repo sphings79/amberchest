@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, downloadUrl, isDesktop } from '../api/client.js';
+import { api, isDesktop, saveFile } from '../api/client.js';
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from '../components/ContextMenu.js';
 import {
   EMPTY_MESSAGE_FILTERS,
@@ -83,14 +83,6 @@ function buildTree(folders: LocalFolder[]): TreeNode[] {
  * on the right - the layout everybody already knows from their mail client,
  * for the times when searching is not what you want.
  */
-/** Starts a download without leaving the page. */
-function download(url: string): void {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = '';
-  link.click();
-}
-
 export function Browser(): ReactNode {
   const { t, i18n } = useTranslation();
   const { accounts, server } = useApp();
@@ -192,13 +184,17 @@ export function Browser(): ReactNode {
         key: 'eml',
         label: t('menu.saveEml'),
         icon: <Download size={14} />,
-        onSelect: () => download(downloadUrl(`${base}/raw`)),
+        onSelect: () => {
+          void saveFile(`${base}/raw`).catch((cause: Error) => setNotice(cause.message));
+        },
       },
       {
         key: 'pdf',
         label: t('menu.savePdf'),
         icon: <FileText size={14} />,
-        onSelect: () => download(downloadUrl(`${base}/pdf`)),
+        onSelect: () => {
+          void saveFile(`${base}/pdf`).catch((cause: Error) => setNotice(cause.message));
+        },
       },
       {
         key: 'sender',

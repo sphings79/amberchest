@@ -191,16 +191,21 @@ import {
 const TOKEN_KEY = 'amberchest-token';
 
 /**
- * The desktop app opens the UI with `?token=...`; the container hands out a
+ * The desktop app opens the UI with `#token=...`; the container hands out a
  * token after the password login. Either way it lives in sessionStorage only.
+ *
+ * A fragment on purpose: unlike a query string it is never sent to the
+ * server, so it cannot end up in a log or in a Referer header.
  */
 function readInitialToken(): string | null {
-  const params = new URLSearchParams(window.location.search);
-  const fromUrl = params.get('token');
+  const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const fromUrl = fragment.get('token');
   if (fromUrl) sessionStorage.setItem(TOKEN_KEY, fromUrl);
+
+  const params = new URLSearchParams(window.location.search);
   if (fromUrl || params.has('desktop')) {
     const url = new URL(window.location.href);
-    url.searchParams.delete('token');
+    url.hash = '';
     url.searchParams.delete('desktop');
     window.history.replaceState({}, '', url.toString());
   }
@@ -595,19 +600,47 @@ export const api = {
   logs: (limit = 300) => request<LogEntry[]>(`/logs?limit=${limit}`),
 };
 
+/**
+ * A one-time ticket for fetching `path` (below /api) with a plain GET.
+ *
+ * A browser cannot put the token in a header for a download or a WebSocket,
+ * and the token does not belong in a URL. The ticket is good for one request
+ * to this one path and runs out after a minute. Null on an instance without a
+ * password, where there is nothing to protect.
+ */
+async function ticketFor(path: string): Promise<string | null> {
+  if (!token) return null;
+  const result = await request<{ ticket: string }>('/tickets', {
+    method: 'POST',
+    body: JSON.stringify({ path: `/api${path.split('?')[0]}` }),
+  });
+  return result.ticket;
+}
+
 /** Websocket URL for the live event stream of the active connection. */
-export function eventsUrl(): string {
+export async function eventsUrl(): Promise<string> {
   const url = connection.url
     ? new URL('/api/events', connection.url)
     : new URL('api/events', window.location.href);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  if (token) url.searchParams.set('token', token);
+  const ticket = await ticketFor('/events');
+  if (ticket) url.searchParams.set('ticket', ticket);
   return url.toString();
 }
 
-/** Builds a download link that carries the token, for plain <a download>. */
-export function downloadUrl(path: string): string {
-  const base = apiBase();
-  const separator = path.includes('?') ? '&' : '?';
-  return token ? `${base}${path}${separator}token=${encodeURIComponent(token)}` : `${base}${path}`;
+/** A link the browser can fetch by itself, valid once and for a minute. */
+export async function downloadUrl(path: string): Promise<string> {
+  const ticket = await ticketFor(path);
+  const url = `${apiBase()}${path}`;
+  if (!ticket) return url;
+  return `${url}${path.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(ticket)}`;
 }
+
+/** Starts a download without leaving the page. */
+export async function saveFile(path: string, name = ''): Promise<void> {
+  const link = document.createElement('a');
+  link.href = await downloadUrl(path);
+  link.download = name;
+  link.click();
+}
+
