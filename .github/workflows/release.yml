@@ -73,9 +73,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # A tag with a hyphen (v2.2.0-beta.1) is a pre-release: it gets its own
+      # image tag and must not move `latest`, which everybody pulls.
       - name: Version from the tag
         id: meta
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$version" in
+            *-*) echo "stable=false" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "stable=true" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - uses: docker/build-push-action@v6
         with:
@@ -84,8 +92,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/amberchest:latest
             ghcr.io/${{ github.repository_owner }}/amberchest:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.stable == 'true' && format('ghcr.io/{0}/amberchest:latest', github.repository_owner) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -114,8 +122,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           notes="docs/release-notes/${GITHUB_REF_NAME}.md"
+          flags=""
+          # A hyphen in the tag marks a pre-release, which is not "latest".
+          case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac
           if [ -f "$notes" ]; then
-            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$notes" artifacts/*
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" $flags --notes-file "$notes" artifacts/*
           else
-            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes artifacts/*
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" $flags --generate-notes artifacts/*
           fi
