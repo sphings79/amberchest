@@ -153,10 +153,10 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
    * The path as the router will see it.
    *
    * The router decodes percent escapes before it matches, so `/%61pi/settings`
-   * reaches the `/api/settings` handler. Checking the raw URL would let that
-   * through unguarded, with or without a token. Decoding the same way, once,
-   * keeps the guard and the router looking at the same string; `decodeURI`
-   * leaves the reserved escapes such as %2F alone, as the router does.
+   * reaches the `/api/settings` handler. Checking the raw URL let that through
+   * unguarded, with or without a token. Decoding the same way, once, keeps the
+   * guard and the router looking at the same string; `decodeURI` leaves the
+   * reserved escapes such as %2F alone, as the router does.
    */
   const routedPath = (url: string): string | null => {
     const raw = url.split('?')[0] ?? '';
