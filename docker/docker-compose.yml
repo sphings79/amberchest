@@ -19,6 +19,8 @@ services:
       # Optional second login that can only read, search and download. Needs
       # the password above and has to differ from it.
       # AMBERCHEST_UI_PASSWORD_READONLY: change-me-three
+      # Let a dashboard embed the interface in a frame (off by default).
+      # AMBERCHEST_ALLOW_FRAMING: "true"
       # Only if your reverse proxy has a public address: which proxies may
       # tell AmberChest the client address (X-Forwarded-For). Default is
       # private networks, which fits a proxy on the same host or network.

@@ -346,6 +346,7 @@ services:
 | `AMBERCHEST_MASTER_PASSWORD` | Entsperrt beim Start die verschlüsselte Konfiguration |
 | `AMBERCHEST_UI_PASSWORD` | Passwort für die Weboberfläche |
 | `AMBERCHEST_UI_PASSWORD_READONLY` | Optionales zweites Passwort für einen Nur-Lese-Zugang, siehe unten |
+| `AMBERCHEST_ALLOW_FRAMING` | `true` erlaubt, die Oberfläche in einem Frame einer anderen Seite einzubetten; standardmäßig aus |
 | `AMBERCHEST_TRUSTED_PROXIES` | Welche Proxys die Client-Adresse angeben dürfen, siehe unten. Standard: private Netze |
 | `AMBERCHEST_CRON` | Zeitplan als gewöhnlicher Cron-Ausdruck |
 | `AMBERCHEST_PORT` | Port im Container, Standard 8484 |

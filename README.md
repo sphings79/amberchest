@@ -331,6 +331,7 @@ services:
 | `AMBERCHEST_MASTER_PASSWORD` | Unlocks the encrypted configuration on start |
 | `AMBERCHEST_UI_PASSWORD` | Password for the web interface |
 | `AMBERCHEST_UI_PASSWORD_READONLY` | Optional second password for a read-only login, see below |
+| `AMBERCHEST_ALLOW_FRAMING` | `true` lets another site embed the interface in a frame; off by default |
 | `AMBERCHEST_TRUSTED_PROXIES` | Which proxies may say who the client is, see below. Default: private networks |
 | `AMBERCHEST_CRON` | Schedule, standard cron expression |
 | `AMBERCHEST_PORT` | Port inside the container, default 8484 |

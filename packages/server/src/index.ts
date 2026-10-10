@@ -79,14 +79,17 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
    * Headers every answer carries.
    *
    * Nothing from the API belongs in a cache, mail least of all. The frame
-   * header keeps the interface out of other sites' pages; the add-on is left
-   * alone, because Home Assistant shows it in a frame of its own.
+   * header keeps the interface out of other sites' pages. The add-on is left
+   * alone, because Home Assistant shows it in a frame of its own, and
+   * AMBERCHEST_ALLOW_FRAMING=true does the same for a dashboard that embeds
+   * the interface.
    */
-  const asAddon = process.env.AMBERCHEST_ADDON === 'true';
+  const frameable =
+    process.env.AMBERCHEST_ADDON === 'true' || process.env.AMBERCHEST_ALLOW_FRAMING === 'true';
   server.addHook('onSend', async (request, reply) => {
     reply.header('x-content-type-options', 'nosniff');
     reply.header('referrer-policy', 'no-referrer');
-    if (!asAddon) reply.header('x-frame-options', 'SAMEORIGIN');
+    if (!frameable) reply.header('x-frame-options', 'SAMEORIGIN');
     if (request.url.startsWith('/api/')) reply.header('cache-control', 'no-store');
   });
 

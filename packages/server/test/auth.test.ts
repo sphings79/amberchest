@@ -370,6 +370,23 @@ describe('API with a viewer login', () => {
     expect(response.headers['cache-control']).toBe('no-store');
   });
 
+  it('can be allowed to sit in another site\'s frame', async () => {
+    process.env.AMBERCHEST_ALLOW_FRAMING = 'true';
+    try {
+      const { server, admin } = await setup();
+      const response = await server.inject({
+        method: 'GET',
+        url: '/api/accounts',
+        headers: { authorization: `Bearer ${admin}` },
+      });
+      expect(response.headers['x-frame-options']).toBeUndefined();
+      // The rest of the headers stay.
+      expect(response.headers['x-content-type-options']).toBe('nosniff');
+    } finally {
+      delete process.env.AMBERCHEST_ALLOW_FRAMING;
+    }
+  });
+
   it('ends a viewer session on logout', async () => {
     const { call, viewer } = await setup();
     expect((await call('POST', '/api/logout', viewer)).status).toBe(200);
