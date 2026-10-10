@@ -600,21 +600,36 @@ export const api = {
   logs: (limit = 300) => request<LogEntry[]>(`/logs?limit=${limit}`),
 };
 
+/** Connections whose server is too old to know tickets. */
+const withoutTickets = new Set<string>();
+
 /**
- * A one-time ticket for fetching `path` (below /api) with a plain GET.
+ * What to put in the URL of a plain GET that cannot carry a header: a
+ * download link, the event socket.
  *
- * A browser cannot put the token in a header for a download or a WebSocket,
- * and the token does not belong in a URL. The ticket is good for one request
- * to this one path and runs out after a minute. Null on an instance without a
- * password, where there is nothing to protect.
+ * A one-time ticket for `path` (below /api), good for that request and a
+ * minute. The token does not belong in a URL, so it is only used as the
+ * fallback for a server that predates tickets - an older container reached
+ * from this app - and only for as long as the server stays that old. Null on
+ * an instance without a password, where there is nothing to protect.
  */
-async function ticketFor(path: string): Promise<string | null> {
+async function urlCredential(path: string): Promise<{ name: 'ticket' | 'token'; value: string } | null> {
   if (!token) return null;
-  const result = await request<{ ticket: string }>('/tickets', {
-    method: 'POST',
-    body: JSON.stringify({ path: `/api${path.split('?')[0]}` }),
-  });
-  return result.ticket;
+
+  if (!withoutTickets.has(connection.id)) {
+    try {
+      const result = await request<{ ticket: string }>('/tickets', {
+        method: 'POST',
+        body: JSON.stringify({ path: `/api${path.split('?')[0]}` }),
+      });
+      return { name: 'ticket', value: result.ticket };
+    } catch (error) {
+      // An old server does not have the route; anything else is a real failure.
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
+      withoutTickets.add(connection.id);
+    }
+  }
+  return { name: 'token', value: token };
 }
 
 /** Websocket URL for the live event stream of the active connection. */
@@ -623,17 +638,18 @@ export async function eventsUrl(): Promise<string> {
     ? new URL('/api/events', connection.url)
     : new URL('api/events', window.location.href);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ticket = await ticketFor('/events');
-  if (ticket) url.searchParams.set('ticket', ticket);
+  const credential = await urlCredential('/events');
+  if (credential) url.searchParams.set(credential.name, credential.value);
   return url.toString();
 }
 
 /** A link the browser can fetch by itself, valid once and for a minute. */
 export async function downloadUrl(path: string): Promise<string> {
-  const ticket = await ticketFor(path);
+  const credential = await urlCredential(path);
   const url = `${apiBase()}${path}`;
-  if (!ticket) return url;
-  return `${url}${path.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(ticket)}`;
+  if (!credential) return url;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${url}${separator}${credential.name}=${encodeURIComponent(credential.value)}`;
 }
 
 /** Starts a download without leaving the page. */
