@@ -18,7 +18,7 @@ import {
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
-import type { AuthGuard } from './auth.js';
+import { viewerMayCall, type AuthGuard } from './auth.js';
 
 const masterPasswordSchema = z.object({ masterPassword: z.string().min(1) });
 const loginSchema = z.object({ password: z.string().min(1) });
@@ -137,14 +137,46 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     '/api/unlock',
   ]);
 
+  /**
+   * The path as the router will see it.
+   *
+   * The router decodes percent escapes before it matches, so `/%61pi/settings`
+   * reaches the `/api/settings` handler. Checking the raw URL would let that
+   * through unguarded, with or without a token. Decoding the same way, once,
+   * keeps the guard and the router looking at the same string; `decodeURI`
+   * leaves the reserved escapes such as %2F alone, as the router does.
+   */
+  const routedPath = (url: string): string | null => {
+    const raw = url.split('?')[0] ?? '';
+    try {
+      return decodeURI(raw);
+    } catch {
+      return null;
+    }
+  };
+
   server.addHook('onRequest', async (request, reply) => {
-    if (!request.url.startsWith('/api/')) return;
-    const path = request.url.split('?')[0] ?? '';
+    const path = routedPath(request.url);
+    if (path === null) {
+      await fail(reply, 400, 'Malformed path');
+      return;
+    }
+    if (!path.startsWith('/api/')) return;
     if (PUBLIC_PATHS.has(path)) return;
-    if (!auth.isValid(auth.tokenFromRequest(request))) {
+
+    const role = auth.roleOf(auth.tokenFromRequest(request));
+    if (!role) {
       await fail(reply, 401, 'Not authenticated');
+      return;
+    }
+    if (role === 'viewer' && !viewerMayCall(request.method, path)) {
+      await fail(reply, 403, 'Not allowed for a read-only login');
     }
   });
+
+  /** The public paths check the token themselves; these need an admin. */
+  const isAdmin = (request: FastifyRequest): boolean =>
+    auth.roleOf(auth.tokenFromRequest(request)) === 'admin';
 
   /** Routes that need an unlocked configuration. */
   const requireUnlocked = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -161,26 +193,42 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   // ------------------------------------------------------------------ state
 
   server.get('/api/state', async (request) => {
-    const authenticated = auth.isValid(auth.tokenFromRequest(request));
+    const role = auth.roleOf(auth.tokenFromRequest(request));
+    const open = role !== null && app.isUnlocked;
+    const settings = open ? app.getSettings() : null;
     return {
       initialized: app.isInitialized,
       unlocked: app.isUnlocked,
       authMode: auth.mode,
-      authenticated,
-      settings: authenticated && app.isUnlocked ? toOperatorSettings(app.getSettings()) : null,
+      authenticated: role !== null,
+      role,
+      // A viewer gets the look of the interface and nothing else: the full
+      // settings carry the MCP token and the addresses of the integrations.
+      settings: settings && role === 'admin' ? toOperatorSettings(settings) : null,
+      appearance: settings
+        ? { theme: settings.theme, accentColor: settings.accentColor, language: settings.language }
+        : null,
     };
   });
 
   server.post('/api/login', async (request, reply) => {
     const body = loginSchema.safeParse(request.body);
     if (!body.success) return fail(reply, 400, 'Password missing');
-    const token = auth.login(body.data.password);
-    if (!token) return fail(reply, 401, 'Wrong password');
-    return { token };
+    const session = auth.login(body.data.password);
+    if (!session) return fail(reply, 401, 'Wrong password');
+    return session;
+  });
+
+  /** Ends a login session; the configuration stays as it is. */
+  server.post('/api/logout', async (request) => {
+    const token = auth.tokenFromRequest(request);
+    if (token) auth.logout(token);
+    return { ok: true };
   });
 
   server.post('/api/setup', async (request, reply) => {
     if (!auth.isValid(auth.tokenFromRequest(request))) return fail(reply, 401, 'Not authenticated');
+    if (!isAdmin(request)) return fail(reply, 403, 'Not allowed for a read-only login');
     const body = masterPasswordSchema.safeParse(request.body);
     if (!body.success) return fail(reply, 400, 'Master password missing');
     if (app.isInitialized) return fail(reply, 409, 'Configuration already exists');
@@ -194,6 +242,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
   server.post('/api/unlock', async (request, reply) => {
     if (!auth.isValid(auth.tokenFromRequest(request))) return fail(reply, 401, 'Not authenticated');
+    if (!isAdmin(request)) return fail(reply, 403, 'Not allowed for a read-only login');
     const body = masterPasswordSchema.safeParse(request.body);
     if (!body.success) return fail(reply, 400, 'Master password missing');
     try {
@@ -1116,7 +1165,8 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   // ----------------------------------------------------------------- events
 
   server.get('/api/events', { websocket: true }, (socket: WebSocket, request: FastifyRequest) => {
-    if (!auth.isValid(auth.tokenFromRequest(request))) {
+    const role = auth.roleOf(auth.tokenFromRequest(request));
+    if (!role) {
       socket.close(4401, 'Not authenticated');
       return;
     }
@@ -1124,6 +1174,15 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const send = (type: string, payload: unknown): void => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type, payload }));
     };
+
+    // A viewer follows its own export files and nothing else: the rest is
+    // the log and the progress of work only an admin starts.
+    if (role === 'viewer') {
+      const onViewerBundle = (progress: unknown): void => send('bundle-progress', progress);
+      app.bundles.on('progress', onViewerBundle);
+      socket.on('close', () => app.bundles.off('progress', onViewerBundle));
+      return;
+    }
 
     for (const progress of app.sync.allProgress()) send('progress', progress);
     for (const progress of app.exports.allProgress()) send('export-progress', progress);

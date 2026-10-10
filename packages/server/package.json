@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
     "dev": "node --watch src/standalone.ts",
     "mcp": "node dist/mcp-stdio.js"
   },

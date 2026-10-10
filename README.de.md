@@ -345,12 +345,20 @@ services:
 | --- | --- |
 | `AMBERCHEST_MASTER_PASSWORD` | Entsperrt beim Start die verschlüsselte Konfiguration |
 | `AMBERCHEST_UI_PASSWORD` | Passwort für die Weboberfläche |
+| `AMBERCHEST_UI_PASSWORD_READONLY` | Optionales zweites Passwort für einen Nur-Lese-Zugang, siehe unten |
 | `AMBERCHEST_CRON` | Zeitplan als gewöhnlicher Cron-Ausdruck |
 | `AMBERCHEST_PORT` | Port im Container, Standard 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Nach jedem Lauf auch Anhänge exportieren |
 | `PUID` / `PGID` | Benutzer und Gruppe, denen die Volumes gehören, Standard 1000 |
 | `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` oder `error` |
 | `TZ` | Zeitzone, nach der sich der Zeitplan richtet |
+
+Ist `AMBERCHEST_UI_PASSWORD_READONLY` gesetzt, hat die Oberfläche einen zweiten
+Zugang. Er sieht alle Postfächer und kann blättern, suchen, lesen und `.eml`,
+PDF, Anhänge und Export-Dateien herunterladen. Einstellungen und Konten ändern,
+Sicherung starten, Wiederherstellen, Nachrichten aussortieren und das Protokoll
+sehen kann er nicht. Er braucht `AMBERCHEST_UI_PASSWORD` daneben und muss sich
+davon unterscheiden. Das MCP-Token ist davon getrennt und nicht betroffen.
 
 Die Weboberfläche antwortet dann auf `http://<host>:8484`. Sie funktioniert
 hinter einem Reverse Proxy, sowohl auf einer Subdomain als auch auf einem

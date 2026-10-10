@@ -130,12 +130,25 @@ export interface AttachmentState {
   runs: Array<Record<string, unknown>>;
 }
 
+/** What a login may do; a viewer only reads and downloads. */
+export type Role = 'admin' | 'viewer';
+
+/** The look of the interface, which even a viewer is told. */
+export interface Appearance {
+  theme: OperatorSettings['theme'];
+  accentColor: string;
+  language: string;
+}
+
 export interface ServerState {
   initialized: boolean;
   unlocked: boolean;
   authMode: 'none' | 'token' | 'password';
   authenticated: boolean;
+  role: Role | null;
+  /** Null for a viewer: the settings carry secrets and integration addresses. */
   settings: OperatorSettings | null;
+  appearance: Appearance | null;
 }
 
 export interface AccountFormValues {
@@ -277,7 +290,7 @@ export type SettingsPatch = DeepPartial<AppSettings>;
 
 export const api = {
   state: () => request<ServerState>('/state'),
-  login: (password: string) => request<{ token: string }>('/login', {
+  login: (password: string) => request<{ token: string; role: Role }>('/login', {
     method: 'POST',
     body: JSON.stringify({ password }),
   }),
@@ -286,6 +299,7 @@ export const api = {
   unlock: (masterPassword: string) =>
     request<{ ok: true }>('/unlock', { method: 'POST', body: JSON.stringify({ masterPassword }) }),
   lock: () => request<{ ok: true }>('/lock', { method: 'POST' }),
+  logout: () => request<{ ok: true }>('/logout', { method: 'POST' }),
 
   // Asymmetric on purpose: a patch may carry any field, including the
   // secrets, while what comes back never does. A secret left out of the patch

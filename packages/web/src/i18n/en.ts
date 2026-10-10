@@ -22,6 +22,8 @@ export const en: Translations = {
     unlock: 'Unlock',
     mismatch: 'The passwords do not match.',
     tooShort: 'At least 8 characters.',
+    lockedForViewer:
+      'The archive is locked. An administrator has to unlock it before you can read anything.',
   },
   support: {
     star: 'Star on GitHub',
@@ -68,6 +70,7 @@ export const en: Translations = {
     logs: 'Log',
     addAccount: 'Add account',
     lock: 'Lock',
+    logout: 'Sign out',
   },
   overview: {
     title: 'Overview',

@@ -16,6 +16,9 @@ services:
       # Password for the web interface. Without it the interface is open to
       # anyone who can reach the port.
       AMBERCHEST_UI_PASSWORD: change-me-too
+      # Optional second login that can only read, search and download. Needs
+      # the password above and has to differ from it.
+      # AMBERCHEST_UI_PASSWORD_READONLY: change-me-three
       # Backup schedule, standard cron syntax. Leave out to disable.
       AMBERCHEST_CRON: "0 3 * * *"
       # Export attachments after every scheduled backup as well.

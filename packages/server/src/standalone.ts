@@ -59,7 +59,14 @@ async function main(): Promise<void> {
     port: Number(process.env.AMBERCHEST_PORT ?? 8484),
   });
 
-  logger.info(`AmberChest listening on ${running.url} (auth: ${auth.mode})`);
+  logger.info(
+    `AmberChest listening on ${running.url} (auth: ${auth.mode}${auth.hasViewer ? ', read-only login enabled' : ''})`,
+  );
+  if (process.env.AMBERCHEST_UI_PASSWORD_READONLY && !auth.hasViewer) {
+    logger.warn(
+      'AMBERCHEST_UI_PASSWORD_READONLY is ignored: it needs AMBERCHEST_UI_PASSWORD, and has to differ from it.',
+    );
+  }
   if (addon) {
     logger.info(
       process.env.AMBERCHEST_INGRESS_ONLY === 'true'

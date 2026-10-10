@@ -51,7 +51,8 @@ function Snippet({ html }: { html: string }): ReactNode {
 
 export function Search(): ReactNode {
   const { t, i18n } = useTranslation();
-  const { accounts, indexProgress } = useApp();
+  const { accounts, indexProgress, server } = useApp();
+  const isViewer = server?.role === 'viewer';
 
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<MessageFilterValues>(EMPTY_MESSAGE_FILTERS);
@@ -209,7 +210,7 @@ export function Search(): ReactNode {
                 })
               : t('search.indexed', { done: indexed, total: messages })}
           </span>
-          {!runningIndex && (
+          {!runningIndex && !isViewer && (
             <Button
               variant="primary"
               className="ml-auto"

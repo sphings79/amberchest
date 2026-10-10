@@ -330,12 +330,20 @@ services:
 | --- | --- |
 | `AMBERCHEST_MASTER_PASSWORD` | Unlocks the encrypted configuration on start |
 | `AMBERCHEST_UI_PASSWORD` | Password for the web interface |
+| `AMBERCHEST_UI_PASSWORD_READONLY` | Optional second password for a read-only login, see below |
 | `AMBERCHEST_CRON` | Schedule, standard cron expression |
 | `AMBERCHEST_PORT` | Port inside the container, default 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
 | `PUID` / `PGID` | User and group the volumes belong to, default 1000 |
 | `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
 | `TZ` | Time zone the schedule follows |
+
+With `AMBERCHEST_UI_PASSWORD_READONLY` set, the interface has a second login. It
+sees every mailbox and can browse, search, read, and download `.eml`, PDF,
+attachments and export files. It cannot change settings or accounts, run a
+backup, restore, discard messages or see the log. It needs
+`AMBERCHEST_UI_PASSWORD` next to it and has to differ from it. The MCP token is
+separate and is not affected by this.
 
 The web interface answers on `http://<host>:8484`. It works behind a reverse
 proxy, both on a subdomain and on a sub-path. Images are built for

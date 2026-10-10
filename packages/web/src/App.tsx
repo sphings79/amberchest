@@ -6,6 +6,7 @@ import {
   Inbox,
   LayoutDashboard,
   Lock,
+  LogOut,
   ScrollText,
   Trash2,
   Search as SearchIcon,
@@ -69,7 +70,11 @@ function Shell({ children }: { children: ReactNode }): ReactNode {
 export function App(): ReactNode {
   const { t } = useTranslation();
   const { server, loading, accounts, refreshState } = useApp();
-  const [view, setView] = useState<View>('overview');
+  const [selected, setView] = useState<View>('overview');
+
+  // A read-only login gets the mailbox and the search, nothing else.
+  const isViewer = server?.role === 'viewer';
+  const view: View = isViewer && selected !== 'search' ? 'browser' : selected;
 
   if (loading) {
     return (
@@ -89,7 +94,7 @@ export function App(): ReactNode {
     );
   }
 
-  const items: Array<{ id: View; label: string; icon: ReactNode; badge?: number }> = [
+  const allItems: Array<{ id: View; label: string; icon: ReactNode; badge?: number }> = [
     { id: 'overview', label: t('nav.overview'), icon: <LayoutDashboard size={16} /> },
     { id: 'accounts', label: t('nav.accounts'), icon: <Inbox size={16} />, badge: accounts.length },
     { id: 'browser', label: t('nav.browser'), icon: <FolderTree size={16} /> },
@@ -101,10 +106,15 @@ export function App(): ReactNode {
     { id: 'homeassistant', label: t('nav.homeAssistant'), icon: <HouseWifi size={16} /> },
     { id: 'logs', label: t('nav.logs'), icon: <ScrollText size={16} /> },
   ];
+  const items = isViewer
+    ? allItems.filter((item) => item.id === 'browser' || item.id === 'search')
+    : allItems;
 
   const lock = async (): Promise<void> => {
-    await api.lock();
-    if (server.authMode === 'password') setToken(null);
+    // Locking would shut the archive for everybody; a viewer only leaves.
+    if (isViewer) await api.logout();
+    else await api.lock();
+    if (isViewer || server.authMode === 'password') setToken(null);
     await refreshState();
   };
 
@@ -165,8 +175,8 @@ export function App(): ReactNode {
             <SupportLinks />
             <ConnectionSwitcher />
             <Button variant="ghost" onClick={() => void lock()} className="w-full justify-start">
-              <Lock size={15} />
-              <span className="hidden md:inline">{t('nav.lock')}</span>
+              {isViewer ? <LogOut size={15} /> : <Lock size={15} />}
+              <span className="hidden md:inline">{isViewer ? t('nav.logout') : t('nav.lock')}</span>
             </Button>
           </div>
         </aside>

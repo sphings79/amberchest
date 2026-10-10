@@ -40,6 +40,9 @@
   <Config Name="Web interface password" Target="AMBERCHEST_UI_PASSWORD" Default="" Mode="" Type="Variable" Display="always" Required="true" Mask="true">
     Needed to open the interface.
   </Config>
+  <Config Name="Read-only password" Target="AMBERCHEST_UI_PASSWORD_READONLY" Default="" Mode="" Type="Variable" Display="always" Required="false" Mask="true">
+    Optional second login that can only browse, search and download. Must differ from the web interface password.
+  </Config>
   <Config Name="Schedule (cron)" Target="AMBERCHEST_CRON" Default="0 3 * * *" Mode="" Type="Variable" Display="always" Required="false">
     Standard cron syntax. Empty means no automatic backups.
   </Config>
