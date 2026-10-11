@@ -101,6 +101,7 @@ export class AdoptEngine extends EventEmitter {
     target: string;
     message: AdoptedMessage;
     folderId: number;
+    serverRemovedAt: string | null;
   }> = [];
   private readonly startedAt = new Date().toISOString();
   private readonly stats: AdoptStats = {
@@ -238,6 +239,8 @@ export class AdoptEngine extends EventEmitter {
     const discarded = new Map<string, Extract<JournalRecord, { op: 'discard' }>>();
     // Messages this folder shows although the file lives elsewhere.
     const links: Array<{ target: string; message: AdoptedMessage }> = [];
+    /** Files whose mail this archive deleted on the server, and when. */
+    const serverRemoved = new Map<string, string>();
 
     for (const record of records) {
       if (record.op === 'add') {
@@ -287,6 +290,10 @@ export class AdoptEngine extends EventEmitter {
         discarded.set(record.fingerprint, record);
       } else if (record.op === 'undiscard') {
         discarded.delete(record.fingerprint);
+      } else if (record.op === 'server-remove') {
+        serverRemoved.set(record.file, record.ts);
+      } else if (record.op === 'server-return') {
+        serverRemoved.delete(record.file);
       }
     }
 
@@ -344,12 +351,28 @@ export class AdoptEngine extends EventEmitter {
 
       if (deleted) this.options.db.markDeleted(id, new Date().toISOString());
 
+      // Deleted on the server on purpose. Without the mark the first backup
+      // after a rebuild takes this for a deletion made elsewhere.
+      const removedAt = serverRemoved.get(file);
+      if (removedAt && !deleted) this.options.db.markServerRemoved([id], removedAt);
+
       if (fromJournal) this.stats.messagesAdopted += 1;
       else this.stats.messagesRebuilt += 1;
     }
 
     // Kept for the end: the folder that owns the file has to exist first.
-    this.pendingLinks.push(...links.map((link) => ({ ...link, folderId: folder.id })));
+    this.pendingLinks.push(
+      ...links.map((link) => ({
+        ...link,
+        folderId: folder.id,
+        // Journaled under the row's own file name, which for a link is the
+        // name of the file it points at.
+        serverRemovedAt:
+          serverRemoved.get(link.message.file) ??
+          serverRemoved.get(link.target.split('/').pop() ?? '') ??
+          null,
+      })),
+    );
 
     const present = new Set(onDisk);
     for (const file of known.keys()) {
@@ -376,7 +399,7 @@ export class AdoptEngine extends EventEmitter {
       if (!owner) continue;
       if (this.options.db.findMessageByFile(this.account.id, link.folderId, fileName)) continue;
 
-      this.options.db.insertMessage({
+      const linkId = this.options.db.insertMessage({
         accountId: this.account.id,
         folderId: link.folderId,
         uid: link.message.uid,
@@ -393,6 +416,7 @@ export class AdoptEngine extends EventEmitter {
         sha256: owner.sha256,
         linkedTo: owner.id,
       });
+      if (link.serverRemovedAt) this.options.db.markServerRemoved([linkId], link.serverRemovedAt);
       this.stats.messagesLinked += 1;
     }
   }

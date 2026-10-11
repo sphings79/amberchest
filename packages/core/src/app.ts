@@ -50,6 +50,8 @@ import { Notifier } from './notify/notifier.js';
 import { writeRegister, type RegisterResult } from './register/writer.js';
 import { OAuthManager } from './oauth/manager.js';
 import { diskSpace, type DiskSpace } from './storage/disk.js';
+import { RemovalManager } from './removal/manager.js';
+import { planRemoval, type RemovalOptions, type RemovalPlan, type RemovalProgress } from './removal/engine.js';
 import { VerifyManager } from './verify/manager.js';
 import type { VerifyProgress } from './verify/engine.js';
 import { RestoreManager } from './restore/manager.js';
@@ -118,6 +120,7 @@ export class AmberChestApp {
   readonly mqtt: MqttBridge;
   readonly oauth: OAuthManager;
   readonly verify: VerifyManager;
+  readonly removal: RemovalManager;
   readonly notifier: Notifier;
   readonly adopt: AdoptManager;
   readonly transfer: TransferManager;
@@ -169,6 +172,13 @@ export class AmberChestApp {
       archiveBaseDir: () => this.config.getSettings().archivePath,
       encryptionKey: () => this.config.archiveKey,
       connectionFor: (account) => this.connectionFor(account),
+    });
+    this.removal = new RemovalManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
+      connectionFor: (account) => this.connectionFor(account),
+      isSyncing: (accountId) => this.sync.isRunning(accountId),
     });
     this.notifier = new Notifier(() => this.config.getSettings().notifications);
     this.transfer = new TransferManager({
@@ -936,6 +946,21 @@ export class AmberChestApp {
 
   lastVerify(accountId: string): VerifyProgress | null {
     return this.verify.lastRun(accountId);
+  }
+
+  /** What a removal would take, from the index alone; nothing is touched. */
+  planServerRemoval(accountId: string, options: RemovalOptions = {}): RemovalPlan {
+    this.requireAccount(accountId);
+    return planRemoval(this.db, accountId, options);
+  }
+
+  /** Deletes archived mail on the server; see RemovalEngine for what has to hold first. */
+  startServerRemoval(accountId: string, options: RemovalOptions = {}): Promise<RemovalProgress> {
+    return this.removal.start(this.requireAccount(accountId), options);
+  }
+
+  cancelServerRemoval(accountId: string): boolean {
+    return this.removal.cancel(accountId);
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

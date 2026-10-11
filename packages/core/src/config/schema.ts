@@ -27,6 +27,13 @@ export const accountSettingsSchema = z.object({
    * old mail is protected, everything newer follows the usual policy.
    */
   protectBeforeDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  /**
+   * Lets this account delete mail on the server once it is safely archived.
+   *
+   * Off by default, and the one setting that makes AmberChest write to the
+   * mailbox: with it off, nothing here ever sets \Deleted or sends EXPUNGE.
+   */
+  allowServerRemoval: z.boolean().default(false),
 });
 
 export const attachmentSettingsSchema = z.object({

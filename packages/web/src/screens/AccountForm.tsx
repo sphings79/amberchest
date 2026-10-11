@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   ownAddresses: [],
   linkDuplicates: false,
   protectBeforeDate: null,
+  allowServerRemoval: false,
 };
 
 const PORT_BY_SECURITY: Record<string, number> = { tls: 993, starttls: 143, none: 143 };
@@ -367,6 +368,13 @@ export function AccountForm({
               onChange={(linkDuplicates) => setSettings({ ...settings, linkDuplicates })}
               label={t('account.linkDuplicates')}
               hint={t('account.linkDuplicatesHint')}
+            />
+
+            <Toggle
+              checked={settings.allowServerRemoval}
+              onChange={(allowServerRemoval) => setSettings({ ...settings, allowServerRemoval })}
+              label={t('account.allowRemoval')}
+              hint={t('account.allowRemovalHint')}
             />
           </div>
         )}

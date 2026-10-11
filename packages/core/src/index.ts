@@ -57,6 +57,15 @@ export {
   type SearchResult,
   type SearchSort,
 } from './search/search.js';
+export {
+  RemovalEngine,
+  planRemoval,
+  type RemovalOptions,
+  type RemovalPlan,
+  type RemovalProgress,
+  type RemovalStats,
+} from './removal/engine.js';
+export { RemovalManager } from './removal/manager.js';
 export { toMatchExpression } from './search/query.js';
 export { foldGerman, foldedVariants, withFoldedVariants } from './search/fold.js';
 export { extractText, isExtractable } from './search/text.js';

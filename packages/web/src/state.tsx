@@ -5,6 +5,7 @@ import type {
   IndexProgress,
   LogEntry,
   MigrationProgress,
+  RemovalProgress,
   SyncProgress,
   TransferProgress,
   VerifyProgress,
@@ -40,6 +41,7 @@ interface AppState {
   restoreProgress: RestoreProgress | null;
   migrationProgress: MigrationProgress | null;
   verifyProgress: Record<string, VerifyProgress>;
+  removalProgress: Record<string, RemovalProgress>;
   transferProgress: TransferProgress | null;
   logs: LogEntry[];
   loading: boolean;
@@ -76,6 +78,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [restoreProgress, setRestoreProgress] = useState<RestoreProgress | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [verifyProgress, setVerifyProgress] = useState<Record<string, VerifyProgress>>({});
+  const [removalProgress, setRemovalProgress] = useState<Record<string, RemovalProgress>>({});
   const [transferProgress, setTransferProgress] = useState<TransferProgress | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +186,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         } else if (message.type === 'verify-progress') {
           const value = message.payload as VerifyProgress;
           setVerifyProgress((current) => ({ ...current, [value.accountId]: value }));
+        } else if (message.type === 'removal-progress') {
+          const value = message.payload as RemovalProgress;
+          setRemovalProgress((current) => ({ ...current, [value.accountId]: value }));
         } else if (message.type === 'transfer-progress') {
           setTransferProgress(message.payload as TransferProgress);
         } else if (message.type === 'log') {
@@ -215,6 +221,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       restoreProgress,
       migrationProgress,
       verifyProgress,
+      removalProgress,
       transferProgress,
       logs,
       loading,
@@ -233,6 +240,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       restoreProgress,
       migrationProgress,
       verifyProgress,
+      removalProgress,
       transferProgress,
       logs,
       loading,
