@@ -5,6 +5,7 @@ import type { Account } from '../types.js';
 import { logger } from '../util/logger.js';
 import { uniqueFileName } from '../util/paths.js';
 import { ArchiveLayout, listMessageFiles, moveMessageFile } from './archive.js';
+import { DELETED_DIR } from '../util/paths.js';
 import { appendJournal } from './journal.js';
 
 export interface DiscardResult {
@@ -46,13 +47,16 @@ export async function discardFolder(
   for (const message of messages) {
     result.bytes += message.size;
     if (message.linked_to !== null) continue;
-    if (await handOver(db, message, folderDir, folder.local_path, accountDir, folders))
+    const where = locate(accountDir, folder, message);
+    if (await handOver(db, message, where.dir, where.localPath, accountDir, folders))
       result.handedOver += 1;
   }
 
-  // Whatever is left in the directory goes, including the journal: the folder
-  // is not being archived any more, so there is nothing to rebuild from.
+  // Whatever is left in the directories goes, including the journals: the
+  // folder is not being archived any more, so there is nothing to rebuild
+  // from. The copy of the mail the server has lost lives in its own tree.
   await rm(folderDir, { recursive: true, force: true });
+  await rm(join(accountDir, DELETED_DIR, folder.local_path), { recursive: true, force: true });
 
   db.deleteFolderContents(folder.id);
 
@@ -62,6 +66,24 @@ export async function discardFolder(
     { accountId: account.id },
   );
   return result;
+}
+
+/**
+ * Where the file of a message is.
+ *
+ * A message the server has lost is kept under `_deleted`, in a tree that
+ * mirrors the folders. Looking for it in the folder itself finds nothing, and
+ * a delete with `force` says nothing about it - the row would be marked as
+ * thrown out while the file sat on the disk.
+ */
+function locate(
+  accountDir: string,
+  folder: FolderRow,
+  row: Pick<MessageRow, 'state'>,
+): { dir: string; localPath: string } {
+  const localPath =
+    row.state === 'deleted' ? join(DELETED_DIR, folder.local_path) : folder.local_path;
+  return { dir: join(accountDir, localPath), localPath };
 }
 
 /**
@@ -142,12 +164,12 @@ export async function discardMessage(
 ): Promise<{ handedOver: boolean }> {
   const layout = new ArchiveLayout(archiveBaseDir);
   const accountDir = layout.accountDir(account);
-  const folderDir = join(accountDir, folder.local_path);
+  const { dir: folderDir, localPath } = locate(accountDir, folder, row);
   const folders = db.listFolders(account.id);
 
   let handedOver = false;
   if (row.linked_to === null) {
-    handedOver = await handOver(db, row, folderDir, folder.local_path, accountDir, folders);
+    handedOver = await handOver(db, row, folderDir, localPath, accountDir, folders);
     // Deleted without the usual "removed" record: the discard record below
     // says the same thing and says why, and two entries for one decision only
     // make the journal harder to read.

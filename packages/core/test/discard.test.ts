@@ -256,3 +256,61 @@ describe('bulk discard by search', () => {
     expect(db.listDiscarded(account.id, { limit: 10, offset: 0 }).total).toBe(0);
   });
 });
+
+describe('mail the server has lost', () => {
+  /**
+   * Kept under `_deleted`, in a tree that mirrors the folders. A discard that
+   * looked for the file in the folder itself found nothing, deleted nothing
+   * and still marked the message as thrown out: the row said "gone" while the
+   * file sat on the disk.
+   */
+  function lost() {
+    const f = fixture();
+    const dir = join(f.archive, f.account.email, '_deleted', 'INBOX');
+    writeMessage(dir, '7.eml', 'lost on the server');
+    const id = f.db.insertMessage({
+      accountId: f.account.id,
+      folderId: f.inbox.id,
+      uid: 7,
+      uidvalidity: 1,
+      messageId: '<m7@x>',
+      fingerprint: 'fp-7',
+      internalDate: '2026-04-01T08:00:00.000Z',
+      size: 18,
+      subject: 'Weg auf dem Server',
+      fromAddr: 'a@b.c',
+      toAddr: 'd@e.f',
+      flags: [],
+      fileName: '7.eml',
+    });
+    f.db.markDeleted(id);
+    return { ...f, dir, id };
+  }
+
+  it('is deleted from the _deleted tree when it is thrown out', async () => {
+    const f = lost();
+
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
+
+    expect(existsSync(join(f.dir, '7.eml'))).toBe(false);
+    expect(f.db.getMessage(f.id)?.state).toBe('discarded');
+  });
+
+  it('keeps the decision in the journal next to the file it was about', async () => {
+    const f = lost();
+
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
+
+    const { readJournal } = await import('../src/storage/journal.js');
+    const records = await readJournal(f.dir);
+    expect(records).toContainEqual(expect.objectContaining({ op: 'discard', file: '7.eml' }));
+  });
+
+  it('goes with its folder', async () => {
+    const f = lost();
+
+    await discardFolder(f.db, f.account, f.inbox, f.archive);
+
+    expect(existsSync(f.dir)).toBe(false);
+  });
+});
