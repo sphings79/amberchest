@@ -25,6 +25,7 @@ describe('applyAddonOptions', () => {
     expect(env.AMBERCHEST_CRON).toBe('0 3 * * *');
     expect(env.AMBERCHEST_CRON_EXPORT_ATTACHMENTS).toBe('true');
     expect(env.AMBERCHEST_LOG_LEVEL).toBe('debug');
+    expect(env.AMBERCHEST_ADDON).toBe('true');
     // Paths that the user did not set get the add-on defaults.
     expect(env.AMBERCHEST_CONFIG_DIR).toBe('/data/config');
     expect(env.AMBERCHEST_ARCHIVE_DIR).toBe('/share/mail-archive');

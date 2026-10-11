@@ -130,12 +130,25 @@ export interface AttachmentState {
   runs: Array<Record<string, unknown>>;
 }
 
+/** What a login may do; a viewer only reads and downloads. */
+export type Role = 'admin' | 'viewer';
+
+/** The look of the interface, which even a viewer is told. */
+export interface Appearance {
+  theme: OperatorSettings['theme'];
+  accentColor: string;
+  language: string;
+}
+
 export interface ServerState {
   initialized: boolean;
   unlocked: boolean;
   authMode: 'none' | 'token' | 'password';
   authenticated: boolean;
+  role: Role | null;
+  /** Null for a viewer: the settings carry secrets and integration addresses. */
   settings: OperatorSettings | null;
+  appearance: Appearance | null;
 }
 
 export interface AccountFormValues {
@@ -178,16 +191,21 @@ import {
 const TOKEN_KEY = 'amberchest-token';
 
 /**
- * The desktop app opens the UI with `?token=...`; the container hands out a
+ * The desktop app opens the UI with `#token=...`; the container hands out a
  * token after the password login. Either way it lives in sessionStorage only.
+ *
+ * A fragment on purpose: unlike a query string it is never sent to the
+ * server, so it cannot end up in a log or in a Referer header.
  */
 function readInitialToken(): string | null {
-  const params = new URLSearchParams(window.location.search);
-  const fromUrl = params.get('token');
+  const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const fromUrl = fragment.get('token');
   if (fromUrl) sessionStorage.setItem(TOKEN_KEY, fromUrl);
+
+  const params = new URLSearchParams(window.location.search);
   if (fromUrl || params.has('desktop')) {
     const url = new URL(window.location.href);
-    url.searchParams.delete('token');
+    url.hash = '';
     url.searchParams.delete('desktop');
     window.history.replaceState({}, '', url.toString());
   }
@@ -277,7 +295,7 @@ export type SettingsPatch = DeepPartial<AppSettings>;
 
 export const api = {
   state: () => request<ServerState>('/state'),
-  login: (password: string) => request<{ token: string }>('/login', {
+  login: (password: string) => request<{ token: string; role: Role }>('/login', {
     method: 'POST',
     body: JSON.stringify({ password }),
   }),
@@ -286,6 +304,7 @@ export const api = {
   unlock: (masterPassword: string) =>
     request<{ ok: true }>('/unlock', { method: 'POST', body: JSON.stringify({ masterPassword }) }),
   lock: () => request<{ ok: true }>('/lock', { method: 'POST' }),
+  logout: () => request<{ ok: true }>('/logout', { method: 'POST' }),
 
   // Asymmetric on purpose: a patch may carry any field, including the
   // secrets, while what comes back never does. A secret left out of the patch
@@ -581,19 +600,63 @@ export const api = {
   logs: (limit = 300) => request<LogEntry[]>(`/logs?limit=${limit}`),
 };
 
+/** Connections whose server is too old to know tickets. */
+const withoutTickets = new Set<string>();
+
+/**
+ * What to put in the URL of a plain GET that cannot carry a header: a
+ * download link, the event socket.
+ *
+ * A one-time ticket for `path` (below /api), good for that request and a
+ * minute. The token does not belong in a URL, so it is only used as the
+ * fallback for a server that predates tickets - an older container reached
+ * from this app - and only for as long as the server stays that old. Null on
+ * an instance without a password, where there is nothing to protect.
+ */
+async function urlCredential(path: string): Promise<{ name: 'ticket' | 'token'; value: string } | null> {
+  if (!token) return null;
+
+  if (!withoutTickets.has(connection.id)) {
+    try {
+      const result = await request<{ ticket: string }>('/tickets', {
+        method: 'POST',
+        body: JSON.stringify({ path: `/api${path.split('?')[0]}` }),
+      });
+      return { name: 'ticket', value: result.ticket };
+    } catch (error) {
+      // An old server does not have the route; anything else is a real failure.
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
+      withoutTickets.add(connection.id);
+    }
+  }
+  return { name: 'token', value: token };
+}
+
 /** Websocket URL for the live event stream of the active connection. */
-export function eventsUrl(): string {
+export async function eventsUrl(): Promise<string> {
   const url = connection.url
     ? new URL('/api/events', connection.url)
     : new URL('api/events', window.location.href);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  if (token) url.searchParams.set('token', token);
+  const credential = await urlCredential('/events');
+  if (credential) url.searchParams.set(credential.name, credential.value);
   return url.toString();
 }
 
-/** Builds a download link that carries the token, for plain <a download>. */
-export function downloadUrl(path: string): string {
-  const base = apiBase();
+/** A link the browser can fetch by itself, valid once and for a minute. */
+export async function downloadUrl(path: string): Promise<string> {
+  const credential = await urlCredential(path);
+  const url = `${apiBase()}${path}`;
+  if (!credential) return url;
   const separator = path.includes('?') ? '&' : '?';
-  return token ? `${base}${path}${separator}token=${encodeURIComponent(token)}` : `${base}${path}`;
+  return `${url}${separator}${credential.name}=${encodeURIComponent(credential.value)}`;
 }
+
+/** Starts a download without leaving the page. */
+export async function saveFile(path: string, name = ''): Promise<void> {
+  const link = document.createElement('a');
+  link.href = await downloadUrl(path);
+  link.download = name;
+  link.click();
+}
+

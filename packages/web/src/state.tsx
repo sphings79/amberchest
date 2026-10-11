@@ -19,7 +19,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, eventsUrl, type AccountOverview, type OperatorSettings, type ServerState } from './api/client.js';
+import {
+  api,
+  eventsUrl,
+  type AccountOverview,
+  type Appearance,
+  type OperatorSettings,
+  type ServerState,
+} from './api/client.js';
 import { setLanguage, type Language } from './i18n/index.js';
 
 interface AppState {
@@ -45,7 +52,7 @@ interface AppState {
 const Context = createContext<AppState | null>(null);
 
 /** Applies theme, accent and language to the document. */
-function applyAppearance(settings: OperatorSettings | null): void {
+function applyAppearance(settings: Appearance | null): void {
   const root = document.documentElement;
   const theme = settings?.theme ?? 'system';
   const resolved =
@@ -79,7 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     try {
       const next = await api.state();
       setServer(next);
-      applyAppearance(next.settings);
+      applyAppearance(next.settings ?? next.appearance);
       setError(null);
     } catch (cause) {
       setError((cause as Error).message);
@@ -108,17 +115,19 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   useEffect(() => {
     if (!server?.unlocked || !server.authenticated) return;
     void refreshAccounts();
-    void api.logs().then(setLogs).catch(() => undefined);
-  }, [server?.unlocked, server?.authenticated, refreshAccounts]);
+    // The log is for admins; a viewer is refused it.
+    if (server.role !== 'viewer') void api.logs().then(setLogs).catch(() => undefined);
+  }, [server?.unlocked, server?.authenticated, server?.role, refreshAccounts]);
 
   // Follow the system theme while "system" is selected.
   useEffect(() => {
-    if (server?.settings?.theme !== 'system') return undefined;
+    const appearance = server?.settings ?? server?.appearance ?? null;
+    if (appearance?.theme !== 'system') return undefined;
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (): void => applyAppearance(server.settings);
+    const onChange = (): void => applyAppearance(appearance);
     media.addEventListener('change', onChange);
     return () => media.removeEventListener('change', onChange);
-  }, [server?.settings]);
+  }, [server?.settings, server?.appearance]);
 
   // Live events: progress and log lines.
   useEffect(() => {
@@ -127,8 +136,21 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     let closed = false;
     let retry: number | undefined;
 
-    const connect = (): void => {
-      const socket = new WebSocket(eventsUrl());
+    const connect = async (): Promise<void> => {
+      if (closed) return;
+
+      // The ticket is single use, so every reconnect asks for a fresh one.
+      let url: string;
+      try {
+        url = await eventsUrl();
+      } catch {
+        // Most likely the session ran out: let the gate screen take over.
+        void refreshState();
+        return;
+      }
+      if (closed) return;
+
+      const socket = new WebSocket(url);
       socketRef.current = socket;
 
       socket.onmessage = (event) => {
@@ -170,17 +192,17 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       socket.onclose = () => {
         if (closed) return;
-        retry = window.setTimeout(connect, 2000);
+        retry = window.setTimeout(() => void connect(), 2000);
       };
     };
 
-    connect();
+    void connect();
     return () => {
       closed = true;
       if (retry) window.clearTimeout(retry);
       socketRef.current?.close();
     };
-  }, [server?.authenticated, refreshAccounts]);
+  }, [server?.authenticated, refreshAccounts, refreshState]);
 
   const value = useMemo<AppState>(
     () => ({

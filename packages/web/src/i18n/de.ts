@@ -20,6 +20,8 @@ export const de = {
     unlock: 'Entsperren',
     mismatch: 'Die Passwörter stimmen nicht überein.',
     tooShort: 'Mindestens 8 Zeichen.',
+    lockedForViewer:
+      'Das Archiv ist gesperrt. Ein Administrator muss es entsperren, bevor du etwas lesen kannst.',
   },
   support: {
     star: 'Stern auf GitHub',
@@ -66,6 +68,7 @@ export const de = {
     logs: 'Protokoll',
     addAccount: 'Konto hinzufügen',
     lock: 'Sperren',
+    logout: 'Abmelden',
   },
   overview: {
     title: 'Übersicht',

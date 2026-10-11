@@ -17,6 +17,14 @@ export function GateScreen(): ReactNode {
   const { server, refreshState } = useApp();
 
   const mode: Mode = !server?.authenticated ? 'login' : !server.initialized ? 'setup' : 'unlock';
+  // Only an admin knows the master password; a viewer waits for one.
+  const viewerWaiting = server?.role === 'viewer' && mode !== 'login';
+
+  const leave = async (): Promise<void> => {
+    await api.logout().catch(() => undefined);
+    setToken(null);
+    await refreshState();
+  };
 
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
@@ -100,9 +108,11 @@ export function GateScreen(): ReactNode {
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            {current.hint}
-          </p>
+          {!viewerWaiting && (
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              {current.hint}
+            </p>
+          )}
 
           {mode === 'setup' && (
             <p
@@ -113,6 +123,16 @@ export function GateScreen(): ReactNode {
             </p>
           )}
 
+          {viewerWaiting ? (
+            <>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                {t('gate.lockedForViewer')}
+              </p>
+              <Button onClick={() => void leave()} className="w-full">
+                {t('nav.logout')}
+              </Button>
+            </>
+          ) : (
           <form className="flex flex-col gap-3" onSubmit={submit}>
             <Field label={mode === 'login' ? t('gate.password') : t('gate.masterPassword')}>
               <Input
@@ -145,6 +165,7 @@ export function GateScreen(): ReactNode {
               {current.action}
             </Button>
           </form>
+          )}
         </Card>
 
         <div className="mt-4 flex justify-center">

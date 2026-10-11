@@ -16,6 +16,15 @@ services:
       # Password for the web interface. Without it the interface is open to
       # anyone who can reach the port.
       AMBERCHEST_UI_PASSWORD: change-me-too
+      # Optional second login that can only read, search and download. Needs
+      # the password above and has to differ from it.
+      # AMBERCHEST_UI_PASSWORD_READONLY: change-me-three
+      # Let a dashboard embed the interface in a frame (off by default).
+      # AMBERCHEST_ALLOW_FRAMING: "true"
+      # Only if your reverse proxy has a public address: which proxies may
+      # tell AmberChest the client address (X-Forwarded-For). Default is
+      # private networks, which fits a proxy on the same host or network.
+      # AMBERCHEST_TRUSTED_PROXIES: "203.0.113.10"
       # Backup schedule, standard cron syntax. Leave out to disable.
       AMBERCHEST_CRON: "0 3 * * *"
       # Export attachments after every scheduled backup as well.

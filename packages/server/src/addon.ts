@@ -16,6 +16,7 @@ export const INGRESS_ADDRESS = '172.30.32.2';
 interface AddonOptions {
   master_password?: string;
   ui_password?: string;
+  ui_password_readonly?: string;
   cron?: string;
   cron_export_attachments?: boolean;
   archive_path?: string;
@@ -44,8 +45,11 @@ export function applyAddonOptions(
     if (value && !env[key]) env[key] = value;
   };
 
+  // Lets the server know it runs inside Home Assistant's frame.
+  env.AMBERCHEST_ADDON = 'true';
   set('AMBERCHEST_MASTER_PASSWORD', options.master_password);
   set('AMBERCHEST_UI_PASSWORD', options.ui_password);
+  set('AMBERCHEST_UI_PASSWORD_READONLY', options.ui_password_readonly);
   set('AMBERCHEST_CRON', options.cron);
   set('AMBERCHEST_CRON_EXPORT_ATTACHMENTS', options.cron_export_attachments ? 'true' : undefined);
   // The paths are the exception to "the environment wins": the image points

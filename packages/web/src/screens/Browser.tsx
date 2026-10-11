@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, downloadUrl, isDesktop } from '../api/client.js';
+import { api, isDesktop, saveFile } from '../api/client.js';
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from '../components/ContextMenu.js';
 import {
   EMPTY_MESSAGE_FILTERS,
@@ -83,17 +83,10 @@ function buildTree(folders: LocalFolder[]): TreeNode[] {
  * on the right - the layout everybody already knows from their mail client,
  * for the times when searching is not what you want.
  */
-/** Starts a download without leaving the page. */
-function download(url: string): void {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = '';
-  link.click();
-}
-
 export function Browser(): ReactNode {
   const { t, i18n } = useTranslation();
-  const { accounts } = useApp();
+  const { accounts, server } = useApp();
+  const isViewer = server?.role === 'viewer';
 
   const [folders, setFolders] = useState<Record<string, LocalFolder[]>>({});
   const [collapsedAccounts, setCollapsedAccounts] = useState<Set<string>>(new Set());
@@ -191,13 +184,17 @@ export function Browser(): ReactNode {
         key: 'eml',
         label: t('menu.saveEml'),
         icon: <Download size={14} />,
-        onSelect: () => download(downloadUrl(`${base}/raw`)),
+        onSelect: () => {
+          void saveFile(`${base}/raw`).catch((cause: Error) => setNotice(cause.message));
+        },
       },
       {
         key: 'pdf',
         label: t('menu.savePdf'),
         icon: <FileText size={14} />,
-        onSelect: () => download(downloadUrl(`${base}/pdf`)),
+        onSelect: () => {
+          void saveFile(`${base}/pdf`).catch((cause: Error) => setNotice(cause.message));
+        },
       },
       {
         key: 'sender',
@@ -210,7 +207,11 @@ export function Browser(): ReactNode {
           setShowFilters(true);
         },
       },
-      {
+    ];
+
+    // Throwing a message out of the archive is an admin's call.
+    if (!isViewer) {
+      items.push({
         key: 'discard',
         label: t('menu.discardMessage'),
         icon: <Trash2 size={14} />,
@@ -224,8 +225,8 @@ export function Browser(): ReactNode {
             })
             .catch((cause: Error) => setNotice(cause.message));
         },
-      },
-    ];
+      });
+    }
 
     // Only the desktop app can hand a file to the system mail client.
     if (isDesktop) {
@@ -244,19 +245,8 @@ export function Browser(): ReactNode {
   };
 
   /** What a right click on a folder offers. */
-  const folderMenu = (accountId: string, node: TreeNode): ContextMenuItem[] => [
-    {
-      key: 'attachments',
-      label: t('menu.exportAttachments'),
-      icon: <Paperclip size={14} />,
-      onSelect: () => {
-        void api
-          .startExport(accountId, [node.path])
-          .then(() => setNotice(t('menu.exportStarted')))
-          .catch((cause: Error) => setNotice(cause.message));
-      },
-    },
-    {
+  const folderMenu = (accountId: string, node: TreeNode): ContextMenuItem[] => {
+    const exportFolder: ContextMenuItem = {
       key: 'export',
       label: t('menu.exportFolder'),
       icon: <Download size={14} />,
@@ -268,15 +258,33 @@ export function Browser(): ReactNode {
           withAttachments: false,
           total: node.messages,
         }),
-    },
-    {
-      key: 'discard',
-      label: t('menu.discardFolder'),
-      icon: <Trash2 size={14} />,
-      danger: true,
-      onSelect: () => setDiscarding({ accountId, path: node.path, messages: node.messages }),
-    },
-  ];
+    };
+    // The attachment export writes into the archive directory, and discarding
+    // changes the archive: neither is for a viewer.
+    if (isViewer) return [exportFolder];
+
+    return [
+      {
+        key: 'attachments',
+        label: t('menu.exportAttachments'),
+        icon: <Paperclip size={14} />,
+        onSelect: () => {
+          void api
+            .startExport(accountId, [node.path])
+            .then(() => setNotice(t('menu.exportStarted')))
+            .catch((cause: Error) => setNotice(cause.message));
+        },
+      },
+      exportFolder,
+      {
+        key: 'discard',
+        label: t('menu.discardFolder'),
+        icon: <Trash2 size={14} />,
+        danger: true,
+        onSelect: () => setDiscarding({ accountId, path: node.path, messages: node.messages }),
+      },
+    ];
+  };
 
   const renderFolder = (accountId: string, node: TreeNode, depth: number): ReactNode => {
     const key = `${accountId}:${node.path}`;
