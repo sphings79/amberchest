@@ -121,6 +121,9 @@ describe('viewerMayCall', () => {
     const denied: Array<[string, string]> = [
       ['PATCH', '/api/settings'],
       ['GET', '/api/settings'],
+      ['POST', '/api/messages/discard'],
+      ['POST', '/api/discarded/restore'],
+      ['POST', '/api/accounts/a1/messages/42/discard'],
       ['POST', '/api/accounts'],
       ['PATCH', '/api/accounts/a1'],
       ['DELETE', '/api/accounts/a1'],

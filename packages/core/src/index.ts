@@ -1,5 +1,5 @@
 export * from './types.js';
-export { AmberChestApp, type AccountOverview } from './app.js';
+export { AmberChestApp, type AccountOverview, type BulkResult } from './app.js';
 export {
   ConfigStore,
   ConfigLockedError,
@@ -49,6 +49,8 @@ export { SearchIndexEngine, IndexCancelledError, type IndexProgress, type IndexS
 export { SearchIndexManager } from './search/manager.js';
 export {
   searchMessages,
+  searchMessageRefs,
+  type MessageRef,
   type SearchField,
   type SearchHit,
   type SearchOptions,

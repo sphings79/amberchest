@@ -33,7 +33,13 @@ import {
   type MessageContent,
 } from './search/message.js';
 import { SearchIndexManager } from './search/manager.js';
-import { searchMessages, type SearchOptions, type SearchResult } from './search/search.js';
+import {
+  searchMessageRefs,
+  searchMessages,
+  type MessageRef,
+  type SearchOptions,
+  type SearchResult,
+} from './search/search.js';
 import { McpServer } from './mcp/protocol.js';
 import { MqttBridge, type MqttStatus } from './mqtt/bridge.js';
 import { AdoptManager } from './adopt/manager.js';
@@ -63,6 +69,14 @@ import type {
   SyncProgress,
 } from './types.js';
 import { logger } from './util/logger.js';
+
+/** What a bulk discard did. */
+export interface BulkResult {
+  done: number;
+  failed: number;
+  /** Files given to another folder instead of deleted. */
+  handedOver: number;
+}
 
 export interface AccountOverview {
   account: PublicAccount;
@@ -419,6 +433,90 @@ export class AmberChestApp {
     const folder = this.db.listFolders(accountId).find((entry) => entry.id === row.folder_id);
     if (!folder) throw new Error('No such folder');
     return discardMessage(this.db, account, folder, row, this.config.getSettings().archivePath);
+  }
+
+  /**
+   * Throws several messages out of the archive.
+   *
+   * One that cannot be thrown out - gone from the index in the meantime, say -
+   * is counted and skipped rather than stopping the rest: a list of a
+   * thousand should not be lost to the one stale entry in it.
+   */
+  async discardMessages(refs: MessageRef[]): Promise<BulkResult> {
+    const result: BulkResult = { done: 0, failed: 0, handedOver: 0 };
+    for (const ref of refs) {
+      try {
+        const { handedOver } = await this.discardMessage(ref.accountId, ref.messageId);
+        result.done += 1;
+        if (handedOver) result.handedOver += 1;
+      } catch (error) {
+        result.failed += 1;
+        logger.warn(`Could not discard message ${ref.messageId}: ${(error as Error).message}`);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Throws out up to `limit` of the messages a search matches.
+   *
+   * A discarded message stops matching, so calling this again with the same
+   * options continues where it left off. That keeps every request short and
+   * lets the caller show progress, instead of one request that runs for the
+   * time it takes to clear a hundred thousand mails.
+   */
+  async discardMatching(
+    options: SearchOptions,
+    limit: number,
+  ): Promise<BulkResult & { remaining: number }> {
+    const { refs } = searchMessageRefs(this.db, options, limit);
+    const result = await this.discardMessages(refs);
+    const { total } = searchMessageRefs(this.db, options, 0);
+    return { ...result, remaining: total };
+  }
+
+  /** How many messages a search matches, for confirming a bulk action. */
+  countMatching(options: SearchOptions): number {
+    return searchMessageRefs(this.db, options, 0).total;
+  }
+
+  /** Takes back several decisions; the next backup fetches those mails again. */
+  async undiscardMessages(refs: MessageRef[]): Promise<{ done: number; failed: number }> {
+    let done = 0;
+    let failed = 0;
+    for (const ref of refs) {
+      try {
+        if (await this.undiscardMessage(ref.accountId, ref.messageId)) done += 1;
+        else failed += 1;
+      } catch (error) {
+        failed += 1;
+        logger.warn(`Could not take back message ${ref.messageId}: ${(error as Error).message}`);
+      }
+    }
+    return { done, failed };
+  }
+
+  /** Takes back up to `limit` of the tombstones a filter matches; call again for the rest. */
+  async undiscardMatching(
+    filter: { accountId?: string | null; folderPath?: string; search?: string },
+    limit: number,
+  ): Promise<{ done: number; failed: number; remaining: number }> {
+    const { rows } = this.db.listDiscarded(filter.accountId ?? null, {
+      ...(filter.folderPath ? { folderPath: filter.folderPath } : {}),
+      ...(filter.search ? { search: filter.search } : {}),
+      limit,
+      offset: 0,
+    });
+    const result = await this.undiscardMessages(
+      rows.map((row) => ({ accountId: row.account_id, messageId: row.id })),
+    );
+    const { total } = this.db.listDiscarded(filter.accountId ?? null, {
+      ...(filter.folderPath ? { folderPath: filter.folderPath } : {}),
+      ...(filter.search ? { search: filter.search } : {}),
+      limit: 1,
+      offset: 0,
+    });
+    return { ...result, remaining: total };
   }
 
   /** What was thrown out, so it can be looked at and taken back. */

@@ -118,6 +118,22 @@ export interface SearchQuery {
   offset?: number;
 }
 
+/** What a bulk action acts on when it is "everything this search shows". */
+export type BulkFilter = Omit<SearchQuery, 'sort' | 'limit' | 'offset'>;
+
+export interface MessageRef {
+  accountId: string;
+  messageId: number;
+}
+
+export interface BulkResult {
+  done: number;
+  failed: number;
+  handedOver?: number;
+  /** Set for a filter: how many matches are left after this call. */
+  remaining?: number;
+}
+
 export type SearchField = 'all' | 'subject' | 'from' | 'to' | 'body' | 'attachments';
 export type SearchSort = 'relevance' | 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc';
 
@@ -476,6 +492,28 @@ export const api = {
   discardMessage: (accountId: string, messageId: number) =>
     request<{ handedOver: boolean }>(`/accounts/${accountId}/messages/${messageId}/discard`, {
       method: 'POST',
+    }),
+
+  /** Throws a list of messages out of the archive. */
+  discardMessages: (messages: MessageRef[]) =>
+    request<BulkResult>('/messages/discard', { method: 'POST', body: JSON.stringify({ messages }) }),
+
+  /** Throws out up to `limit` matches of a search; repeat until `remaining` is 0. */
+  discardMatching: (filter: BulkFilter, limit = 500) =>
+    request<BulkResult>('/messages/discard', {
+      method: 'POST',
+      body: JSON.stringify({ filter, limit }),
+    }),
+
+  /** Takes a list of discarded messages back. */
+  restoreMessages: (messages: MessageRef[]) =>
+    request<BulkResult>('/discarded/restore', { method: 'POST', body: JSON.stringify({ messages }) }),
+
+  /** Takes back up to `limit` discarded messages that match; repeat until `remaining` is 0. */
+  restoreMatching: (filter: { account?: string; folder?: string; q?: string }, limit = 500) =>
+    request<BulkResult>('/discarded/restore', {
+      method: 'POST',
+      body: JSON.stringify({ filter, limit }),
     }),
 
   discarded: (options: {
