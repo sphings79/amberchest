@@ -152,8 +152,12 @@ async function handOver(
  * and fetch it straight back. The journal gets the same decision, so a
  * rebuilt index and an archive that has been moved keep it as well.
  *
- * As with a whole folder, a file another folder was only pointing at is handed
- * over instead of deleted.
+ * A message stored once and shown in several folders (Gmail) is one mail with
+ * several places. By default all of them go, each with its own tombstone: the
+ * backup looks at every folder, and one that was left without would fetch the
+ * mail again from there. With `allLocations: false` only this folder's copy is
+ * thrown out, and a file another folder was only pointing at is handed over
+ * instead of deleted.
  */
 export async function discardMessage(
   db: ArchiveDatabase,
@@ -161,11 +165,40 @@ export async function discardMessage(
   folder: FolderRow,
   row: MessageRow,
   archiveBaseDir: string,
-): Promise<{ handedOver: boolean }> {
+  options: { allLocations?: boolean } = {},
+): Promise<{ handedOver: boolean; others: number }> {
+  // Already thrown out, say as another place of a message in the same batch.
+  if (row.state === 'discarded') return { handedOver: false, others: 0 };
+
   const layout = new ArchiveLayout(archiveBaseDir);
   const accountDir = layout.accountDir(account);
-  const { dir: folderDir, localPath } = locate(accountDir, folder, row);
   const folders = db.listFolders(account.id);
+
+  if (options.allLocations ?? true) {
+    const owner = row.linked_to !== null ? (db.getMessage(row.linked_to) ?? row) : row;
+    const places = [owner, ...db.listLinks(owner.id)].filter(
+      (entry) => entry.state !== 'discarded',
+    );
+    if (places.length > 1 && places.some((entry) => entry.id === row.id)) {
+      // The places that only point at the file first, the one that holds it
+      // last: if this stops half way, the file is still there for the rest.
+      const ordered = [...places.filter((entry) => entry.id !== owner.id), owner].filter(
+        (entry) => entry.state !== 'discarded',
+      );
+      for (const place of ordered) {
+        const where = folders.find((entry) => entry.id === place.folder_id);
+        if (!where) continue;
+        if (place.id === owner.id && place.linked_to === null) {
+          const { dir } = locate(accountDir, where, place);
+          await rm(join(dir, place.file_name), { force: true });
+        }
+        await tombstone(db, account, accountDir, where, place);
+      }
+      return { handedOver: false, others: places.length - 1 };
+    }
+  }
+
+  const { dir: folderDir, localPath } = locate(accountDir, folder, row);
 
   let handedOver = false;
   if (row.linked_to === null) {
@@ -176,9 +209,22 @@ export async function discardMessage(
     if (!handedOver) await rm(join(folderDir, row.file_name), { force: true });
   }
 
+  await tombstone(db, account, accountDir, folder, row);
+  return { handedOver, others: 0 };
+}
+
+/** Marks one row as thrown out, in the index and in its folder's journal. */
+async function tombstone(
+  db: ArchiveDatabase,
+  account: Account,
+  accountDir: string,
+  folder: FolderRow,
+  row: MessageRow,
+): Promise<void> {
+  const { dir } = locate(accountDir, folder, row);
   db.discardMessage(row.id);
 
-  await appendJournal(folderDir, {
+  await appendJournal(dir, {
     op: 'discard',
     ts: new Date().toISOString(),
     file: row.file_name,
@@ -196,7 +242,6 @@ export async function discardMessage(
   logger.info(`Discarded ${row.subject ?? row.file_name} from ${folder.path}`, {
     accountId: account.id,
   });
-  return { handedOver };
 }
 
 /** Takes the decision back, in the index and in the journal. */

@@ -702,6 +702,7 @@ export const de = {
     discardFolder: "Lokale Kopie löschen …",
     discardMessage: "Aus dem Archiv werfen",
     discarded: "Aus dem Archiv geworfen.",
+    discardedCopies: "Aus dem Archiv geworfen, zusammen mit {{count}} Kopie(n) in anderen Ordnern.",
     exportStarted: "Anhang-Export gestartet.",
     openInClient: "Im Mailprogramm öffnen",
     saveEml: "Als .eml speichern",
@@ -731,6 +732,8 @@ export const de = {
     emptyHint: "Über das Rechtsklick-Menü im Postfach lassen sich einzelne Nachrichten aus dem Archiv werfen.",
   },
   bulk: {
+    allLocations: "Auch die Kopien in anderen Ordnern",
+    allLocationsHint: "Eine Mail, die nur einmal gespeichert und in mehreren Ordnern gezeigt wird (Gmail), geht aus allen. Ohne das geht nur die Kopie im gewählten Ordner, und die Datei bleibt, solange ein anderer Ordner sie zeigt.",
     selected: "{{count}} ausgewählt",
     selectLoaded: "Die {{count}} angezeigten auswählen",
     selectAllMatching: "Alle {{count}} Treffer auswählen",

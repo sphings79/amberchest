@@ -2,7 +2,7 @@ import { RotateCcw, Trash2, TriangleAlert, X } from 'lucide-react';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type BulkFilter, type BulkResult, type MessageRef } from '../api/client.js';
-import { Button, Card } from './ui.js';
+import { Button, Card, Toggle } from './ui.js';
 
 /** How many messages one request carries; the server caps it at 1000. */
 const CHUNK = 500;
@@ -222,6 +222,10 @@ export function BulkDialog({
   const n = (value: number): string => value.toLocaleString(i18n.language);
 
   const total = target.kind === 'messages' ? target.refs.length : target.total;
+  // On: a message stored once and shown in several folders goes from all of
+  // them. Off keeps the other folders' copies, which is the less surprising
+  // thing only when somebody has a reason for it.
+  const [allLocations, setAllLocations] = useState(true);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(0);
   const [failed, setFailed] = useState(0);
@@ -248,7 +252,7 @@ export function BulkDialog({
           const chunk = target.refs.slice(start, start + CHUNK);
           step(
             mode === 'discard'
-              ? await api.discardMessages(chunk)
+              ? await api.discardMessages(chunk, allLocations)
               : await api.restoreMessages(chunk),
           );
         }
@@ -260,7 +264,7 @@ export function BulkDialog({
           if (cancelled.current) break;
           const result =
             mode === 'discard'
-              ? await api.discardMatching(target.filter as BulkFilter, CHUNK)
+              ? await api.discardMatching(target.filter as BulkFilter, CHUNK, allLocations)
               : await api.restoreMatching(
                   target.filter as { account?: string; folder?: string; q?: string },
                   CHUNK,
@@ -301,6 +305,15 @@ export function BulkDialog({
         <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {t(discard ? 'bulk.discardBody' : 'bulk.restoreBody', { count: n(total) })}
         </p>
+
+        {discard && !busy && (
+          <Toggle
+            checked={allLocations}
+            onChange={setAllLocations}
+            label={t('bulk.allLocations')}
+            hint={t('bulk.allLocationsHint')}
+          />
+        )}
 
         {busy && (
           <div className="flex flex-col gap-1.5">

@@ -703,6 +703,7 @@ export const en: Translations = {
     discardFolder: "Delete the local copy …",
     discardMessage: "Throw out of the archive",
     discarded: "Thrown out of the archive.",
+    discardedCopies: "Thrown out of the archive, together with {{count}} copy/copies in other folders.",
     exportStarted: "Attachment export started.",
     openInClient: "Open in the mail client",
     saveEml: "Save as .eml",
@@ -732,6 +733,8 @@ export const en: Translations = {
     emptyHint: "The right click menu in the mailbox throws single messages out of the archive.",
   },
   bulk: {
+    allLocations: "Also the copies in other folders",
+    allLocationsHint: "A mail that is stored once and shown in several folders (Gmail) goes from all of them. Without this, only the copy in the folder you chose goes, and the file stays as long as another folder shows it.",
     selected: "{{count}} selected",
     selectLoaded: "Select the {{count}} shown",
     selectAllMatching: "Select all {{count}} matching",

@@ -244,8 +244,12 @@ export function Browser(): ReactNode {
         onSelect: () => {
           void api
             .discardMessage(hit.accountId, hit.messageId)
-            .then(() => {
-              setNotice(t('menu.discarded'));
+            .then((result) => {
+              setNotice(
+                result.others > 0
+                  ? t('menu.discardedCopies', { count: result.others })
+                  : t('menu.discarded'),
+              );
               void loadMessages(0);
             })
             .catch((cause: Error) => setNotice(cause.message));
