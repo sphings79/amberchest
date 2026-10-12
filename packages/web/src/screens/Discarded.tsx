@@ -2,6 +2,7 @@ import { RotateCcw, Search as SearchIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type DiscardedMessage } from '../api/client.js';
+import { BulkBar, BulkDialog, RowCheck, useSelection, type RestoreTarget } from '../components/Bulk.js';
 import { Button, Card, EmptyState, Input, Select } from '../components/ui.js';
 import { useApp } from '../state.js';
 
@@ -17,7 +18,8 @@ const PAGE_SIZE = 50;
  */
 export function Discarded(): ReactNode {
   const { t, i18n } = useTranslation();
-  const { accounts } = useApp();
+  const { accounts, server } = useApp();
+  const isViewer = server?.role === 'viewer';
 
   const [accountId, setAccountId] = useState('');
   const [folder, setFolder] = useState('');
@@ -26,6 +28,7 @@ export function Discarded(): ReactNode {
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bulk, setBulk] = useState<RestoreTarget | null>(null);
 
   const load = useCallback(
     async (offset: number): Promise<void> => {
@@ -73,6 +76,15 @@ export function Discarded(): ReactNode {
       setError((cause as Error).message);
     }
   };
+
+  const refs = rows.map((row) => ({ accountId: row.account_id, messageId: row.id }));
+  const selection = useSelection(refs);
+  const { clear: clearSelection } = selection;
+
+  // A selection belongs to the list it was made in.
+  useEffect(() => {
+    clearSelection();
+  }, [accountId, folder, query, clearSelection]);
 
   // Only the folders that actually hold a tombstone are worth offering.
   const folders = [...new Set(rows.map((row) => row.folderPath))].sort();
@@ -142,6 +154,35 @@ export function Discarded(): ReactNode {
         )}
       </Card>
 
+      {!isViewer && rows.length > 0 && (
+        <BulkBar
+          count={selection.selected.size}
+          loaded={rows.length}
+          total={total}
+          allMatching={selection.allMatching}
+          onSelectLoaded={selection.selectLoaded}
+          onSelectAllMatching={() => selection.setAllMatching(true)}
+          onClear={selection.clear}
+          actionLabel={t('bulk.restore')}
+          actionIcon={<RotateCcw size={14} />}
+          onAction={() => {
+            if (selection.allMatching) {
+              setBulk({
+                kind: 'filter',
+                total,
+                filter: {
+                  ...(accountId ? { account: accountId } : {}),
+                  ...(folder ? { folder } : {}),
+                  ...(query ? { q: query } : {}),
+                },
+              });
+            } else {
+              setBulk({ kind: 'messages', refs: selection.refs });
+            }
+          }}
+        />
+      )}
+
       {rows.length === 0 && !busy ? (
         <EmptyState
           icon={<Trash2 size={22} />}
@@ -150,12 +191,27 @@ export function Discarded(): ReactNode {
         />
       ) : (
         <Card className="flex flex-col gap-0 !p-0">
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <div
               key={`${row.account_id}-${row.id}`}
               className="flex items-center gap-3 border-b px-4 py-2.5 last:border-b-0"
-              style={{ borderColor: 'var(--border)' }}
+              style={{
+                borderColor: 'var(--border)',
+                background: selection.has({ accountId: row.account_id, messageId: row.id })
+                  ? 'var(--accent-soft)'
+                  : undefined,
+              }}
             >
+              {!isViewer && (
+                <RowCheck
+                  checked={
+                    selection.allMatching ||
+                    selection.has({ accountId: row.account_id, messageId: row.id })
+                  }
+                  label={t('bulk.select')}
+                  onToggle={(range) => selection.toggle(index, range)}
+                />
+              )}
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm">{row.subject || t('stats.noSubject')}</span>
                 <span className="truncate text-xs" style={{ color: 'var(--text-faint)' }}>
@@ -178,6 +234,19 @@ export function Discarded(): ReactNode {
             </div>
           )}
         </Card>
+      )}
+
+      {bulk && (
+        <BulkDialog
+          mode="restore"
+          target={bulk}
+          onClose={() => setBulk(null)}
+          onDone={() => {
+            setBulk(null);
+            selection.clear();
+            void load(0);
+          }}
+        />
       )}
     </div>
   );

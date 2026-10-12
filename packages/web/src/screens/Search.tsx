@@ -5,6 +5,7 @@ import {
   Paperclip,
   Search as SearchIcon,
   SlidersHorizontal,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -18,6 +19,7 @@ import {
   toSearchOptions,
   type MessageFilterValues,
 } from '../components/MessageFilters.js';
+import { BulkBar, BulkDialog, RowCheck, useSelection, type BulkTarget } from '../components/Bulk.js';
 import { Badge, Button, Card, EmptyState, Input, Select, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { ExportDialog, type ExportSelection } from './ExportDialog.js';
@@ -64,6 +66,8 @@ export function Search(): ReactNode {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<{ accountId: string; messageId: number } | null>(null);
   const [exporting, setExporting] = useState<ExportSelection | null>(null);
+  const [bulk, setBulk] = useState<BulkTarget | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const debounce = useRef<number | undefined>(undefined);
 
   const run = useCallback(
@@ -97,6 +101,14 @@ export function Search(): ReactNode {
     debounce.current = window.setTimeout(() => void run(0), 250);
     return () => window.clearTimeout(debounce.current);
   }, [run]);
+
+  const selection = useSelection(hits);
+  const { clear: clearSelection } = selection;
+
+  // A selection belongs to the search it was made in.
+  useEffect(() => {
+    clearSelection();
+  }, [query, filters, clearSelection]);
 
   const indexed = accounts.reduce((sum, entry) => sum + entry.indexedCount, 0);
   const messages = accounts.reduce((sum, entry) => sum + entry.messageCount, 0);
@@ -226,6 +238,17 @@ export function Search(): ReactNode {
         </Card>
       )}
 
+      {notice && (
+        <button
+          type="button"
+          onClick={() => setNotice(null)}
+          className="rounded-xl border px-3 py-2 text-left text-xs"
+          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        >
+          {notice}
+        </button>
+      )}
+
       {error && (
         <div className="rounded-xl px-3 py-2 text-xs" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
           {error}
@@ -238,6 +261,37 @@ export function Search(): ReactNode {
         </div>
       )}
 
+      {!isViewer && hits.length > 0 && (
+        <BulkBar
+          count={selection.selected.size}
+          loaded={hits.length}
+          total={result?.total ?? hits.length}
+          allMatching={selection.allMatching}
+          onSelectLoaded={selection.selectLoaded}
+          onSelectAllMatching={() => selection.setAllMatching(true)}
+          onClear={selection.clear}
+          actionLabel={t('bulk.discard')}
+          actionIcon={<Trash2 size={14} />}
+          danger
+          onAction={() => {
+            if (selection.allMatching) {
+              setBulk({
+                kind: 'filter',
+                total: result?.total ?? 0,
+                filter: {
+                  q: query,
+                  account: filters.accountId || undefined,
+                  folders: filters.folders,
+                  ...toSearchOptions(filters),
+                },
+              });
+            } else {
+              setBulk({ kind: 'messages', refs: selection.refs });
+            }
+          }}
+        />
+      )}
+
       {hits.length === 0 && !busy ? (
         <EmptyState
           icon={<SearchIcon size={22} />}
@@ -246,13 +300,24 @@ export function Search(): ReactNode {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {hits.map((hit) => (
+          {hits.map((hit, index) => (
+            <div key={`${hit.accountId}-${hit.messageId}`} className="flex items-start gap-2">
+              {!isViewer && (
+                <div className="pt-4">
+                  <RowCheck
+                    checked={selection.allMatching || selection.has(hit)}
+                    label={t('bulk.select')}
+                    onToggle={(range) => selection.toggle(index, range)}
+                  />
+                </div>
+              )}
             <button
-              key={`${hit.accountId}-${hit.messageId}`}
               type="button"
               onClick={() => setOpen({ accountId: hit.accountId, messageId: hit.messageId })}
-              className={cx('rounded-xl border p-3 text-left transition hover:brightness-110')}
-              style={{ background: 'var(--surface-1)' }}
+              className={cx('min-w-0 flex-1 rounded-xl border p-3 text-left transition hover:brightness-110')}
+              style={{
+                background: selection.has(hit) ? 'var(--accent-soft)' : 'var(--surface-1)',
+              }}
             >
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-medium">{hit.subject || '—'}</span>
@@ -284,6 +349,7 @@ export function Search(): ReactNode {
                 </div>
               )}
             </button>
+            </div>
           ))}
 
           {result && hits.length < result.total && (
@@ -299,6 +365,20 @@ export function Search(): ReactNode {
       )}
 
       {exporting && <ExportDialog selection={exporting} onClose={() => setExporting(null)} />}
+
+      {bulk && (
+        <BulkDialog
+          mode="discard"
+          target={bulk}
+          onClose={() => setBulk(null)}
+          onDone={(summary) => {
+            setBulk(null);
+            setNotice(summary);
+            selection.clear();
+            void run(0);
+          }}
+        />
+      )}
     </div>
   );
 }

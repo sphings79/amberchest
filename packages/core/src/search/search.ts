@@ -91,10 +91,71 @@ interface Row {
  * screen can be used to browse a folder.
  */
 export function searchMessages(db: ArchiveDatabase, options: SearchOptions): SearchResult {
-  const match = toMatchExpression(options.query, options.field ?? 'all');
+  const { match, where, params } = buildFilters(options);
   const limit = Math.min(Math.max(options.limit ?? 50, 1), 500);
   const offset = Math.max(options.offset ?? 0, 0);
 
+  const handle = db.handle;
+
+  if (match) {
+    const sql = `
+      SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
+             m.to_addr, m.internal_date, m.size, m.flags,
+             (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
+             snippet(message_fts, 3, '<mark>', '</mark>', '…', 12) AS snippet
+        FROM message_fts
+        JOIN messages m ON m.id = message_fts.rowid
+        JOIN folders  f ON f.id = m.folder_id
+       WHERE message_fts MATCH ? AND ${where.join(' AND ')}
+       ORDER BY ${orderFor(options.sort ?? 'relevance', true)}
+       LIMIT ? OFFSET ?`;
+
+    const countSql = `
+      SELECT COUNT(*) AS total
+        FROM message_fts
+        JOIN messages m ON m.id = message_fts.rowid
+        JOIN folders  f ON f.id = m.folder_id
+       WHERE message_fts MATCH ? AND ${where.join(' AND ')}`;
+
+    const rows = handle.prepare(sql).all(match, ...params, limit, offset) as Row[];
+    const { total } = handle.prepare(countSql).get(match, ...params) as { total: number };
+    return { hits: rows.map(toHit), total, textSearch: true };
+  }
+
+  const sql = `
+    SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
+           m.to_addr, m.internal_date, m.size, m.flags,
+           (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
+           NULL AS snippet
+      FROM messages m
+      JOIN folders f ON f.id = m.folder_id
+     WHERE ${where.join(' AND ')}
+     ORDER BY ${orderFor(options.sort ?? 'date-desc', false)}
+     LIMIT ? OFFSET ?`;
+
+  const countSql = `
+    SELECT COUNT(*) AS total
+      FROM messages m
+      JOIN folders f ON f.id = m.folder_id
+     WHERE ${where.join(' AND ')}`;
+
+  const rows = handle.prepare(sql).all(...params, limit, offset) as Row[];
+  const { total } = handle.prepare(countSql).get(...params) as { total: number };
+  return { hits: rows.map(toHit), total, textSearch: false };
+}
+
+/**
+ * The WHERE clause and match expression for a set of search options.
+ *
+ * One definition for the listing and for the bulk actions that act on "every
+ * hit": what is counted, shown and thrown out has to be the same set.
+ */
+function buildFilters(options: SearchOptions): {
+  match: string | null;
+  where: string[];
+  params: unknown[];
+} {
+  const match = toMatchExpression(options.query, options.field ?? 'all');
   const where: string[] = [];
   const params: unknown[] = [];
 
@@ -154,53 +215,45 @@ export function searchMessages(db: ArchiveDatabase, options: SearchOptions): Sea
     for (const address of options.sentToSelf) params.push(`%${address}%`);
   }
 
-  const handle = db.handle;
+  return { match, where, params };
+}
 
-  if (match) {
-    const sql = `
-      SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
-             m.to_addr, m.internal_date, m.size, m.flags,
-             (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
-             snippet(message_fts, 3, '<mark>', '</mark>', '…', 12) AS snippet
-        FROM message_fts
-        JOIN messages m ON m.id = message_fts.rowid
-        JOIN folders  f ON f.id = m.folder_id
-       WHERE message_fts MATCH ? AND ${where.join(' AND ')}
-       ORDER BY ${orderFor(options.sort ?? 'relevance', true)}
-       LIMIT ? OFFSET ?`;
+export interface MessageRef {
+  accountId: string;
+  messageId: number;
+}
 
-    const countSql = `
-      SELECT COUNT(*) AS total
-        FROM message_fts
-        JOIN messages m ON m.id = message_fts.rowid
-        JOIN folders  f ON f.id = m.folder_id
-       WHERE message_fts MATCH ? AND ${where.join(' AND ')}`;
+/**
+ * The messages a search matches, without paging, for acting on all of them.
+ *
+ * Ordered by id so a caller working through them in batches sees a stable
+ * sequence. `total` is the full count; `refs` is capped at `limit`.
+ */
+export function searchMessageRefs(
+  db: ArchiveDatabase,
+  options: SearchOptions,
+  limit: number,
+): { refs: MessageRef[]; total: number } {
+  const { match, where, params } = buildFilters(options);
+  const from = match
+    ? 'message_fts JOIN messages m ON m.id = message_fts.rowid JOIN folders f ON f.id = m.folder_id'
+    : 'messages m JOIN folders f ON f.id = m.folder_id';
+  const clause = (match ? 'message_fts MATCH ? AND ' : '') + where.join(' AND ');
+  const args = match ? [match, ...params] : params;
 
-    const rows = handle.prepare(sql).all(match, ...params, limit, offset) as Row[];
-    const { total } = handle.prepare(countSql).get(match, ...params) as { total: number };
-    return { hits: rows.map(toHit), total, textSearch: true };
-  }
+  const rows = db.handle
+    .prepare(
+      `SELECT m.id AS message_id, m.account_id FROM ${from} WHERE ${clause} ORDER BY m.id LIMIT ?`,
+    )
+    .all(...args, Math.max(limit, 0)) as Array<{ message_id: number; account_id: string }>;
+  const { total } = db.handle
+    .prepare(`SELECT COUNT(*) AS total FROM ${from} WHERE ${clause}`)
+    .get(...args) as { total: number };
 
-  const sql = `
-    SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
-           m.to_addr, m.internal_date, m.size, m.flags,
-           (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
-           NULL AS snippet
-      FROM messages m
-      JOIN folders f ON f.id = m.folder_id
-     WHERE ${where.join(' AND ')}
-     ORDER BY ${orderFor(options.sort ?? 'date-desc', false)}
-     LIMIT ? OFFSET ?`;
-
-  const countSql = `
-    SELECT COUNT(*) AS total
-      FROM messages m
-      JOIN folders f ON f.id = m.folder_id
-     WHERE ${where.join(' AND ')}`;
-
-  const rows = handle.prepare(sql).all(...params, limit, offset) as Row[];
-  const { total } = handle.prepare(countSql).get(...params) as { total: number };
-  return { hits: rows.map(toHit), total, textSearch: false };
+  return {
+    refs: rows.map((row) => ({ accountId: row.account_id, messageId: row.message_id })),
+    total,
+  };
 }
 
 /** SQL ordering for the chosen sort; relevance only exists with a text query. */

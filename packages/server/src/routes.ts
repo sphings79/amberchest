@@ -112,6 +112,54 @@ const bundleSchema = z.object({
   maxSize: z.number().int().min(0).optional(),
 });
 
+const messageRefSchema = z.object({
+  accountId: z.string().min(1),
+  messageId: z.number().int().positive(),
+});
+
+/** What a bulk action acts on: listed messages, or everything a search matches. */
+const bulkDiscardSchema = z.union([
+  z.object({
+    messages: z.array(messageRefSchema).min(1).max(1000),
+    /** Also the copies of a message that is stored once and shown in several folders. */
+    allLocations: z.boolean().default(true),
+  }),
+  z.object({
+    allLocations: z.boolean().default(true),
+    filter: z.object({
+      q: z.string().default(''),
+      account: z.string().optional(),
+      folders: z.array(z.string()).default([]),
+      from: z.string().optional(),
+      to: z.string().optional(),
+      field: z.enum(['all', 'subject', 'from', 'to', 'body', 'attachments']).default('all'),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      withAttachments: z.boolean().default(false),
+      unreadOnly: z.boolean().default(false),
+      flaggedOnly: z.boolean().default(false),
+      includeDeleted: z.boolean().default(false),
+      toSelf: z.boolean().default(false),
+      minSize: z.number().int().min(0).optional(),
+      maxSize: z.number().int().min(0).optional(),
+    }),
+    /** How many to take in this call; the caller repeats until nothing remains. */
+    limit: z.number().int().min(1).max(1000).default(500),
+  }),
+]);
+
+const bulkRestoreSchema = z.union([
+  z.object({ messages: z.array(messageRefSchema).min(1).max(1000) }),
+  z.object({
+    filter: z.object({
+      account: z.string().optional(),
+      folder: z.string().optional(),
+      q: z.string().optional(),
+    }),
+    limit: z.number().int().min(1).max(1000).default(500),
+  }),
+]);
+
 const searchQuerySchema = z.object({
   q: z.string().default(''),
   account: z.string().optional(),
@@ -505,13 +553,87 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     });
   });
 
+  /**
+   * Throws several messages out of the archive at once.
+   *
+   * Either a list of messages, or a search filter plus a batch size. With a
+   * filter the call takes up to `limit` matches and says how many are left,
+   * so the interface calls again until none are - a discarded message stops
+   * matching, so the same request makes progress each time.
+   */
+  server.post('/api/messages/discard', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = bulkDiscardSchema.safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    try {
+      if ('messages' in body.data) {
+        return await app.discardMessages(body.data.messages, {
+          allLocations: body.data.allLocations,
+        });
+      }
+      const f = body.data.filter;
+      return await app.discardMatching(
+        {
+          query: f.q,
+          accountId: f.account ?? null,
+          folders: f.folders,
+          sentToSelf: f.toSelf ? app.ownAddresses(f.account ?? null) : undefined,
+          from: f.from ?? null,
+          to: f.to ?? null,
+          field: f.field,
+          dateFrom: f.dateFrom ?? null,
+          dateTo: f.dateTo ?? null,
+          withAttachments: f.withAttachments,
+          unreadOnly: f.unreadOnly,
+          flaggedOnly: f.flaggedOnly,
+          includeDeleted: f.includeDeleted,
+          minSize: f.minSize ?? null,
+          maxSize: f.maxSize ?? null,
+        },
+        body.data.limit,
+        { allLocations: body.data.allLocations },
+      );
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
+  /** The same for taking decisions back; see /api/messages/discard. */
+  server.post('/api/discarded/restore', { preHandler: requireUnlocked }, async (request, reply) => {
+    const body = bulkRestoreSchema.safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    try {
+      if ('messages' in body.data) {
+        return await app.undiscardMessages(body.data.messages);
+      }
+      const f = body.data.filter;
+      return await app.undiscardMatching(
+        {
+          accountId: f.account ?? null,
+          ...(f.folder ? { folderPath: f.folder } : {}),
+          ...(f.q ? { search: f.q } : {}),
+        },
+        body.data.limit,
+      );
+    } catch (error) {
+      return fail(reply, 400, (error as Error).message);
+    }
+  });
+
   server.post(
     '/api/accounts/:id/messages/:messageId/discard',
     { preHandler: requireUnlocked },
     async (request, reply) => {
       const { id, messageId } = request.params as { id: string; messageId: string };
+      const body = z
+        .object({ allLocations: z.boolean().default(true) })
+        .safeParse(request.body ?? {});
+      if (!body.success) return fail(reply, 400, 'Invalid request');
       try {
-        return await app.discardMessage(id, Number(messageId));
+        return await app.discardMessage(id, Number(messageId), {
+          allLocations: body.data.allLocations,
+        });
       } catch (error) {
         return fail(reply, 404, (error as Error).message);
       }

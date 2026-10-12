@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ArchiveDatabase } from '../src/db/database.js';
-import { discardFolder } from '../src/storage/discard.js';
-import { searchMessages } from '../src/search/search.js';
+import { discardFolder, discardMessage, undiscardMessage } from '../src/storage/discard.js';
+import { searchMessageRefs, searchMessages } from '../src/search/search.js';
 import { appSettingsSchema } from '../src/config/schema.js';
 import type { Account, RemoteFolder } from '../src/types.js';
 
@@ -179,3 +179,232 @@ describe('discardFolder', () => {
     expect(find()).toBe(0);
   });
 });
+
+describe('bulk discard by search', () => {
+  function seed(count: number) {
+    const f = fixture();
+    const dir = join(f.archive, f.account.email, 'INBOX');
+    const ids: number[] = [];
+    for (let uid = 1; uid <= count; uid += 1) {
+      writeMessage(dir, `${uid}.eml`, `mail ${uid}`);
+      ids.push(
+        f.db.insertMessage({
+          accountId: f.account.id,
+          folderId: f.inbox.id,
+          uid,
+          uidvalidity: 1,
+          messageId: `<m${uid}@x>`,
+          fingerprint: `fp-${uid}`,
+          internalDate: '2026-04-01T08:00:00.000Z',
+          size: 10,
+          subject: uid % 2 === 0 ? 'Newsletter' : 'Rechnung',
+          fromAddr: uid % 2 === 0 ? 'news@shop.example' : 'a@b.c',
+          toAddr: 'd@e.f',
+          flags: [],
+          fileName: `${uid}.eml`,
+        }),
+      );
+    }
+    return { ...f, dir, ids };
+  }
+
+  it('lists every match without paging, in a stable order', () => {
+    const { db } = seed(6);
+    const all = searchMessageRefs(db, { query: '', from: 'news@shop.example' }, 100);
+    expect(all.total).toBe(3);
+    expect(all.refs).toHaveLength(3);
+
+    const capped = searchMessageRefs(db, { query: '', from: 'news@shop.example' }, 2);
+    expect(capped.total).toBe(3);
+    expect(capped.refs.map((r) => r.messageId)).toEqual(all.refs.slice(0, 2).map((r) => r.messageId));
+
+    expect(searchMessageRefs(db, { query: '' }, 0)).toEqual({ refs: [], total: 6 });
+  });
+
+  it('shrinks the match set as messages are discarded, so batches make progress', async () => {
+    const { db, account, inbox, archive } = seed(6);
+    const options = { query: '', from: 'news@shop.example' };
+
+    const first = searchMessageRefs(db, options, 2);
+    for (const ref of first.refs) {
+      await discardMessage(db, account, inbox, db.getMessage(ref.messageId)!, archive);
+    }
+    const second = searchMessageRefs(db, options, 2);
+    expect(second.total).toBe(1);
+    expect(second.refs.map((r) => r.messageId)).not.toContain(first.refs[0]!.messageId);
+  });
+
+  it('leaves the messages that do not match alone', async () => {
+    const { db, account, inbox, archive, dir } = seed(4);
+    for (const ref of searchMessageRefs(db, { query: '', from: 'news@shop.example' }, 100).refs) {
+      await discardMessage(db, account, inbox, db.getMessage(ref.messageId)!, archive);
+    }
+    expect(searchMessageRefs(db, { query: '' }, 0).total).toBe(2);
+    expect(existsSync(join(dir, '1.eml'))).toBe(true);
+    expect(existsSync(join(dir, '2.eml'))).toBe(false);
+  });
+
+  it('lists tombstones for taking back and forgets them', async () => {
+    const { db, account, inbox, archive, ids } = seed(3);
+    await discardMessage(db, account, inbox, db.getMessage(ids[0]!)!, archive);
+    await discardMessage(db, account, inbox, db.getMessage(ids[1]!)!, archive);
+
+    const listed = db.listDiscarded(account.id, { limit: 10, offset: 0 });
+    expect(listed.total).toBe(2);
+
+    for (const row of listed.rows) await undiscardMessage(db, account, archive, row.id);
+    expect(db.listDiscarded(account.id, { limit: 10, offset: 0 }).total).toBe(0);
+  });
+});
+
+describe('mail the server has lost', () => {
+  /**
+   * Kept under `_deleted`, in a tree that mirrors the folders. A discard that
+   * looked for the file in the folder itself found nothing, deleted nothing
+   * and still marked the message as thrown out: the row said "gone" while the
+   * file sat on the disk.
+   */
+  function lost() {
+    const f = fixture();
+    const dir = join(f.archive, f.account.email, '_deleted', 'INBOX');
+    writeMessage(dir, '7.eml', 'lost on the server');
+    const id = f.db.insertMessage({
+      accountId: f.account.id,
+      folderId: f.inbox.id,
+      uid: 7,
+      uidvalidity: 1,
+      messageId: '<m7@x>',
+      fingerprint: 'fp-7',
+      internalDate: '2026-04-01T08:00:00.000Z',
+      size: 18,
+      subject: 'Weg auf dem Server',
+      fromAddr: 'a@b.c',
+      toAddr: 'd@e.f',
+      flags: [],
+      fileName: '7.eml',
+    });
+    f.db.markDeleted(id);
+    return { ...f, dir, id };
+  }
+
+  it('is deleted from the _deleted tree when it is thrown out', async () => {
+    const f = lost();
+
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
+
+    expect(existsSync(join(f.dir, '7.eml'))).toBe(false);
+    expect(f.db.getMessage(f.id)?.state).toBe('discarded');
+  });
+
+  it('keeps the decision in the journal next to the file it was about', async () => {
+    const f = lost();
+
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
+
+    const { readJournal } = await import('../src/storage/journal.js');
+    const records = await readJournal(f.dir);
+    expect(records).toContainEqual(expect.objectContaining({ op: 'discard', file: '7.eml' }));
+  });
+
+  it('goes with its folder', async () => {
+    const f = lost();
+
+    await discardFolder(f.db, f.account, f.inbox, f.archive);
+
+    expect(existsSync(f.dir)).toBe(false);
+  });
+});
+
+describe('a message stored once and shown in several folders', () => {
+  /** Gmail: INBOX points at the file that All Mail holds. */
+  function shared() {
+    const f = fixture();
+    const allDir = join(f.archive, f.account.email, 'Alle Nachrichten');
+    writeMessage(allDir, '9.eml', 'the only copy');
+    const meta = {
+      accountId: f.account.id,
+      uidvalidity: 1,
+      messageId: '<m9@x>',
+      fingerprint: 'fp-9',
+      internalDate: '2026-04-01T08:00:00.000Z',
+      size: 13,
+      subject: 'Überall',
+      fromAddr: 'a@b.c',
+      toAddr: 'd@e.f',
+      flags: [] as string[],
+      fileName: '9.eml',
+    };
+    const ownerId = f.db.insertMessage({ ...meta, folderId: f.all.id, uid: 9 });
+    const linkId = f.db.insertMessage({ ...meta, folderId: f.inbox.id, uid: 3, linkedTo: ownerId });
+    return { ...f, allDir, ownerId, linkId };
+  }
+
+  it('goes from every place, with a tombstone in each', async () => {
+    const f = shared();
+
+    const result = await discardMessage(
+      f.db, f.account, f.inbox, f.db.getMessage(f.linkId)!, f.archive,
+    );
+
+    expect(result.others).toBe(1);
+    expect(existsSync(join(f.allDir, '9.eml'))).toBe(false);
+    expect(f.db.getMessage(f.ownerId)?.state).toBe('discarded');
+    expect(f.db.getMessage(f.linkId)?.state).toBe('discarded');
+    // The backup looks at each folder; one without a tombstone fetches the mail again.
+    expect([...f.db.discardedFingerprints(f.inbox.id)]).toEqual(['fp-9']);
+    expect([...f.db.discardedFingerprints(f.all.id)]).toEqual(['fp-9']);
+  });
+
+  it('goes the same way from the folder that holds the file', async () => {
+    const f = shared();
+
+    const result = await discardMessage(
+      f.db, f.account, f.all, f.db.getMessage(f.ownerId)!, f.archive,
+    );
+
+    expect(result.others).toBe(1);
+    expect(existsSync(join(f.allDir, '9.eml'))).toBe(false);
+    expect(f.db.getMessage(f.linkId)?.state).toBe('discarded');
+  });
+
+  it('can be limited to this folder, which hands the file over', async () => {
+    const f = shared();
+
+    const result = await discardMessage(
+      f.db, f.account, f.all, f.db.getMessage(f.ownerId)!, f.archive, { allLocations: false },
+    );
+
+    expect(result).toEqual({ handedOver: true, others: 0 });
+    expect(f.db.getMessage(f.linkId)?.state).toBe('active');
+    expect(
+      existsSync(join(f.archive, f.account.email, 'INBOX', f.db.getMessage(f.linkId)!.file_name)),
+    ).toBe(true);
+  });
+
+  it('is not done twice when both places are in one batch', async () => {
+    const f = shared();
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.linkId)!, f.archive);
+
+    // The second one of the batch: already thrown out together with the first.
+    const again = await discardMessage(
+      f.db, f.account, f.all, f.db.getMessage(f.ownerId)!, f.archive,
+    );
+
+    expect(again).toEqual({ handedOver: false, others: 0 });
+  });
+
+  it('keeps every tombstone when the index is rebuilt from the files', async () => {
+    const f = shared();
+    await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.linkId)!, f.archive);
+
+    const { AdoptEngine } = await import('../src/adopt/engine.js');
+    const { mkdtempSync: tmp } = await import('node:fs');
+    const rebuilt = new ArchiveDatabase(join(tmp(join(tmpdir(), 'ac-rb-')), 'a.db'));
+    await new AdoptEngine(f.account, { db: rebuilt, archiveBaseDir: f.archive }).run();
+
+    for (const folder of rebuilt.listFolders(f.account.id)) {
+      expect([...rebuilt.discardedFingerprints(folder.id)], folder.path).toEqual(['fp-9']);
+    }
+  });
+});
+

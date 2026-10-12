@@ -29,6 +29,7 @@ import {
   toSearchOptions,
   type MessageFilterValues,
 } from '../components/MessageFilters.js';
+import { BulkBar, BulkDialog, RowCheck, useSelection, type BulkTarget } from '../components/Bulk.js';
 import { Badge, Button, EmptyState, Input, cx } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { DiscardFolderDialog } from './DiscardFolderDialog.js';
@@ -107,6 +108,7 @@ export function Browser(): ReactNode {
     messages: number;
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [bulk, setBulk] = useState<BulkTarget | null>(null);
   const [open, setOpen] = useState<{ accountId: string; messageId: number } | null>(null);
 
   const loadFolders = useCallback(async (): Promise<void> => {
@@ -170,6 +172,29 @@ export function Browser(): ReactNode {
     void loadMessages(0);
   }, [loadMessages]);
 
+  const selection = useSelection(hits);
+  const { clear: clearSelection } = selection;
+
+  // A selection belongs to the list it was made in.
+  useEffect(() => {
+    clearSelection();
+  }, [active, filter, filters, clearSelection]);
+
+  /** The search the list shows, for acting on all of it rather than a page. */
+  const currentFilter = (): BulkTarget | null => {
+    if (!active) return null;
+    return {
+      kind: 'filter',
+      total,
+      filter: {
+        q: filter,
+        account: active.accountId,
+        folders: [active.path],
+        ...toSearchOptions(filters),
+      },
+    };
+  };
+
   const trees = useMemo(() => {
     const result: Record<string, TreeNode[]> = {};
     for (const [accountId, list] of Object.entries(folders)) result[accountId] = buildTree(list);
@@ -219,8 +244,12 @@ export function Browser(): ReactNode {
         onSelect: () => {
           void api
             .discardMessage(hit.accountId, hit.messageId)
-            .then(() => {
-              setNotice(t('menu.discarded'));
+            .then((result) => {
+              setNotice(
+                result.others > 0
+                  ? t('menu.discardedCopies', { count: result.others })
+                  : t('menu.discarded'),
+              );
               void loadMessages(0);
             })
             .catch((cause: Error) => setNotice(cause.message));
@@ -460,6 +489,25 @@ export function Browser(): ReactNode {
             <MessageFilters filters={filters} onChange={setFilters} />
           )}
 
+          {!isViewer && hits.length > 0 && (
+            <BulkBar
+              count={selection.selected.size}
+              loaded={hits.length}
+              total={total}
+              allMatching={selection.allMatching}
+              onSelectLoaded={selection.selectLoaded}
+              onSelectAllMatching={() => selection.setAllMatching(true)}
+              onClear={selection.clear}
+              actionLabel={t('bulk.discard')}
+              actionIcon={<Trash2 size={14} />}
+              danger
+              onAction={() => {
+                if (selection.allMatching) setBulk(currentFilter());
+                else setBulk({ kind: 'messages', refs: selection.refs });
+              }}
+            />
+          )}
+
           <div
             className="min-h-0 flex-1 rounded-2xl border lg:overflow-y-auto"
             style={{ background: 'var(--surface-1)' }}
@@ -469,19 +517,32 @@ export function Browser(): ReactNode {
                 {active ? t('browser.emptyFolder') : t('browser.pickFolder')}
               </div>
             ) : (
-              hits.map((hit) => {
+              hits.map((hit, index) => {
                 const unread = !hit.flags.includes('\\Seen');
                 return (
-                  <button
+                  <div
                     key={hit.messageId}
+                    className="flex items-center gap-2 border-b pl-3 last:border-b-0"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: selection.has(hit) ? 'var(--accent-soft)' : undefined,
+                    }}
+                  >
+                    {!isViewer && (
+                      <RowCheck
+                        checked={selection.allMatching || selection.has(hit)}
+                        label={t('bulk.select')}
+                        onToggle={(range) => selection.toggle(index, range)}
+                      />
+                    )}
+                  <button
                     type="button"
                     onClick={() => setOpen({ accountId: hit.accountId, messageId: hit.messageId })}
                     onContextMenu={(event) => {
                       event.preventDefault();
                       setMenu({ x: event.clientX, y: event.clientY, items: messageMenu(hit) });
                     }}
-                    className="flex w-full flex-col gap-0.5 border-b px-3 py-2 text-left transition last:border-b-0 hover:bg-[var(--surface-2)]"
-                    style={{ borderColor: 'var(--border)' }}
+                    className="flex min-w-0 flex-1 flex-col gap-0.5 px-1 py-2 pr-3 text-left transition hover:bg-[var(--surface-2)]"
                   >
                     <div className="flex items-baseline gap-2">
                       <span
@@ -514,6 +575,7 @@ export function Browser(): ReactNode {
                       </span>
                     </div>
                   </button>
+                  </div>
                 );
               })
             )}
@@ -536,6 +598,21 @@ export function Browser(): ReactNode {
       <ContextMenu state={menu} onClose={() => setMenu(null)} />
 
       {exporting && <ExportDialog selection={exporting} onClose={() => setExporting(null)} />}
+
+      {bulk && (
+        <BulkDialog
+          mode="discard"
+          target={bulk}
+          onClose={() => setBulk(null)}
+          onDone={(summary) => {
+            setBulk(null);
+            setNotice(summary);
+            selection.clear();
+            void loadMessages(0);
+            void loadFolders();
+          }}
+        />
+      )}
 
       {discarding && (
         <DiscardFolderDialog

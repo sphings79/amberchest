@@ -156,7 +156,8 @@ describe('discarding a message', () => {
       linkedTo: row.id,
     });
 
-    const result = await discardMessage(db, account, inbox, row, archive);
+    // Only this folder's copy: by default the other places would go as well.
+    const result = await discardMessage(db, account, inbox, row, archive, { allLocations: false });
 
     expect(result.handedOver).toBe(true);
     const survivor = db.listActiveMessages(all.id)[0]!;

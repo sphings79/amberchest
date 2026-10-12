@@ -5,6 +5,7 @@ import type { Account } from '../types.js';
 import { logger } from '../util/logger.js';
 import { uniqueFileName } from '../util/paths.js';
 import { ArchiveLayout, listMessageFiles, moveMessageFile } from './archive.js';
+import { DELETED_DIR } from '../util/paths.js';
 import { appendJournal } from './journal.js';
 
 export interface DiscardResult {
@@ -46,13 +47,16 @@ export async function discardFolder(
   for (const message of messages) {
     result.bytes += message.size;
     if (message.linked_to !== null) continue;
-    if (await handOver(db, message, folderDir, folder.local_path, accountDir, folders))
+    const where = locate(accountDir, folder, message);
+    if (await handOver(db, message, where.dir, where.localPath, accountDir, folders))
       result.handedOver += 1;
   }
 
-  // Whatever is left in the directory goes, including the journal: the folder
-  // is not being archived any more, so there is nothing to rebuild from.
+  // Whatever is left in the directories goes, including the journals: the
+  // folder is not being archived any more, so there is nothing to rebuild
+  // from. The copy of the mail the server has lost lives in its own tree.
   await rm(folderDir, { recursive: true, force: true });
+  await rm(join(accountDir, DELETED_DIR, folder.local_path), { recursive: true, force: true });
 
   db.deleteFolderContents(folder.id);
 
@@ -62,6 +66,24 @@ export async function discardFolder(
     { accountId: account.id },
   );
   return result;
+}
+
+/**
+ * Where the file of a message is.
+ *
+ * A message the server has lost is kept under `_deleted`, in a tree that
+ * mirrors the folders. Looking for it in the folder itself finds nothing, and
+ * a delete with `force` says nothing about it - the row would be marked as
+ * thrown out while the file sat on the disk.
+ */
+function locate(
+  accountDir: string,
+  folder: FolderRow,
+  row: Pick<MessageRow, 'state'>,
+): { dir: string; localPath: string } {
+  const localPath =
+    row.state === 'deleted' ? join(DELETED_DIR, folder.local_path) : folder.local_path;
+  return { dir: join(accountDir, localPath), localPath };
 }
 
 /**
@@ -130,8 +152,12 @@ async function handOver(
  * and fetch it straight back. The journal gets the same decision, so a
  * rebuilt index and an archive that has been moved keep it as well.
  *
- * As with a whole folder, a file another folder was only pointing at is handed
- * over instead of deleted.
+ * A message stored once and shown in several folders (Gmail) is one mail with
+ * several places. By default all of them go, each with its own tombstone: the
+ * backup looks at every folder, and one that was left without would fetch the
+ * mail again from there. With `allLocations: false` only this folder's copy is
+ * thrown out, and a file another folder was only pointing at is handed over
+ * instead of deleted.
  */
 export async function discardMessage(
   db: ArchiveDatabase,
@@ -139,24 +165,66 @@ export async function discardMessage(
   folder: FolderRow,
   row: MessageRow,
   archiveBaseDir: string,
-): Promise<{ handedOver: boolean }> {
+  options: { allLocations?: boolean } = {},
+): Promise<{ handedOver: boolean; others: number }> {
+  // Already thrown out, say as another place of a message in the same batch.
+  if (row.state === 'discarded') return { handedOver: false, others: 0 };
+
   const layout = new ArchiveLayout(archiveBaseDir);
   const accountDir = layout.accountDir(account);
-  const folderDir = join(accountDir, folder.local_path);
   const folders = db.listFolders(account.id);
+
+  if (options.allLocations ?? true) {
+    const owner = row.linked_to !== null ? (db.getMessage(row.linked_to) ?? row) : row;
+    const places = [owner, ...db.listLinks(owner.id)].filter(
+      (entry) => entry.state !== 'discarded',
+    );
+    if (places.length > 1 && places.some((entry) => entry.id === row.id)) {
+      // The places that only point at the file first, the one that holds it
+      // last: if this stops half way, the file is still there for the rest.
+      const ordered = [...places.filter((entry) => entry.id !== owner.id), owner].filter(
+        (entry) => entry.state !== 'discarded',
+      );
+      for (const place of ordered) {
+        const where = folders.find((entry) => entry.id === place.folder_id);
+        if (!where) continue;
+        if (place.id === owner.id && place.linked_to === null) {
+          const { dir } = locate(accountDir, where, place);
+          await rm(join(dir, place.file_name), { force: true });
+        }
+        await tombstone(db, account, accountDir, where, place);
+      }
+      return { handedOver: false, others: places.length - 1 };
+    }
+  }
+
+  const { dir: folderDir, localPath } = locate(accountDir, folder, row);
 
   let handedOver = false;
   if (row.linked_to === null) {
-    handedOver = await handOver(db, row, folderDir, folder.local_path, accountDir, folders);
+    handedOver = await handOver(db, row, folderDir, localPath, accountDir, folders);
     // Deleted without the usual "removed" record: the discard record below
     // says the same thing and says why, and two entries for one decision only
     // make the journal harder to read.
     if (!handedOver) await rm(join(folderDir, row.file_name), { force: true });
   }
 
+  await tombstone(db, account, accountDir, folder, row);
+  return { handedOver, others: 0 };
+}
+
+/** Marks one row as thrown out, in the index and in its folder's journal. */
+async function tombstone(
+  db: ArchiveDatabase,
+  account: Account,
+  accountDir: string,
+  folder: FolderRow,
+  row: MessageRow,
+): Promise<void> {
+  const { dir } = locate(accountDir, folder, row);
   db.discardMessage(row.id);
 
-  await appendJournal(folderDir, {
+  await appendJournal(dir, {
     op: 'discard',
     ts: new Date().toISOString(),
     file: row.file_name,
@@ -174,7 +242,6 @@ export async function discardMessage(
   logger.info(`Discarded ${row.subject ?? row.file_name} from ${folder.path}`, {
     accountId: account.id,
   });
-  return { handedOver };
 }
 
 /** Takes the decision back, in the index and in the journal. */
