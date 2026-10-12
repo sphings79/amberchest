@@ -298,7 +298,11 @@ export class AdoptEngine extends EventEmitter {
     }
 
     for (const record of discarded.values()) {
-      if (this.options.db.findByFingerprint(this.account.id, record.fingerprint).length > 0) continue;
+      // One tombstone per folder: a mail stored once and shown in several
+      // places is thrown out of each of them, and a folder without its own
+      // would fetch the mail again.
+      const there = this.options.db.findByFingerprint(this.account.id, record.fingerprint);
+      if (there.some((entry) => entry.folder_id === folder.id)) continue;
       const id = this.options.db.insertMessage({
         accountId: this.account.id,
         folderId: folder.id,

@@ -436,13 +436,24 @@ export class AmberChestApp {
    * that this archive stops wanting it, which needs the tombstone - see
    * discardMessage.
    */
-  async discardMessage(accountId: string, messageId: number): Promise<{ handedOver: boolean }> {
+  async discardMessage(
+    accountId: string,
+    messageId: number,
+    options: { allLocations?: boolean } = {},
+  ): Promise<{ handedOver: boolean; others: number }> {
     const account = this.requireAccount(accountId);
     const row = this.db.getMessage(messageId);
     if (!row || row.account_id !== accountId) throw new Error('No such message');
     const folder = this.db.listFolders(accountId).find((entry) => entry.id === row.folder_id);
     if (!folder) throw new Error('No such folder');
-    return discardMessage(this.db, account, folder, row, this.config.getSettings().archivePath);
+    return discardMessage(
+      this.db,
+      account,
+      folder,
+      row,
+      this.config.getSettings().archivePath,
+      options,
+    );
   }
 
   /**
@@ -452,11 +463,14 @@ export class AmberChestApp {
    * is counted and skipped rather than stopping the rest: a list of a
    * thousand should not be lost to the one stale entry in it.
    */
-  async discardMessages(refs: MessageRef[]): Promise<BulkResult> {
+  async discardMessages(
+    refs: MessageRef[],
+    options: { allLocations?: boolean } = {},
+  ): Promise<BulkResult> {
     const result: BulkResult = { done: 0, failed: 0, handedOver: 0 };
     for (const ref of refs) {
       try {
-        const { handedOver } = await this.discardMessage(ref.accountId, ref.messageId);
+        const { handedOver } = await this.discardMessage(ref.accountId, ref.messageId, options);
         result.done += 1;
         if (handedOver) result.handedOver += 1;
       } catch (error) {
@@ -478,9 +492,10 @@ export class AmberChestApp {
   async discardMatching(
     options: SearchOptions,
     limit: number,
+    discard: { allLocations?: boolean } = {},
   ): Promise<BulkResult & { remaining: number }> {
     const { refs } = searchMessageRefs(this.db, options, limit);
-    const result = await this.discardMessages(refs);
+    const result = await this.discardMessages(refs, discard);
     const { total } = searchMessageRefs(this.db, options, 0);
     return { ...result, remaining: total };
   }

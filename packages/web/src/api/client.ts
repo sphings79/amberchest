@@ -511,20 +511,24 @@ export const api = {
     return request<SearchResult>(`/search?${params.toString()}`);
   },
   /** Throws a message out of the archive; the server keeps its copy. */
-  discardMessage: (accountId: string, messageId: number) =>
-    request<{ handedOver: boolean }>(`/accounts/${accountId}/messages/${messageId}/discard`, {
-      method: 'POST',
-    }),
+  discardMessage: (accountId: string, messageId: number, allLocations = true) =>
+    request<{ handedOver: boolean; others: number }>(
+      `/accounts/${accountId}/messages/${messageId}/discard`,
+      { method: 'POST', body: JSON.stringify({ allLocations }) },
+    ),
 
   /** Throws a list of messages out of the archive. */
-  discardMessages: (messages: MessageRef[]) =>
-    request<BulkResult>('/messages/discard', { method: 'POST', body: JSON.stringify({ messages }) }),
-
-  /** Throws out up to `limit` matches of a search; repeat until `remaining` is 0. */
-  discardMatching: (filter: BulkFilter, limit = 500) =>
+  discardMessages: (messages: MessageRef[], allLocations = true) =>
     request<BulkResult>('/messages/discard', {
       method: 'POST',
-      body: JSON.stringify({ filter, limit }),
+      body: JSON.stringify({ messages, allLocations }),
+    }),
+
+  /** Throws out up to `limit` matches of a search; repeat until `remaining` is 0. */
+  discardMatching: (filter: BulkFilter, limit = 500, allLocations = true) =>
+    request<BulkResult>('/messages/discard', {
+      method: 'POST',
+      body: JSON.stringify({ filter, limit, allLocations }),
     }),
 
   /** Takes a list of discarded messages back. */

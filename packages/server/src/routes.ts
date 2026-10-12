@@ -119,8 +119,13 @@ const messageRefSchema = z.object({
 
 /** What a bulk action acts on: listed messages, or everything a search matches. */
 const bulkDiscardSchema = z.union([
-  z.object({ messages: z.array(messageRefSchema).min(1).max(1000) }),
   z.object({
+    messages: z.array(messageRefSchema).min(1).max(1000),
+    /** Also the copies of a message that is stored once and shown in several folders. */
+    allLocations: z.boolean().default(true),
+  }),
+  z.object({
+    allLocations: z.boolean().default(true),
     filter: z.object({
       q: z.string().default(''),
       account: z.string().optional(),
@@ -562,7 +567,9 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
 
     try {
       if ('messages' in body.data) {
-        return await app.discardMessages(body.data.messages);
+        return await app.discardMessages(body.data.messages, {
+          allLocations: body.data.allLocations,
+        });
       }
       const f = body.data.filter;
       return await app.discardMatching(
@@ -584,6 +591,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
           maxSize: f.maxSize ?? null,
         },
         body.data.limit,
+        { allLocations: body.data.allLocations },
       );
     } catch (error) {
       return fail(reply, 400, (error as Error).message);
@@ -618,8 +626,14 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     { preHandler: requireUnlocked },
     async (request, reply) => {
       const { id, messageId } = request.params as { id: string; messageId: string };
+      const body = z
+        .object({ allLocations: z.boolean().default(true) })
+        .safeParse(request.body ?? {});
+      if (!body.success) return fail(reply, 400, 'Invalid request');
       try {
-        return await app.discardMessage(id, Number(messageId));
+        return await app.discardMessage(id, Number(messageId), {
+          allLocations: body.data.allLocations,
+        });
       } catch (error) {
         return fail(reply, 404, (error as Error).message);
       }

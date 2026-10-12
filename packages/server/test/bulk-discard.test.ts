@@ -48,7 +48,11 @@ describe('bulk discard and restore routes', () => {
     ];
     const response = await post('/api/messages/discard', { messages }, admin);
     expect(response.statusCode).toBe(200);
-    expect(app.discardMessages).toHaveBeenCalledWith(messages);
+    // All places of a mail stored once, unless the caller says otherwise.
+    expect(app.discardMessages).toHaveBeenCalledWith(messages, { allLocations: true });
+
+    await post('/api/messages/discard', { messages, allLocations: false }, admin);
+    expect(app.discardMessages).toHaveBeenLastCalledWith(messages, { allLocations: false });
     expect(response.json()).toMatchObject({ done: 2 });
   });
 
@@ -67,6 +71,7 @@ describe('bulk discard and restore routes', () => {
       number,
     ];
     expect(limit).toBe(200);
+    expect(app.discardMatching.mock.calls[0]![2]).toEqual({ allLocations: true });
     expect(options).toMatchObject({
       query: 'newsletter',
       accountId: 'a1',
