@@ -752,6 +752,7 @@ export const de = {
     noChecksumDone: "{{count}} unberührt: keine Prüfsumme",
     changedOnServer: "{{count}} unberührt: nicht die archivierte Nachricht",
     alreadyGone: "{{count}} sind auf dem Server schon weg",
+    stillOnServer: "{{count}} vom Server nach dem Löschen weiter aufgeführt; der Anbieter behält sie",
     skippedFolders: "{{count}} Ordner übersprungen: der Server hat sie neu nummeriert",
     done: "Fertig. Das nächste Backup lässt das Archiv, wie es ist.",
     phase: {

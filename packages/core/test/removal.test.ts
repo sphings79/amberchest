@@ -107,7 +107,12 @@ function fixture(options: { allowRemoval?: boolean } = {}) {
   }
 
   /** A stand-in for ImapFlow with exactly the calls the engine makes. */
-  function client(capabilities: string[] = ['IMAP4rev1', 'UIDPLUS'], uidValidity = 1) {
+  function client(
+    capabilities: string[] = ['IMAP4rev1', 'UIDPLUS'],
+    uidValidity = 1,
+    /** UIDs the fake keeps listing after they were deleted, like a provider's trash. */
+    keepListed: number[] = [],
+  ) {
     const deleted: number[] = [];
     const calls: string[] = [];
     const stub = {
@@ -147,6 +152,17 @@ function fixture(options: { allowRemoval?: boolean } = {}) {
       },
       async messageFlagsRemove() {
         return true;
+      },
+      async search(query: { uid: string }) {
+        const wanted = new Set(
+          query.uid.split(',').flatMap((part) => {
+            const [a, b] = part.split(':').map(Number) as [number, number | undefined];
+            return b === undefined ? [a] : Array.from({ length: b - a + 1 }, (_, i) => a + i);
+          }),
+        );
+        return server
+          .map((m) => m.uid)
+          .filter((uid) => wanted.has(uid) && (!deleted.includes(uid) || keepListed.includes(uid)));
       },
     };
     return { stub, deleted, calls };
@@ -188,6 +204,21 @@ describe('server removal', () => {
     expect(f.db.getMessage(b)?.server_removed_at).not.toBeNull();
     // Still archived: removing it from the server must not touch the copy.
     expect(f.db.getMessage(a)?.state).toBe('active');
+  });
+
+  it('does not count a message the server still lists after deleting it', async () => {
+    const f = fixture();
+    const kept = f.add(1);
+    const gone = f.add(2);
+    const { stub } = f.client(undefined, 1, [1]);
+
+    const result = await f.engine(stub).run();
+
+    expect(result.stats.removed).toBe(1);
+    expect(result.stats.stillOnServer).toBe(1);
+    // Not marked as removed: it is on the server, so the backup keeps it.
+    expect(f.db.getMessage(kept)?.server_removed_at).toBeNull();
+    expect(f.db.getMessage(gone)?.server_removed_at).not.toBeNull();
   });
 
   it('does nothing when the account has not allowed it', async () => {

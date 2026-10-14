@@ -753,6 +753,7 @@ export const en: Translations = {
     noChecksumDone: "{{count}} left alone: no checksum",
     changedOnServer: "{{count}} left alone: not the archived message",
     alreadyGone: "{{count}} already gone from the server",
+    stillOnServer: "{{count}} still listed by the server after deleting; the provider keeps them",
     skippedFolders: "{{count}} folder(s) skipped: the server renumbered them",
     done: "Finished. The next backup leaves the archive as it is.",
     phase: {

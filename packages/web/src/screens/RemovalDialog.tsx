@@ -207,6 +207,9 @@ export function RemovalDialog({
                 <span>{t('removal.changedOnServer', { count: n(stats.changedOnServer) })}</span>
               )}
               {stats.alreadyGone > 0 && <span>{t('removal.alreadyGone', { count: n(stats.alreadyGone) })}</span>}
+              {stats.stillOnServer > 0 && (
+                <span>{t('removal.stillOnServer', { count: n(stats.stillOnServer) })}</span>
+              )}
               {stats.skippedFolders > 0 && (
                 <span>{t('removal.skippedFolders', { count: n(stats.skippedFolders) })}</span>
               )}

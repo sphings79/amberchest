@@ -37,6 +37,8 @@ export interface RemovalStats {
   alreadyGone: number;
   /** UIDVALIDITY changed, so the stored UIDs mean nothing. */
   skippedFolders: number;
+  /** The server accepted the deletion but still lists the message. */
+  stillOnServer: number;
   failed: number;
 }
 
@@ -145,6 +147,7 @@ export class RemovalEngine extends EventEmitter {
     changedOnServer: 0,
     alreadyGone: 0,
     skippedFolders: 0,
+    stillOnServer: 0,
     failed: 0,
   };
 
@@ -227,7 +230,7 @@ export class RemovalEngine extends EventEmitter {
       this.emitProgress('done');
       logger.info(
         `Removal for ${this.account.name} finished: ${this.stats.removed} removed, ` +
-          `${this.stats.notVerified + this.stats.noChecksum + this.stats.changedOnServer} left alone`,
+          `${this.stats.notVerified + this.stats.noChecksum + this.stats.changedOnServer + this.stats.stillOnServer} left alone`,
         { accountId: this.account.id },
       );
       return this.progress('done');
@@ -252,6 +255,7 @@ export class RemovalEngine extends EventEmitter {
   ): Promise<void> {
     this.currentFolder = path;
     this.emitProgress('removing');
+    const before = { ...this.stats };
 
     // Read-write, which is the point; everywhere else folders are EXAMINEd.
     const mailbox = await client.mailboxOpen(path, { readOnly: false });
@@ -276,6 +280,32 @@ export class RemovalEngine extends EventEmitter {
 
       if (start + batchSize < usable.length) await this.pause();
     }
+
+    this.logFolderSummary(path, before);
+  }
+
+  /**
+   * One line per folder with the reason for every message that was left
+   * alone. The single messages are logged at debug level only: a folder with
+   * hundreds of them would push everything else out of the log's buffer.
+   */
+  private logFolderSummary(path: string, before: RemovalStats): void {
+    const delta = (key: keyof RemovalStats): number => this.stats[key] - before[key];
+    const leftAlone =
+      delta('notVerified') + delta('noChecksum') + delta('changedOnServer') + delta('alreadyGone') + delta('stillOnServer');
+    const text =
+      `${path}: ${delta('removed')} removed, ${leftAlone} left alone ` +
+      `(archived copy not intact ${delta('notVerified')}, no checksum ${delta('noChecksum')}, ` +
+      `not the archived message ${delta('changedOnServer')}, not on the server ${delta('alreadyGone')}, ` +
+      `still on the server after deleting ${delta('stillOnServer')})`;
+    if (leftAlone > 0 || delta('failed') > 0) logger.warn(text, { accountId: this.account.id });
+    else logger.info(text, { accountId: this.account.id });
+  }
+
+  private skipped(row: MessageRow & { folder_path: string }, reason: string): void {
+    logger.debug(`${row.folder_path} UID ${row.uid} (${row.file_name}) left alone: ${reason}`, {
+      accountId: this.account.id,
+    });
   }
 
   private async removeBatch(
@@ -287,10 +317,14 @@ export class RemovalEngine extends EventEmitter {
     // 1. The archive has to hold a good copy.
     const archived: typeof batch = [];
     for (const row of batch) {
-      const verdict = await this.archivedCopyIsGood(row);
-      if (verdict === 'ok') archived.push(row);
-      else if (verdict === 'no-checksum') this.stats.noChecksum += 1;
+      const { verdict, reason } = await this.archivedCopyIsGood(row);
+      if (verdict === 'ok') {
+        archived.push(row);
+        continue;
+      }
+      if (verdict === 'no-checksum') this.stats.noChecksum += 1;
       else this.stats.notVerified += 1;
+      this.skipped(row, reason);
     }
     if (archived.length === 0) return;
 
@@ -321,9 +355,13 @@ export class RemovalEngine extends EventEmitter {
     const doomed: typeof batch = [];
     for (const row of archived) {
       const fingerprint = onServer.get(row.uid);
-      if (fingerprint === undefined) this.stats.alreadyGone += 1;
-      else if (fingerprint !== row.fingerprint) this.stats.changedOnServer += 1;
-      else doomed.push(row);
+      if (fingerprint === undefined) {
+        this.stats.alreadyGone += 1;
+        this.skipped(row, 'the server has no message under this UID');
+      } else if (fingerprint !== row.fingerprint) {
+        this.stats.changedOnServer += 1;
+        this.skipped(row, 'the message under this UID is not the archived one');
+      } else doomed.push(row);
     }
     if (doomed.length === 0) return;
 
@@ -348,9 +386,38 @@ export class RemovalEngine extends EventEmitter {
       throw new Error('The server refused to delete the messages');
     }
 
-    await this.writeJournal(doomed);
-    this.stats.removed += doomed.length;
-    this.stats.bytesRemoved += doomed.reduce((sum, row) => sum + row.size, 0);
+    // A server can accept the deletion and still list the message (a trash
+    // folder that keeps what is put in it, a provider that only hides it).
+    // Ask again instead of taking the answer for granted.
+    const remaining = await this.stillThere(client, range);
+    const gone = remaining === null ? doomed : doomed.filter((row) => !remaining.has(row.uid));
+    const kept = remaining === null ? [] : doomed.filter((row) => remaining.has(row.uid));
+    for (const row of kept) {
+      db.clearServerRemoved(row.id);
+      this.stats.stillOnServer += 1;
+      this.skipped(row, 'the server still lists the message after the deletion');
+    }
+    if (gone.length === 0) return;
+
+    await this.writeJournal(gone);
+    this.stats.removed += gone.length;
+    this.stats.bytesRemoved += gone.reduce((sum, row) => sum + row.size, 0);
+  }
+
+  /**
+   * The UIDs of the range the server still lists, or null when it cannot be
+   * asked - the deletion was acknowledged, so that is then taken as it is.
+   */
+  private async stillThere(client: ImapFlow, range: string): Promise<Set<number> | null> {
+    try {
+      const found = await client.search({ uid: range }, { uid: true });
+      return new Set(Array.isArray(found) ? found : []);
+    } catch (error) {
+      logger.warn(`Could not check the deletion in ${this.currentFolder}: ${(error as Error).message}`, {
+        accountId: this.account.id,
+      });
+      return null;
+    }
   }
 
   /**
@@ -391,24 +458,30 @@ export class RemovalEngine extends EventEmitter {
    * is not accepted on the strength of the file merely being readable: that
    * would only prove the file exists, not that it is the mail.
    */
-  private async archivedCopyIsGood(row: MessageRow): Promise<'ok' | 'no-checksum' | 'bad'> {
+  private async archivedCopyIsGood(
+    row: MessageRow,
+  ): Promise<{ verdict: 'ok' | 'no-checksum' | 'bad'; reason: string }> {
     const { db } = this.options;
     const owner = db.resolveFile(row);
-    if (owner.state !== 'active') return 'bad';
-    if (!owner.sha256) return 'no-checksum';
+    if (owner.state !== 'active') return { verdict: 'bad', reason: `the file's owner is ${owner.state}` };
+    if (!owner.sha256) return { verdict: 'no-checksum', reason: 'no checksum in the index' };
 
     const folder = db.listFolders(this.account.id).find((entry) => entry.id === owner.folder_id);
-    if (!folder) return 'bad';
+    if (!folder) return { verdict: 'bad', reason: "the file's folder is unknown" };
 
     const layout = new ArchiveLayout(this.options.archiveBaseDir);
     const path = join(layout.accountDir(this.account), folder.local_path, owner.file_name);
+    let plain: Buffer;
     try {
-      const plain = openMessageFile(await readFile(path), this.options.encryptionKey ?? null);
-      if (plain.length === 0) return 'bad';
-      return createHash('sha256').update(plain).digest('hex') === owner.sha256 ? 'ok' : 'bad';
-    } catch {
-      return 'bad';
+      plain = openMessageFile(await readFile(path), this.options.encryptionKey ?? null);
+    } catch (error) {
+      return { verdict: 'bad', reason: `the file cannot be read (${(error as Error).message})` };
     }
+    if (plain.length === 0) return { verdict: 'bad', reason: 'the file is empty' };
+    if (createHash('sha256').update(plain).digest('hex') !== owner.sha256) {
+      return { verdict: 'bad', reason: 'the checksum of the file does not match' };
+    }
+    return { verdict: 'ok', reason: '' };
   }
 
   private async pause(): Promise<void> {
