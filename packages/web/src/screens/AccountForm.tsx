@@ -112,7 +112,8 @@ export function AccountForm({
     values.name.trim() !== '' &&
     values.host.trim() !== '' &&
     values.username.trim() !== '' &&
-    (account !== undefined || (values.password ?? '') !== '');
+    // An OAuth account has no password; it is connected after the first save.
+    (account !== undefined || authType === 'oauth' || (values.password ?? '') !== '');
 
   return (
     <Modal
