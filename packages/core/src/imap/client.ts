@@ -79,7 +79,14 @@ export interface ConnectionTestResult {
 
 /** Turns the more common IMAP failures into something a human can act on. */
 export function describeImapError(error: unknown): string {
-  const err = error as { code?: string; authenticationFailed?: boolean; responseText?: string; message?: string };
+  const err = error as {
+    code?: string;
+    authenticationFailed?: boolean;
+    responseText?: string;
+    message?: string;
+    reason?: string;
+    command?: string;
+  };
   if (err?.authenticationFailed) return 'Authentication failed - check user name and password';
   switch (err?.code) {
     case 'ENOTFOUND':
@@ -92,6 +99,16 @@ export function describeImapError(error: unknown): string {
     case 'SELF_SIGNED_CERT_IN_CHAIN':
     case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
       return 'Certificate could not be verified - enable "accept self-signed certificate" if this is expected';
+    case 'NoConnection': {
+      // The library only says that the connection was gone. Why it went is in
+      // the server's BYE text and in the command that was running.
+      const parts: string[] = [];
+      if (err.reason) parts.push(`server said: ${err.reason}`);
+      if (err.command) parts.push(`during ${err.command}`);
+      return parts.length > 0
+        ? `${err.message ?? 'Connection not available'} (${parts.join(', ')})`
+        : (err.message ?? 'Connection not available');
+    }
     default:
       return err?.responseText ?? err?.message ?? String(error);
   }

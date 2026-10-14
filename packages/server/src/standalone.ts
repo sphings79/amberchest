@@ -31,7 +31,9 @@ async function main(): Promise<void> {
   // In a container the log belongs on stdout, that is what `docker logs` reads.
   logger.setLevel((process.env.AMBERCHEST_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') ?? 'info');
   logger.on('entry', (entry) => {
-    const line = `${entry.ts} [${entry.level}] ${entry.message}`;
+    // The detail (a stack trace, say) is what tells a failure apart from the
+    // next one with the same message, so it belongs in `docker logs` too.
+    const line = `${entry.ts} [${entry.level}] ${entry.message}${entry.detail ? `\n${entry.detail}` : ''}`;
     if (entry.level === 'error' || entry.level === 'warn') process.stderr.write(`${line}\n`);
     else process.stdout.write(`${line}\n`);
   });
