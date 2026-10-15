@@ -283,6 +283,41 @@ describe('server removal', () => {
     expect(result.stats.notVerified).toBe(1);
   });
 
+  it('says which part of a message differs, without its subject or addresses', async () => {
+    const f = fixture();
+    f.add(1);
+    f.server[0]!.size += 19;
+    f.server[0]!.subject = 'a secret subject';
+    f.server[0]!.from = 'someone@secret.example';
+    const { stub } = f.client();
+
+    const { logger } = await import('../src/util/logger.js');
+    logger.setLevel('debug');
+    const result = await f.engine(stub).run();
+    const text = logger
+      .recent(50)
+      .map((entry) => entry.message)
+      .join('\n');
+
+    expect(result.stats.changedOnServer).toBe(1);
+    expect(text).toContain('INBOX UID 1 is not the archived message: differs in size');
+    expect(text).toContain('sender');
+    expect(text).not.toContain('secret');
+  });
+
+  it('counts a message missing on the server as left alone in the summary', async () => {
+    const f = fixture();
+    f.add(1);
+    f.server.length = 0;
+    const { stub } = f.client();
+
+    const result = await f.engine(stub).run();
+
+    expect(result.stats.alreadyGone).toBe(1);
+    const { logger } = await import('../src/util/logger.js');
+    expect(logger.recent(5).map((entry) => entry.message).join('\n')).toContain('1 left alone');
+  });
+
   it('does not trust a UID that now names a different message', async () => {
     const f = fixture();
     f.add(1);

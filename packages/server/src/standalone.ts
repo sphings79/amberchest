@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import {
   AmberChestApp,
+  Logger,
   Scheduler,
   applyLegacyEnv,
   isValidCron,
@@ -33,7 +34,7 @@ async function main(): Promise<void> {
   logger.on('entry', (entry) => {
     // The detail (a stack trace, say) is what tells a failure apart from the
     // next one with the same message, so it belongs in `docker logs` too.
-    const line = `${entry.ts} [${entry.level}] ${entry.message}${entry.detail ? `\n${entry.detail}` : ''}`;
+    const line = Logger.format(entry);
     if (entry.level === 'error' || entry.level === 'warn') process.stderr.write(`${line}\n`);
     else process.stdout.write(`${line}\n`);
   });

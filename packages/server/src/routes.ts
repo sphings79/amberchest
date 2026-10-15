@@ -1426,6 +1426,29 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return logger.recent(Number(query.limit ?? 300));
   });
 
+  /**
+   * The log file as one download, oldest part first.
+   *
+   * Not on the viewer's list, so the read-only login cannot fetch it: a debug
+   * log names folders and files.
+   */
+  server.get('/api/logs/file', async (_request, reply) => {
+    const { createReadStream, existsSync } = await import('node:fs');
+    const { Readable } = await import('node:stream');
+    const parts = logger.logFiles().filter((path) => existsSync(path)).reverse();
+    if (parts.length === 0) return fail(reply, 404, 'No log file is being written');
+
+    async function* concatenated(): AsyncGenerator<Buffer> {
+      for (const path of parts) {
+        for await (const chunk of createReadStream(path)) yield chunk as Buffer;
+      }
+    }
+    return reply
+      .header('content-type', 'text/plain; charset=utf-8')
+      .header('content-disposition', 'attachment; filename="amberchest.log"')
+      .send(Readable.from(concatenated()));
+  });
+
   // ----------------------------------------------------------------- events
 
   server.get('/api/events', { websocket: true }, (socket: WebSocket, request: FastifyRequest) => {

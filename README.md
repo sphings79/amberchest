@@ -342,7 +342,7 @@ services:
 | `AMBERCHEST_PORT` | Port inside the container, default 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
 | `PUID` / `PGID` | User and group the volumes belong to, default 1000 |
-| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
+| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error`; the starting level. A level chosen under **Settings → Log** replaces it |
 | `TZ` | Time zone the schedule follows |
 
 With `AMBERCHEST_UI_PASSWORD_READONLY` set, the interface has a second login. It

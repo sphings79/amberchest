@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { ConfigStore, toPublicAccount } from './config/store.js';
 import {
   discardFolder,
@@ -70,6 +71,7 @@ import type {
   PublicAccount,
   SyncProgress,
 } from './types.js';
+import { configDir } from './config/locations.js';
 import { logger } from './util/logger.js';
 
 /** What a bulk discard did. */
@@ -219,14 +221,36 @@ export class AmberChestApp {
   async initialize(masterPassword: string): Promise<void> {
     await this.config.initialize(masterPassword);
     logger.info('Created a new configuration');
+    this.applyLogging();
   }
 
   async unlock(masterPassword: string): Promise<void> {
     await this.config.unlock(masterPassword);
     logger.info('Configuration unlocked');
+    this.applyLogging();
     // The broker credentials live in the encrypted configuration, so the
     // bridge can only start once that is open.
     await this.mqtt.apply();
+  }
+
+  /**
+   * Puts the saved logging settings to work: the level, and the file.
+   *
+   * A level that was never chosen in the interface (null) leaves what the
+   * start-up set, so AMBERCHEST_LOG_LEVEL keeps working for whoever uses it.
+   */
+  private applyLogging(): void {
+    const { level, toFile } = this.config.getSettings().logging;
+    if (level) logger.setLevel(level);
+    const path = this.logFilePath();
+    if (logger.setFile(toFile ? path : null)) {
+      // The first line, so the file exists as soon as it is switched on.
+      logger.info(toFile ? `Writing the log to ${path}` : 'No longer writing the log to a file');
+    }
+  }
+
+  logFilePath(): string {
+    return join(configDir(), 'logs', 'amberchest.log');
   }
 
   lock(): void {
@@ -241,6 +265,7 @@ export class AmberChestApp {
   async updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
     const before = this.config.getSettings().mqtt;
     const settings = await this.config.updateSettings(patch);
+    if (patch.logging) this.applyLogging();
     // Reconnecting on every settings change would drop the connection when
     // only the theme was touched.
     if (JSON.stringify(before) !== JSON.stringify(settings.mqtt)) await this.mqtt.apply();

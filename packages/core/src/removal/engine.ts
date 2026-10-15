@@ -9,7 +9,7 @@ import { ArchiveLayout } from '../storage/archive.js';
 import { appendJournal } from '../storage/journal.js';
 import { openMessageFile } from '../storage/encryption.js';
 import type { Account } from '../types.js';
-import { messageFingerprint } from '../util/hash.js';
+import { messageFingerprint, type MessageIdentity } from '../util/hash.js';
 import { logger } from '../util/logger.js';
 
 export class RemovalCancelledError extends Error {
@@ -83,6 +83,33 @@ export interface RemovalEngineOptions {
 const DEFAULT_BATCH = 500;
 const DEFAULT_PAUSE_MS = 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MISMATCHES_LOGGED_PER_FOLDER = 5;
+
+/**
+ * Which parts of a message's identity differ between the archive and the
+ * server. Sizes and dates are numbers, everything else only says whether it
+ * matches: the text goes into logs that people attach to bug reports.
+ */
+export function describeDifferences(
+  stored: Pick<MessageRow, 'message_id' | 'internal_date' | 'size' | 'from_addr' | 'subject'>,
+  server: MessageIdentity,
+): string {
+  const parts: string[] = [];
+  const hasId = Boolean(server.messageId) || Boolean(stored.message_id);
+  if (hasId && (stored.message_id ?? null) !== (server.messageId ?? null)) parts.push('Message-ID');
+  const serverDate = Number.isNaN(server.internalDate.getTime()) ? null : server.internalDate.toISOString();
+  if (new Date(stored.internal_date).getTime() !== server.internalDate.getTime()) {
+    parts.push(`date (stored ${stored.internal_date}, server ${serverDate ?? 'invalid'})`);
+  }
+  if (stored.size !== server.size) parts.push(`size (stored ${stored.size}, server ${server.size})`);
+  if ((stored.from_addr ?? null) !== (server.fromAddress ?? null)) parts.push('sender');
+  if (!server.messageId && !stored.message_id) {
+    if ((stored.subject ?? '').trim().toLowerCase() !== (server.subject ?? '').trim().toLowerCase()) {
+      parts.push('subject');
+    }
+  }
+  return parts.length > 0 ? `differs in ${parts.join(', ')}` : 'no single field differs';
+}
 
 /** What would be removed, from the index alone; nothing is read or deleted. */
 export function planRemoval(
@@ -138,6 +165,7 @@ export class RemovalEngine extends EventEmitter {
   private cancelled = false;
   private currentFolder: string | null = null;
   private readonly startedAt = new Date().toISOString();
+  private mismatchesLogged = 0;
   private readonly stats: RemovalStats = {
     candidates: 0,
     removed: 0,
@@ -230,7 +258,7 @@ export class RemovalEngine extends EventEmitter {
       this.emitProgress('done');
       logger.info(
         `Removal for ${this.account.name} finished: ${this.stats.removed} removed, ` +
-          `${this.stats.notVerified + this.stats.noChecksum + this.stats.changedOnServer + this.stats.stillOnServer} left alone`,
+          `${this.stats.notVerified + this.stats.noChecksum + this.stats.changedOnServer + this.stats.alreadyGone + this.stats.stillOnServer} left alone`,
         { accountId: this.account.id },
       );
       return this.progress('done');
@@ -256,6 +284,7 @@ export class RemovalEngine extends EventEmitter {
     this.currentFolder = path;
     this.emitProgress('removing');
     const before = { ...this.stats };
+    this.mismatchesLogged = 0;
 
     // Read-write, which is the point; everywhere else folders are EXAMINEd.
     const mailbox = await client.mailboxOpen(path, { readOnly: false });
@@ -329,7 +358,7 @@ export class RemovalEngine extends EventEmitter {
     if (archived.length === 0) return;
 
     // 2. The server has to hold the message that was archived under that UID.
-    const onServer = new Map<number, string>();
+    const onServer = new Map<number, { fingerprint: string; identity: MessageIdentity }>();
     for await (const message of client.fetch(
       toSequenceString(archived.map((row) => row.uid)),
       { uid: true, internalDate: true, size: true, envelope: true },
@@ -337,30 +366,39 @@ export class RemovalEngine extends EventEmitter {
     )) {
       const envelope = message.envelope;
       const first = envelope?.from?.[0];
-      onServer.set(
-        message.uid,
-        messageFingerprint({
-          messageId: envelope?.messageId ?? null,
-          internalDate:
-            message.internalDate instanceof Date
-              ? message.internalDate
-              : new Date(message.internalDate ?? 0),
-          fromAddress: first?.address ?? first?.name ?? null,
-          subject: envelope?.subject ?? null,
-          size: message.size ?? 0,
-        }),
-      );
+      const identity: MessageIdentity = {
+        messageId: envelope?.messageId ?? null,
+        internalDate:
+          message.internalDate instanceof Date
+            ? message.internalDate
+            : new Date(message.internalDate ?? 0),
+        fromAddress: first?.address ?? first?.name ?? null,
+        subject: envelope?.subject ?? null,
+        size: message.size ?? 0,
+      };
+      onServer.set(message.uid, { fingerprint: messageFingerprint(identity), identity });
     }
 
     const doomed: typeof batch = [];
     for (const row of archived) {
-      const fingerprint = onServer.get(row.uid);
-      if (fingerprint === undefined) {
+      const there = onServer.get(row.uid);
+      const fingerprint = there?.fingerprint;
+      if (there === undefined || fingerprint === undefined) {
         this.stats.alreadyGone += 1;
         this.skipped(row, 'the server has no message under this UID');
       } else if (fingerprint !== row.fingerprint) {
         this.stats.changedOnServer += 1;
-        this.skipped(row, 'the message under this UID is not the archived one');
+        const differences = describeDifferences(row, there.identity);
+        this.skipped(row, `the message under this UID is not the archived one (${differences})`);
+        // The first few per folder at warn level, so the cause is in the log
+        // without debug: what differs, as numbers and yes/no, never the
+        // subject or an address - a log gets attached to bug reports.
+        if (this.mismatchesLogged < MISMATCHES_LOGGED_PER_FOLDER) {
+          this.mismatchesLogged += 1;
+          logger.warn(`${row.folder_path} UID ${row.uid} is not the archived message: ${differences}`, {
+            accountId: this.account.id,
+          });
+        }
       } else doomed.push(row);
     }
     if (doomed.length === 0) return;

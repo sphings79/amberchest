@@ -693,10 +693,20 @@ export const de = {
     setupHint: 'Diesen Block in die Konfigurationsdatei von Claude Desktop eintragen:',
     tools: '{{count}} von 6 Bereichen frei',
   },
+  logSettings: {
+    title: 'Protokoll',
+    level: 'Detailgrad',
+    levelHint: 'Debug nennt auch jede Mail, die das Entfernen vom Server übergeht, und schreibt viel. Der Detailgrad gilt sofort.',
+    levelDefault: 'Wie gestartet (AMBERCHEST_LOG_LEVEL, sonst Info)',
+    levels: { debug: 'Debug', info: 'Info', warn: 'Warnungen', error: 'Fehler' },
+    toFile: 'Protokoll zusätzlich in eine Datei schreiben',
+    toFileHint: 'Im Ordner „logs“ neben der Konfiguration. Bis zu drei Dateien mit je 50 MB, die älteste wird ersetzt. Auf der Protokollseite herunterladbar.',
+  },
   logs: {
     title: 'Protokoll',
     empty: 'Noch keine Einträge.',
     clear: 'Ansicht leeren',
+    download: 'Log-Datei herunterladen',
   },
   menu: {
     exportAttachments: "Anhänge dieses Ordners exportieren",

@@ -358,7 +358,7 @@ services:
 | `AMBERCHEST_PORT` | Port im Container, Standard 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Nach jedem Lauf auch Anhänge exportieren |
 | `PUID` / `PGID` | Benutzer und Gruppe, denen die Volumes gehören, Standard 1000 |
-| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` oder `error` |
+| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` oder `error`; der Startwert. Ein unter **Einstellungen → Protokoll** gewählter Detailgrad ersetzt ihn |
 | `TZ` | Zeitzone, nach der sich der Zeitplan richtet |
 
 Ist `AMBERCHEST_UI_PASSWORD_READONLY` gesetzt, hat die Oberfläche einen zweiten

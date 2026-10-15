@@ -694,10 +694,20 @@ export const en: Translations = {
     setupHint: 'Add this block to the Claude Desktop configuration file:',
     tools: '{{count}} of 6 areas enabled',
   },
+  logSettings: {
+    title: 'Log',
+    level: 'Detail level',
+    levelHint: 'Debug also lists every message the server removal leaves alone, and writes a lot. The level applies at once.',
+    levelDefault: 'As started (AMBERCHEST_LOG_LEVEL, otherwise Info)',
+    levels: { debug: 'Debug', info: 'Info', warn: 'Warnings', error: 'Errors' },
+    toFile: 'Also write the log to a file',
+    toFileHint: 'In the "logs" folder next to the configuration. Up to three files of 50 MB, the oldest is replaced. Can be downloaded on the log page.',
+  },
   logs: {
     title: 'Log',
     empty: 'No entries yet.',
     clear: 'Clear view',
+    download: 'Download the log file',
   },
   menu: {
     exportAttachments: "Export the attachments of this folder",

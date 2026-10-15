@@ -220,6 +220,13 @@ export interface StorageSettings {
   stopBelowGb: number;
 }
 
+export interface LoggingSettings {
+  /** Null keeps the level the start-up chose. */
+  level: LogLevel | null;
+  /** Also write the log to a file beside the configuration. */
+  toFile: boolean;
+}
+
 export interface NotificationSettings {
   enabled: boolean;
   url: string;
@@ -244,6 +251,7 @@ export interface AppSettings {
   mqtt: MqttSettings;
   oauth: OAuthSettings;
   storage: StorageSettings;
+  logging: LoggingSettings;
   notifications: NotificationSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can
