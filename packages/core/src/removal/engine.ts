@@ -95,17 +95,27 @@ export function describeDifferences(
   server: MessageIdentity,
 ): string {
   const parts: string[] = [];
-  const hasId = Boolean(server.messageId) || Boolean(stored.message_id);
-  if (hasId && (stored.message_id ?? null) !== (server.messageId ?? null)) parts.push('Message-ID');
+
+  const text = (name: string, archived: string | null | undefined, there: string | null | undefined) => {
+    const a = archived ?? null;
+    const b = there ?? null;
+    if (a === b) return;
+    if (a === null || a === '') parts.push(`${name} (empty in the archive, set on the server)`);
+    else if (b === null || b === '') parts.push(`${name} (set in the archive, empty on the server)`);
+    else parts.push(`${name} (different)`);
+  };
+
+  text('Message-ID', stored.message_id, server.messageId);
   const serverDate = Number.isNaN(server.internalDate.getTime()) ? null : server.internalDate.toISOString();
   if (new Date(stored.internal_date).getTime() !== server.internalDate.getTime()) {
     parts.push(`date (stored ${stored.internal_date}, server ${serverDate ?? 'invalid'})`);
   }
   if (stored.size !== server.size) parts.push(`size (stored ${stored.size}, server ${server.size})`);
-  if ((stored.from_addr ?? null) !== (server.fromAddress ?? null)) parts.push('sender');
+  text('sender', stored.from_addr, server.fromAddress);
+  // The subject only enters the fingerprint of a message without an ID.
   if (!server.messageId && !stored.message_id) {
     if ((stored.subject ?? '').trim().toLowerCase() !== (server.subject ?? '').trim().toLowerCase()) {
-      parts.push('subject');
+      parts.push('subject (different)');
     }
   }
   return parts.length > 0 ? `differs in ${parts.join(', ')}` : 'no single field differs';

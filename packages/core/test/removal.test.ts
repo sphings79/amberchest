@@ -300,9 +300,34 @@ describe('server removal', () => {
       .join('\n');
 
     expect(result.stats.changedOnServer).toBe(1);
-    expect(text).toContain('INBOX UID 1 is not the archived message: differs in size');
-    expect(text).toContain('sender');
+    expect(text).toContain('INBOX UID 1 is not the archived message: differs in');
+    expect(text).toContain('size (stored');
+    expect(text).toContain('sender (different)');
     expect(text).not.toContain('secret');
+  });
+
+  it('says which side is empty when the message ID or the sender is missing', async () => {
+    const { describeDifferences } = await import('../src/removal/engine.js');
+    const server = {
+      messageId: '<a@x>',
+      internalDate: new Date('2024-03-01T08:00:00.000Z'),
+      fromAddress: 'a@b.c',
+      subject: 's',
+      size: 10,
+    };
+    const stored = {
+      message_id: null,
+      internal_date: '2024-03-01T08:00:00.000Z',
+      size: 10,
+      from_addr: null,
+      subject: 's',
+    };
+    expect(describeDifferences(stored, server)).toBe(
+      'differs in Message-ID (empty in the archive, set on the server), sender (empty in the archive, set on the server)',
+    );
+    expect(describeDifferences({ ...stored, message_id: '<a@x>', from_addr: 'a@b.c' }, { ...server, messageId: null, fromAddress: null })).toBe(
+      'differs in Message-ID (set in the archive, empty on the server), sender (set in the archive, empty on the server)',
+    );
   });
 
   it('counts a message missing on the server as left alone in the summary', async () => {
