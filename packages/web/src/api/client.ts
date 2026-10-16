@@ -13,6 +13,8 @@ import type {
   DeviceCode,
   MqttStatus,
   PublicAccount,
+  RemovalPlan,
+  RemovalProgress,
   SearchResult,
   TransferProgress,
   VerifyProgress,
@@ -191,6 +193,8 @@ export interface AccountSettingsValues {
   autoSelectNewFolders: boolean;
   linkDuplicates: boolean;
   protectBeforeDate: string | null;
+  /** Lets the archive delete mail on the server once it is archived. */
+  allowServerRemoval: boolean;
   /** Aliases beside the account address, for "sent to myself". */
   ownAddresses: string[];
 }
@@ -424,6 +428,24 @@ export const api = {
     request<{ cancelled: boolean }>(`/accounts/${id}/verify/cancel`, { method: 'POST' }),
   lastVerify: (id: string) =>
     request<{ run: VerifyProgress | null; running: boolean }>(`/accounts/${id}/verify`),
+
+  planRemoval: (id: string, body: { folders: string[]; olderThanDays: number | null }) =>
+    request<RemovalPlan>(`/accounts/${id}/removal/plan`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  startRemoval: (
+    id: string,
+    body: { folders: string[]; olderThanDays: number | null; confirmName: string },
+  ) =>
+    request<{ started: boolean }>(`/accounts/${id}/removal`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  cancelRemoval: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/removal/cancel`, { method: 'POST' }),
+  lastRemoval: (id: string) =>
+    request<{ run: RemovalProgress | null; running: boolean }>(`/accounts/${id}/removal`),
 
   oauthProviders: () =>
     request<{

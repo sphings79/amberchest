@@ -27,6 +27,13 @@ export const accountSettingsSchema = z.object({
    * old mail is protected, everything newer follows the usual policy.
    */
   protectBeforeDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  /**
+   * Lets this account delete mail on the server once it is safely archived.
+   *
+   * Off by default, and the one setting that makes AmberChest write to the
+   * mailbox: with it off, nothing here ever sets \Deleted or sends EXPUNGE.
+   */
+  allowServerRemoval: z.boolean().default(false),
 });
 
 export const attachmentSettingsSchema = z.object({
@@ -82,6 +89,17 @@ export const storageSettingsSchema = z.object({
    * bad, a system with no room left at all is worse.
    */
   stopBelowGb: z.number().min(0).max(10_000).default(1),
+});
+
+/** How much the program says, and whether it also writes it to a file. */
+export const loggingSettingsSchema = z.object({
+  /**
+   * Null leaves the level as the start-up put it (AMBERCHEST_LOG_LEVEL in the
+   * container, "info" otherwise); a value set in the interface wins from then on.
+   */
+  level: z.enum(['debug', 'info', 'warn', 'error']).nullable().default(null),
+  /** Also append to a file beside the configuration, with a size limit. */
+  toFile: z.boolean().default(false),
 });
 
 export const oauthSettingsSchema = z.object({
@@ -205,6 +223,7 @@ export const appSettingsSchema = z.object({
   mqtt: mqttSettingsSchema.default(() => mqttSettingsSchema.parse({})),
   oauth: oauthSettingsSchema.default(() => oauthSettingsSchema.parse({})),
   storage: storageSettingsSchema.default(() => storageSettingsSchema.parse({})),
+  logging: loggingSettingsSchema.default(() => loggingSettingsSchema.parse({})),
   notifications: notificationSettingsSchema.default(() => notificationSettingsSchema.parse({})),
   encryptArchive: z.boolean().default(false),
 });

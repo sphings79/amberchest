@@ -201,6 +201,17 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX idx_messages_linked_to ON messages (linked_to);
   `,
+
+  // 9 - mail removed from the server on purpose
+  `
+  /*
+   * When this archive deleted the message on the server, because a person asked
+   * it to. The next backup finds the mail gone there, and without this mark
+   * that looks exactly like a deletion made elsewhere - which the "mirror"
+   * policy would answer by deleting the only copy that is left.
+   */
+  ALTER TABLE messages ADD COLUMN server_removed_at TEXT;
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

@@ -104,6 +104,25 @@ export type JournalRecord =
       op: 'undiscard';
       ts: string;
       fingerprint: string;
+    }
+  | {
+      /**
+       * Deleted on the server by this archive, at a person's request.
+       *
+       * The file stays, so this is not a `remove`. What it records is that
+       * the mail being gone from the server is intended: an index rebuilt
+       * from the journal has to know, or the first backup afterwards reads
+       * every one of these as a deletion made elsewhere.
+       */
+      op: 'server-remove';
+      ts: string;
+      file: string;
+    }
+  | {
+      /** The mail is on the server again, so `server-remove` no longer applies. */
+      op: 'server-return';
+      ts: string;
+      file: string;
     };
 
 export function journalPath(folderDir: string): string {

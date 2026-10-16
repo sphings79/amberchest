@@ -11,6 +11,7 @@ import {
   Search as SearchIcon,
   Server,
   ShieldCheck,
+  CloudOff,
   Square,
   Trash2,
   Upload,
@@ -25,6 +26,7 @@ import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
 import { RestoreDialog } from './RestoreDialog.js';
 import { TransferDialog } from './TransferDialog.js';
+import { RemovalDialog } from './RemovalDialog.js';
 import { VerifyDialog } from './VerifyDialog.js';
 
 function formatBytes(bytes: number): string {
@@ -107,6 +109,7 @@ function AccountCard({
   onAttachments,
   onRestore,
   onVerify,
+  onRemoval,
   onTransfer,
   onChanged,
 }: {
@@ -117,6 +120,7 @@ function AccountCard({
   onAttachments: () => void;
   onRestore: () => void;
   onVerify: () => void;
+  onRemoval: () => void;
   onTransfer: () => void;
   onChanged: () => void;
 }): ReactNode {
@@ -201,6 +205,12 @@ function AccountCard({
             <ShieldCheck size={15} />
             {t('verify.open')}
           </Button>
+          {account.settings.allowServerRemoval && (
+            <Button onClick={onRemoval} disabled={overview.messageCount === 0}>
+              <CloudOff size={15} />
+              {t('removal.open')}
+            </Button>
+          )}
           <Button onClick={onRestore} disabled={overview.messageCount === 0}>
             <Upload size={15} />
             {t('restore.open')}
@@ -262,6 +272,7 @@ export function Dashboard(): ReactNode {
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
   const [verifyFor, setVerifyFor] = useState<AccountOverview | null>(null);
+  const [removalFor, setRemovalFor] = useState<AccountOverview | null>(null);
   const [transferFor, setTransferFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
@@ -331,6 +342,7 @@ export function Dashboard(): ReactNode {
               onAttachments={() => setAttachmentsFor(overview)}
               onRestore={() => setRestoreFor(overview)}
               onVerify={() => setVerifyFor(overview)}
+              onRemoval={() => setRemovalFor(overview)}
               onTransfer={() => setTransferFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
@@ -350,6 +362,8 @@ export function Dashboard(): ReactNode {
       {restoreFor && <RestoreDialog overview={restoreFor} onClose={() => setRestoreFor(null)} />}
 
       {verifyFor && <VerifyDialog overview={verifyFor} onClose={() => setVerifyFor(null)} />}
+
+      {removalFor && <RemovalDialog overview={removalFor} onClose={() => setRemovalFor(null)} />}
 
       {transferFor && (
         <TransferDialog overview={transferFor} onClose={() => setTransferFor(null)} />

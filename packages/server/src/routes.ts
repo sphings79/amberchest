@@ -737,6 +737,65 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return { run: app.lastVerify(id), running: app.verify.isRunning(id) };
   });
 
+  // ---------------------------------------------------- remove from server
+
+  const removalSchema = z.object({
+    folders: z.array(z.string()).default([]),
+    olderThanDays: z.number().int().min(0).max(36_500).nullable().default(null),
+  });
+
+  /** What a removal would take; reads the index, touches nothing. */
+  server.post('/api/accounts/:id/removal/plan', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = removalSchema.safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    try {
+      return app.planServerRemoval(id, body.data);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+  });
+
+  /**
+   * Deletes archived mail on the server. The one call that writes to a
+   * mailbox, so the caller has to name the account again as confirmation.
+   */
+  server.post('/api/accounts/:id/removal', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = removalSchema.extend({ confirmName: z.string() }).safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    let account;
+    try {
+      account = app.requireAccount(id);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+    if (!account.settings.allowServerRemoval) {
+      return fail(reply, 403, 'Removing mail from the server is not enabled for this account');
+    }
+    if (body.data.confirmName !== account.name) return fail(reply, 400, 'The account name does not match');
+    if (app.removal.isRunning(id)) return fail(reply, 409, 'A removal is already running');
+
+    void app
+      .startServerRemoval(id, {
+        folders: body.data.folders,
+        olderThanDays: body.data.olderThanDays,
+      })
+      .catch((error: Error) => logger.error(`Removal failed: ${error.message}`));
+    return { started: true };
+  });
+
+  server.post('/api/accounts/:id/removal/cancel', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { cancelled: app.cancelServerRemoval(id) };
+  });
+
+  server.get('/api/accounts/:id/removal', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { run: app.removal.getProgress(id) ?? null, running: app.removal.isRunning(id) };
+  });
+
   // ------------------------------------------------------------------ oauth
 
   const oauthProviderSchema = z.enum(['google', 'microsoft', 'custom']);
@@ -1367,6 +1426,29 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return logger.recent(Number(query.limit ?? 300));
   });
 
+  /**
+   * The log file as one download, oldest part first.
+   *
+   * Not on the viewer's list, so the read-only login cannot fetch it: a debug
+   * log names folders and files.
+   */
+  server.get('/api/logs/file', async (_request, reply) => {
+    const { createReadStream, existsSync } = await import('node:fs');
+    const { Readable } = await import('node:stream');
+    const parts = logger.logFiles().filter((path) => existsSync(path)).reverse();
+    if (parts.length === 0) return fail(reply, 404, 'No log file is being written');
+
+    async function* concatenated(): AsyncGenerator<Buffer> {
+      for (const path of parts) {
+        for await (const chunk of createReadStream(path)) yield chunk as Buffer;
+      }
+    }
+    return reply
+      .header('content-type', 'text/plain; charset=utf-8')
+      .header('content-disposition', 'attachment; filename="amberchest.log"')
+      .send(Readable.from(concatenated()));
+  });
+
   // ----------------------------------------------------------------- events
 
   server.get('/api/events', { websocket: true }, (socket: WebSocket, request: FastifyRequest) => {
@@ -1400,6 +1482,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onRestoreProgress = (progress: unknown): void => send('restore-progress', progress);
     const onMigrationProgress = (progress: unknown): void => send('migration-progress', progress);
     const onVerifyProgress = (progress: unknown): void => send('verify-progress', progress);
+    const onRemovalProgress = (progress: unknown): void => send('removal-progress', progress);
     const onAdoptProgress = (progress: unknown): void => send('adopt-progress', progress);
     const onTransferProgress = (progress: unknown): void => send('transfer-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
@@ -1411,6 +1494,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     app.restore.on('progress', onRestoreProgress);
     app.migration.on('progress', onMigrationProgress);
     app.verify.on('progress', onVerifyProgress);
+    app.removal.on('progress', onRemovalProgress);
     app.adopt.on('progress', onAdoptProgress);
     app.transfer.on('progress', onTransferProgress);
     logger.on('entry', onLog);
@@ -1423,6 +1507,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.restore.off('progress', onRestoreProgress);
       app.migration.off('progress', onMigrationProgress);
       app.verify.off('progress', onVerifyProgress);
+      app.removal.off('progress', onRemovalProgress);
       app.adopt.off('progress', onAdoptProgress);
       app.transfer.off('progress', onTransferProgress);
       logger.off('entry', onLog);

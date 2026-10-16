@@ -53,6 +53,8 @@ export interface MessageRow {
   sha256: string | null;
   /** Set when the bytes live with another message of the same account. */
   linked_to: number | null;
+  /** When this archive removed the message from the server on request; null otherwise. */
+  server_removed_at: string | null;
   /**
    * active   - in the archive
    * deleted  - gone from the server, kept here
@@ -765,6 +767,48 @@ export class ArchiveDatabase {
   }
 
   // ------------------------------------------------------------ attachments
+
+  /**
+   * The messages that could be removed from the server: archived, and not
+   * removed there before. Whether each one is really safe is decided one by one
+   * at the time it is deleted.
+   */
+  listRemovalCandidates(
+    accountId: string,
+    options: { folderPaths?: string[]; olderThanIso?: string | null } = {},
+  ): Array<MessageRow & { folder_path: string }> {
+    const where = ["m.account_id = ?", "m.state = 'active'", 'm.server_removed_at IS NULL'];
+    const params: unknown[] = [accountId];
+    if (options.folderPaths && options.folderPaths.length > 0) {
+      where.push(`f.path IN (${options.folderPaths.map(() => '?').join(',')})`);
+      params.push(...options.folderPaths);
+    }
+    if (options.olderThanIso) {
+      where.push('m.internal_date < ?');
+      params.push(options.olderThanIso);
+    }
+    return this.db
+      .prepare(
+        `SELECT m.*, f.path AS folder_path
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE ${where.join(' AND ')}
+          ORDER BY f.path, m.uid`,
+      )
+      .all(...params) as Array<MessageRow & { folder_path: string }>;
+  }
+
+  /** Records that these messages were deleted on the server by this archive. */
+  markServerRemoved(ids: number[], removedAt = new Date().toISOString()): void {
+    this.transaction(() => {
+      const statement = this.db.prepare('UPDATE messages SET server_removed_at = ? WHERE id = ?');
+      for (const id of ids) statement.run(removedAt, id);
+    });
+  }
+
+  /** The message is on the server again, so the mark no longer applies. */
+  clearServerRemoved(id: number): void {
+    this.db.prepare('UPDATE messages SET server_removed_at = NULL WHERE id = ?').run(id);
+  }
 
   /** Every message of an account that is still present locally. */
   listMessagesForExport(

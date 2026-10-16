@@ -44,6 +44,13 @@ export interface AccountSettings {
    * For emptying a mailbox to win back space while the archive keeps it.
    */
   protectBeforeDate: string | null;
+  /**
+   * Lets the archive delete mail on the server once it is safely archived.
+   *
+   * Off unless a person turns it on: it is the only thing here that writes to
+   * the mailbox.
+   */
+  allowServerRemoval: boolean;
 }
 
 /** Where exported attachments are laid out inside the target directory. */
@@ -213,6 +220,13 @@ export interface StorageSettings {
   stopBelowGb: number;
 }
 
+export interface LoggingSettings {
+  /** Null keeps the level the start-up chose. */
+  level: LogLevel | null;
+  /** Also write the log to a file beside the configuration. */
+  toFile: boolean;
+}
+
 export interface NotificationSettings {
   enabled: boolean;
   url: string;
@@ -237,6 +251,7 @@ export interface AppSettings {
   mqtt: MqttSettings;
   oauth: OAuthSettings;
   storage: StorageSettings;
+  logging: LoggingSettings;
   notifications: NotificationSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can

@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { ConfigStore, toPublicAccount } from './config/store.js';
 import {
   discardFolder,
@@ -50,6 +51,8 @@ import { Notifier } from './notify/notifier.js';
 import { writeRegister, type RegisterResult } from './register/writer.js';
 import { OAuthManager } from './oauth/manager.js';
 import { diskSpace, type DiskSpace } from './storage/disk.js';
+import { RemovalManager } from './removal/manager.js';
+import { planRemoval, type RemovalOptions, type RemovalPlan, type RemovalProgress } from './removal/engine.js';
 import { VerifyManager } from './verify/manager.js';
 import type { VerifyProgress } from './verify/engine.js';
 import { RestoreManager } from './restore/manager.js';
@@ -68,6 +71,7 @@ import type {
   PublicAccount,
   SyncProgress,
 } from './types.js';
+import { configDir } from './config/locations.js';
 import { logger } from './util/logger.js';
 
 /** What a bulk discard did. */
@@ -118,6 +122,7 @@ export class AmberChestApp {
   readonly mqtt: MqttBridge;
   readonly oauth: OAuthManager;
   readonly verify: VerifyManager;
+  readonly removal: RemovalManager;
   readonly notifier: Notifier;
   readonly adopt: AdoptManager;
   readonly transfer: TransferManager;
@@ -170,6 +175,13 @@ export class AmberChestApp {
       encryptionKey: () => this.config.archiveKey,
       connectionFor: (account) => this.connectionFor(account),
     });
+    this.removal = new RemovalManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
+      connectionFor: (account) => this.connectionFor(account),
+      isSyncing: (accountId) => this.sync.isRunning(accountId),
+    });
     this.notifier = new Notifier(() => this.config.getSettings().notifications);
     this.transfer = new TransferManager({
       archiveBaseDir: () => this.config.getSettings().archivePath,
@@ -209,14 +221,36 @@ export class AmberChestApp {
   async initialize(masterPassword: string): Promise<void> {
     await this.config.initialize(masterPassword);
     logger.info('Created a new configuration');
+    this.applyLogging();
   }
 
   async unlock(masterPassword: string): Promise<void> {
     await this.config.unlock(masterPassword);
     logger.info('Configuration unlocked');
+    this.applyLogging();
     // The broker credentials live in the encrypted configuration, so the
     // bridge can only start once that is open.
     await this.mqtt.apply();
+  }
+
+  /**
+   * Puts the saved logging settings to work: the level, and the file.
+   *
+   * A level that was never chosen in the interface (null) leaves what the
+   * start-up set, so AMBERCHEST_LOG_LEVEL keeps working for whoever uses it.
+   */
+  private applyLogging(): void {
+    const { level, toFile } = this.config.getSettings().logging;
+    if (level) logger.setLevel(level);
+    const path = this.logFilePath();
+    if (logger.setFile(toFile ? path : null)) {
+      // The first line, so the file exists as soon as it is switched on.
+      logger.info(toFile ? `Writing the log to ${path}` : 'No longer writing the log to a file');
+    }
+  }
+
+  logFilePath(): string {
+    return join(configDir(), 'logs', 'amberchest.log');
   }
 
   lock(): void {
@@ -231,6 +265,7 @@ export class AmberChestApp {
   async updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
     const before = this.config.getSettings().mqtt;
     const settings = await this.config.updateSettings(patch);
+    if (patch.logging) this.applyLogging();
     // Reconnecting on every settings change would drop the connection when
     // only the theme was touched.
     if (JSON.stringify(before) !== JSON.stringify(settings.mqtt)) await this.mqtt.apply();
@@ -951,6 +986,21 @@ export class AmberChestApp {
 
   lastVerify(accountId: string): VerifyProgress | null {
     return this.verify.lastRun(accountId);
+  }
+
+  /** What a removal would take, from the index alone; nothing is touched. */
+  planServerRemoval(accountId: string, options: RemovalOptions = {}): RemovalPlan {
+    this.requireAccount(accountId);
+    return planRemoval(this.db, accountId, options);
+  }
+
+  /** Deletes archived mail on the server; see RemovalEngine for what has to hold first. */
+  startServerRemoval(accountId: string, options: RemovalOptions = {}): Promise<RemovalProgress> {
+    return this.removal.start(this.requireAccount(accountId), options);
+  }
+
+  cancelServerRemoval(accountId: string): boolean {
+    return this.removal.cancel(accountId);
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

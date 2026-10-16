@@ -26,6 +26,7 @@ import {
   storeMessage,
 } from '../storage/archive.js';
 import { assertRoom } from '../storage/disk.js';
+import { appendJournal } from '../storage/journal.js';
 import { isBeforeCutoff } from './protect.js';
 import type { Account, RemoteFolder, SyncProgress, SyncStats } from '../types.js';
 import { mapWithConcurrency, sleep } from '../util/concurrency.js';
@@ -241,7 +242,9 @@ export class SyncEngine extends EventEmitter {
 
       const protectedHere = this.db
         .listActiveMessages(local.id)
-        .some((message) => this.isProtected(message.internal_date));
+        .some(
+          (message) => this.isProtected(message.internal_date) || message.server_removed_at !== null,
+        );
       if (protectedHere) {
         logger.info(
           `Folder ${local.path} vanished on the server, but holds protected mail - keeping it`,
@@ -352,6 +355,17 @@ export class SyncEngine extends EventEmitter {
       }
 
       seenRowIds.add(existing.id);
+
+      // Back on the server - put there again by a restore, say - so it is an
+      // ordinary message once more.
+      if (existing.server_removed_at) {
+        this.db.clearServerRemoved(existing.id);
+        await appendJournal(this.layout.folderDir(this.account, relativeFolder), {
+          op: 'server-return',
+          ts: new Date().toISOString(),
+          file: existing.file_name,
+        });
+      }
 
       if (uidValidityChanged || existing.uid !== message.uid) {
         this.db.moveMessage(existing.id, {
@@ -641,6 +655,11 @@ export class SyncEngine extends EventEmitter {
         this.stats.messagesProtected += 1;
         continue;
       }
+
+      // Removed from the server by this archive, at a person's request. Being
+      // gone there is the whole point; the copy here is the one that is left,
+      // and no policy gets to dispose of it.
+      if (row.server_removed_at) continue;
 
       // Another folder may be showing the same message through this file. It
       // has to keep it, otherwise deleting one copy would lose both.
