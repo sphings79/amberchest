@@ -1002,10 +1002,31 @@ export class ArchiveDatabase {
       .run(runId, accountId, new Date().toISOString());
   }
 
-  finishRun(runId: string, status: 'done' | 'cancelled' | 'failed', stats: SyncStats, error?: string): void {
+  finishRun(
+    runId: string,
+    status: 'done' | 'cancelled' | 'failed' | 'paused',
+    stats: SyncStats,
+    error?: string,
+  ): void {
     this.db
       .prepare('UPDATE sync_runs SET finished_at = ?, status = ?, stats = ?, error = ? WHERE id = ?')
       .run(new Date().toISOString(), status, JSON.stringify(stats), error ?? null, runId);
+  }
+
+  /**
+   * How many runs in a row, newest first, ended paused, and when the last one
+   * did. Anything else ends the row: a run that got through starts afresh.
+   */
+  pauseState(accountId: string): { consecutive: number; lastPausedAt: string | null } {
+    const rows = this.db
+      .prepare('SELECT status, finished_at FROM sync_runs WHERE account_id = ? ORDER BY started_at DESC LIMIT 20')
+      .all(accountId) as Array<{ status: string; finished_at: string | null }>;
+    let consecutive = 0;
+    for (const row of rows) {
+      if (row.status !== 'paused') break;
+      consecutive += 1;
+    }
+    return { consecutive, lastPausedAt: consecutive > 0 ? (rows[0]?.finished_at ?? null) : null };
   }
 
   listRuns(accountId: string, limit = 25): Array<Record<string, unknown>> {

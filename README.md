@@ -515,6 +515,29 @@ The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
 over an archive directory that is already in place — which is how an index
 database is rebuilt after it was lost.
 
+## When the host cuts a run off
+
+Some hosts close the connection after a certain amount of data or time, or say
+"Account exceeded command or bandwidth limits" (Gmail does). A big mailbox then
+cannot be copied in one run.
+
+AmberChest does not treat this as a failure. A run that the server ends is
+**paused**: what was downloaded is kept, the account shows a yellow "Paused"
+instead of a red "Failed", and the next run carries on from there. You get one
+notification at the first pause, not one per attempt.
+
+- **The schedule waits.** After a pause, scheduled runs skip that account for 6
+  hours, then 12, 24 and at most 48 if it keeps happening, because trying again
+  every hour may only keep the host closed. A run started by hand is never held
+  back, and a run that gets through starts the count afresh.
+- **Most data per run** (account, Advanced): a run ends cleanly, as a normal
+  finished run, once it has downloaded this many megabytes, and the rest follows
+  in the next run. It is off by default; set it to a little below the point where
+  your host cuts you off.
+- **The scan is done in blocks** of 1,000 UIDs, with the "pause between
+  fetches" of the account between them, instead of one command for a whole
+  folder.
+
 ## Gmail: one message, several folders
 
 Gmail shows every mail in its folder **and** in All Mail, so archiving both

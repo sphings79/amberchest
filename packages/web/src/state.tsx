@@ -161,7 +161,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         if (message.type === 'progress') {
           const value = message.payload as SyncProgress;
           setProgress((current) => ({ ...current, [value.accountId]: value }));
-          if (value.phase === 'done' || value.phase === 'failed' || value.phase === 'cancelled') {
+          if (
+            value.phase === 'done' ||
+            value.phase === 'failed' ||
+            value.phase === 'cancelled' ||
+            value.phase === 'paused'
+          ) {
             void refreshAccounts();
           }
         } else if (message.type === 'export-progress') {

@@ -34,6 +34,8 @@ export const accountSettingsSchema = z.object({
    * mailbox: with it off, nothing here ever sets \Deleted or sends EXPUNGE.
    */
   allowServerRemoval: z.boolean().default(false),
+  /** Stop a run after this many megabytes; zero is no limit. */
+  maxMegabytesPerRun: z.number().int().min(0).max(10_000_000).default(0),
 });
 
 export const attachmentSettingsSchema = z.object({

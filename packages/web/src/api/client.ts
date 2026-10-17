@@ -195,6 +195,8 @@ export interface AccountSettingsValues {
   protectBeforeDate: string | null;
   /** Lets the archive delete mail on the server once it is archived. */
   allowServerRemoval: boolean;
+  /** A run stops after this many megabytes; zero is no limit. */
+  maxMegabytesPerRun: number;
   /** Aliases beside the account address, for "sent to myself". */
   ownAddresses: string[];
 }

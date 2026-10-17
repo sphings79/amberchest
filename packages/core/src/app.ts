@@ -72,6 +72,7 @@ import type {
   SyncProgress,
 } from './types.js';
 import { configDir } from './config/locations.js';
+import { pausedUntil } from './sync/pause.js';
 import { logger } from './util/logger.js';
 
 /** What a bulk discard did. */
@@ -851,6 +852,22 @@ export class AmberChestApp {
     const account = this.config.getAccount(progress.accountId);
     const name = account?.name ?? progress.accountId;
 
+    if (progress.phase === 'paused') {
+      // Said once, at the first pause of a row: the ones after it are the
+      // same news, and the schedule is already waiting longer.
+      if (this.db.pauseState(progress.accountId).consecutive !== 1) return;
+      await this.notifier.send({
+        event: 'backupFailed',
+        level: 'warning',
+        title: `AmberChest: backup of ${name} paused`,
+        message:
+          `${progress.error ?? 'The server ended the run.'} What was downloaded is kept; ` +
+          'a later run carries on.',
+        details: { account: name, accountId: progress.accountId, stats: progress.stats },
+      });
+      return;
+    }
+
     if (progress.phase === 'failed') {
       await this.notifier.send({
         event: 'backupFailed',
@@ -1005,6 +1022,11 @@ export class AmberChestApp {
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {
     return this.sync.start(this.requireAccount(accountId));
+  }
+
+  /** When a scheduled run may try this account again after a pause; null when it may now. */
+  pausedUntil(accountId: string): Date | null {
+    return pausedUntil(this.db, accountId);
   }
 
   cancelSync(accountId: string): boolean {

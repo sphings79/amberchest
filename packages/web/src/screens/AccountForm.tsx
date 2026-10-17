@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   linkDuplicates: false,
   protectBeforeDate: null,
   allowServerRemoval: false,
+  maxMegabytesPerRun: 0,
 };
 
 const PORT_BY_SECURITY: Record<string, number> = { tls: 993, starttls: 143, none: 143 };
@@ -293,6 +294,17 @@ export function AccountForm({
                 />
               </Field>
             </div>
+
+            <Field label={t('account.maxPerRun')} hint={t('account.maxPerRunHint')}>
+              <Input
+                type="number"
+                min={0}
+                value={settings.maxMegabytesPerRun}
+                onChange={(event) =>
+                  setSettings({ ...settings, maxMegabytesPerRun: Math.max(0, Math.floor(Number(event.target.value) || 0)) })
+                }
+              />
+            </Field>
 
             <Field label={t('account.sinceDate')} hint={t('account.sinceDateHint')}>
               <Input

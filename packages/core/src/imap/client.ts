@@ -1,5 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import type { Account, RemoteFolder } from '../types.js';
+import { sleep } from '../util/concurrency.js';
 import { messageFingerprint } from '../util/hash.js';
 
 export interface ImapConnectionOptions {
@@ -114,6 +115,22 @@ export function describeImapError(error: unknown): string {
   }
 }
 
+/**
+ * Why a run should pause instead of fail, or null when it should fail.
+ *
+ * A host that closes the connection in the middle of a run, or says it has
+ * had enough ("Account exceeded command or bandwidth limits"), is not broken:
+ * what was downloaded is kept and a later run carries on. A wrong password or
+ * a missing server is a different matter and stays a failure.
+ */
+export function serverPauseReason(error: unknown): string | null {
+  const err = error as { code?: string; reason?: string; responseText?: string; message?: string };
+  const text = `${err?.reason ?? ''} ${err?.responseText ?? ''}`;
+  if (err?.code === 'NoConnection') return describeImapError(error);
+  if (/limit|bandwidth|too many|throttl|rate/i.test(text)) return describeImapError(error);
+  return null;
+}
+
 export async function testConnection(options: ImapConnectionOptions): Promise<ConnectionTestResult> {
   try {
     return await withConnection(options, async (client) => {
@@ -215,6 +232,34 @@ export interface ScanOptions {
   /** Only look at messages received at or after this date. */
   since?: Date | null;
   onProgress?: (done: number, total: number) => void;
+  /**
+   * UIDs asked for per command. Zero asks for the whole folder in one, which
+   * is what a host that is not touchy about it is happiest with.
+   */
+  blockSize?: number;
+  /** Pause between two blocks, in milliseconds. */
+  pauseMs?: number;
+  shouldCancel?: () => boolean;
+}
+
+/** The UID ranges one scan is made of, as IMAP sequence strings. */
+function scanRanges(uids: number[] | null, uidNext: number, blockSize: number): string[] {
+  if (uids) {
+    if (blockSize <= 0 || uids.length <= blockSize) return [toSequenceString(uids)];
+    const sorted = [...uids].sort((a, b) => a - b);
+    const ranges: string[] = [];
+    for (let index = 0; index < sorted.length; index += blockSize) {
+      ranges.push(toSequenceString(sorted.slice(index, index + blockSize)));
+    }
+    return ranges;
+  }
+  // The server may not tell where the UIDs end; then there is only one block.
+  if (blockSize <= 0 || !Number.isFinite(uidNext) || uidNext <= blockSize + 1) return ['1:*'];
+  const ranges: string[] = [];
+  for (let start = 1; start < uidNext; start += blockSize) {
+    ranges.push(`${start}:${Math.min(start + blockSize - 1, uidNext - 1)}`);
+  }
+  return ranges;
 }
 
 /**
@@ -223,46 +268,59 @@ export interface ScanOptions {
  * This is the cheap pass that drives the diff: it tells us which messages are
  * new, which vanished and which only changed their flags - and it produces the
  * fingerprints needed to recognise a message that merely moved.
+ *
+ * In blocks of UIDs with a pause between them, when asked: one command for a
+ * whole folder of tens of thousands of messages is what some hosts answer
+ * with a closed connection.
  */
 export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): Promise<ScannedMessage[]> {
-  let range = '1:*';
+  let uids: number[] | null = null;
 
   if (options.since) {
     const found = await client.search({ since: options.since }, { uid: true });
     if (!found || !Array.isArray(found) || found.length === 0) return [];
-    range = toSequenceString(found);
+    uids = found;
   }
 
-  const messages: ScannedMessage[] = [];
-  const total = client.mailbox && typeof client.mailbox === 'object' ? client.mailbox.exists : 0;
+  const mailbox = client.mailbox && typeof client.mailbox === 'object' ? client.mailbox : null;
+  const total = mailbox ? mailbox.exists : 0;
+  const uidNext = mailbox ? Number(mailbox.uidNext) : 0;
+  const ranges = scanRanges(uids, uidNext, options.blockSize ?? 0);
 
-  for await (const message of client.fetch(
-    range,
-    { uid: true, flags: true, internalDate: true, size: true, envelope: true },
-    { uid: true },
-  )) {
-    const internalDate = toDate(message.internalDate);
-    const envelope = message.envelope;
-    const scanned: ScannedMessage = {
-      uid: message.uid,
-      flags: message.flags ? [...message.flags] : [],
-      internalDate,
-      size: message.size ?? 0,
-      messageId: envelope?.messageId ?? null,
-      subject: envelope?.subject ?? null,
-      fromAddress: firstAddress(envelope?.from),
-      toAddress: firstAddress(envelope?.to),
-      fingerprint: '',
-    };
-    scanned.fingerprint = messageFingerprint({
-      messageId: scanned.messageId,
-      internalDate,
-      fromAddress: scanned.fromAddress,
-      subject: scanned.subject,
-      size: scanned.size,
-    });
-    messages.push(scanned);
-    options.onProgress?.(messages.length, total);
+  const messages: ScannedMessage[] = [];
+
+  for (const [index, range] of ranges.entries()) {
+    if (options.shouldCancel?.()) return messages;
+    if (index > 0 && (options.pauseMs ?? 0) > 0) await sleep(options.pauseMs as number);
+
+    for await (const message of client.fetch(
+      range,
+      { uid: true, flags: true, internalDate: true, size: true, envelope: true },
+      { uid: true },
+    )) {
+      const internalDate = toDate(message.internalDate);
+      const envelope = message.envelope;
+      const scanned: ScannedMessage = {
+        uid: message.uid,
+        flags: message.flags ? [...message.flags] : [],
+        internalDate,
+        size: message.size ?? 0,
+        messageId: envelope?.messageId ?? null,
+        subject: envelope?.subject ?? null,
+        fromAddress: firstAddress(envelope?.from),
+        toAddress: firstAddress(envelope?.to),
+        fingerprint: '',
+      };
+      scanned.fingerprint = messageFingerprint({
+        messageId: scanned.messageId,
+        internalDate,
+        fromAddress: scanned.fromAddress,
+        subject: scanned.subject,
+        size: scanned.size,
+      });
+      messages.push(scanned);
+      options.onProgress?.(messages.length, total);
+    }
   }
 
   return messages;

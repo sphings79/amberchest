@@ -537,6 +537,30 @@ Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ei
 Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
 Index-Datenbank wieder aufgebaut.
 
+## Wenn der Anbieter einen Lauf abbricht
+
+Manche Anbieter schließen die Verbindung nach einer bestimmten Datenmenge oder
+Zeit oder melden „Account exceeded command or bandwidth limits“ (Gmail tut das).
+Ein großes Postfach lässt sich dann nicht in einem Lauf kopieren.
+
+AmberChest behandelt das nicht als Fehler. Ein Lauf, den der Server beendet, ist
+**pausiert**: Was heruntergeladen wurde, bleibt erhalten, das Konto zeigt ein
+gelbes „Pausiert“ statt eines roten „Fehlgeschlagen“, und der nächste Lauf macht
+dort weiter. Eine Benachrichtigung gibt es beim ersten Pausieren, nicht bei
+jedem Versuch.
+
+- **Der Zeitplan wartet.** Nach einer Pause überspringen geplante Läufe das Konto
+  6 Stunden, dann 12, 24 und höchstens 48, wenn es sich wiederholt, denn ein
+  stündlicher Versuch hält den Anbieter womöglich nur geschlossen. Ein von Hand
+  gestarteter Lauf wird nie aufgehalten, und ein Lauf, der durchkommt, beginnt
+  die Zählung von vorn.
+- **Höchstmenge pro Lauf** (Konto, Erweitert): Ein Lauf endet sauber, als normal
+  beendeter Lauf, sobald er so viele Megabyte heruntergeladen hat, der Rest folgt
+  im nächsten Lauf. Standardmäßig aus; stell es etwas unter die Menge, bei der
+  dein Anbieter abbricht.
+- **Der Scan läuft in Blöcken** zu 1.000 UIDs, mit der „Pause zwischen Abrufen“
+  des Kontos dazwischen, statt in einem Befehl für den ganzen Ordner.
+
 ## Gmail: eine Nachricht, mehrere Ordner
 
 Gmail zeigt jede Mail in ihrem Ordner **und** in „Alle Nachrichten" — wer beides

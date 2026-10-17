@@ -6,6 +6,7 @@ import {
   FolderTree,
   HardDrive,
   Mail,
+  Pause,
   PlayCircle,
   Users,
   XCircle,
@@ -246,14 +247,15 @@ export function Overview({ onGoToAccounts }: { onGoToAccounts: () => void }): Re
                 messagesDeleted?: number;
               };
               const failed = run.status === 'failed';
+              const paused = run.status === 'paused';
               return (
                 <div
                   key={run.id}
                   className="flex flex-wrap items-center gap-2 border-b py-2 last:border-b-0"
                   style={{ borderColor: 'var(--border)' }}
                 >
-                  <span style={{ color: failed ? 'var(--danger)' : 'var(--ok)' }}>
-                    {failed ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                  <span style={{ color: failed ? 'var(--danger)' : paused ? 'var(--warn)' : 'var(--ok)' }}>
+                    {failed ? <XCircle size={14} /> : paused ? <Pause size={14} /> : <CheckCircle2 size={14} />}
                   </span>
                   <span className="text-sm">{nameOf(run.account_id)}</span>
                   <span className="text-xs" style={{ color: 'var(--text-faint)' }}>

@@ -11,6 +11,7 @@ import {
   listRemoteFolders,
   openFolderReadOnly,
   scanFolder,
+  serverPauseReason,
   withConnection,
   type ScannedMessage,
 } from '../imap/client.js';
@@ -77,7 +78,12 @@ export interface SyncEngineOptions {
   encryptionKey?: Buffer | null;
   /** Prepared connection; an OAuth account arrives with a fresh token. */
   connection?: ImapConnectionOptions | undefined;
+  /** Replaceable so a test can run against a stand-in for the server. */
+  connect?: <T>(options: ImapConnectionOptions, fn: (client: ImapFlow) => Promise<T>) => Promise<T>;
 }
+
+/** How many UIDs one command of the scan asks for. */
+const SCAN_BLOCK_SIZE = 1000;
 
 /**
  * Archives one account.
@@ -92,6 +98,8 @@ export class SyncEngine extends EventEmitter {
   readonly runId = randomUUID();
 
   private cancelled = false;
+  /** The download limit of the account was reached; no more is fetched. */
+  private limitReached = false;
   private readonly stats = emptyStats();
   private readonly layout: ArchiveLayout;
   private currentFolder: string | null = null;
@@ -141,15 +149,24 @@ export class SyncEngine extends EventEmitter {
 
     try {
       const connection = this.options.connection ?? connectionOptionsFromAccount(this.account);
-      const stats = await withConnection(connection, async (client) => {
+      const connect = this.options.connect ?? withConnection;
+      const stats = await connect(connection, async (client) => {
         return this.execute(client);
       });
+      if (this.limitReached) stats.stoppedAtLimit = true;
       this.db.finishRun(this.runId, 'done', stats);
       this.emitProgress('done');
       logger.info(
         `Backup finished for ${this.account.name}: ${stats.messagesNew} new, ${stats.messagesMoved} moved, ${stats.messagesDeleted} removed`,
         { accountId: this.account.id },
       );
+      if (this.limitReached) {
+        logger.info(
+          `${this.account.name}: stopped after ${Math.round(stats.bytesDownloaded / 1024 / 1024)} MB, ` +
+            'the limit set for this account; the rest follows in the next run',
+          { accountId: this.account.id },
+        );
+      }
       return stats;
     } catch (error) {
       if (error instanceof SyncCancelledError) {
@@ -157,6 +174,18 @@ export class SyncEngine extends EventEmitter {
         this.emitProgress('cancelled');
         logger.warn(`Backup cancelled for ${this.account.name}`, { accountId: this.account.id });
         return this.stats;
+      }
+      const pauseReason = serverPauseReason(error);
+      if (pauseReason) {
+        // What was downloaded is kept, and the next run carries on from it.
+        this.db.finishRun(this.runId, 'paused', this.stats, pauseReason);
+        this.emitProgress('paused', pauseReason);
+        logger.warn(
+          `Backup paused for ${this.account.name}: ${pauseReason}. What was downloaded is kept; ` +
+            'the next run carries on.',
+          { accountId: this.account.id, ...(error instanceof Error ? { detail: error.stack } : {}) },
+        );
+        throw error;
       }
       const message = describeImapError(error);
       this.db.finishRun(this.runId, 'failed', this.stats, message);
@@ -214,7 +243,9 @@ export class SyncEngine extends EventEmitter {
     this.emitProgress('downloading');
     for (const plan of plans) {
       this.checkCancelled();
+      if (this.limitReached) break;
       await this.downloadFolder(client, plan);
+      if (this.limitReached) break;
       this.stats.foldersDone += 1;
       this.emitProgress('downloading');
     }
@@ -305,6 +336,9 @@ export class SyncEngine extends EventEmitter {
     const since = this.account.settings.sinceDate ? new Date(this.account.settings.sinceDate) : null;
     const scanned = await scanFolder(client, {
       since,
+      blockSize: SCAN_BLOCK_SIZE,
+      pauseMs: this.account.settings.requestDelayMs,
+      shouldCancel: () => this.cancelled,
       onProgress: (done, total) => {
         this.folderDone = done;
         this.folderTotal = total;
@@ -730,6 +764,7 @@ export class SyncEngine extends EventEmitter {
     const taken = await listMessageFiles(folderDir);
     const scannedByUid = new Map(plan.scanned.map((message) => [message.uid, message]));
     const delay = this.account.settings.requestDelayMs;
+    const maxBytes = (this.account.settings.maxMegabytesPerRun ?? 0) * 1024 * 1024;
 
     await fetchSources(
       client,
@@ -788,12 +823,16 @@ export class SyncEngine extends EventEmitter {
         this.stats.bytesDownloaded += source.length;
         this.folderDone += 1;
         if (this.folderDone % 25 === 0) this.emitProgress('downloading');
+        if (maxBytes > 0 && this.stats.bytesDownloaded >= maxBytes) this.limitReached = true;
         if (delay > 0) await sleep(delay);
       },
-      () => this.cancelled,
+      () => this.cancelled || this.limitReached,
     );
 
     this.checkCancelled();
+    // A folder that was stopped half way is picked up again next time; it has
+    // not been synced in full.
+    if (this.limitReached) return;
     this.db.updateFolderSyncState(plan.folder.id, { lastSync: new Date().toISOString() });
     this.emitProgress('downloading');
   }

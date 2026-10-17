@@ -48,7 +48,8 @@ function formatDate(iso: string | null | undefined, locale: string, never: strin
 
 function ProgressSection({ progress }: { progress: SyncProgress }): ReactNode {
   const { t, i18n } = useTranslation();
-  const active = !['done', 'failed', 'cancelled'].includes(progress.phase);
+  const active = !['done', 'failed', 'cancelled', 'paused'].includes(progress.phase);
+  const paused = progress.phase === 'paused';
   const ratio =
     progress.folderMessagesTotal > 0 ? progress.folderMessagesDone / progress.folderMessagesTotal : 0;
 
@@ -93,8 +94,22 @@ function ProgressSection({ progress }: { progress: SyncProgress }): ReactNode {
       </div>
 
       {progress.error && (
-        <div className="rounded-lg px-2.5 py-1.5 text-xs" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+        <div
+          className="rounded-lg px-2.5 py-1.5 text-xs"
+          style={
+            paused
+              ? { background: 'var(--warn-soft)', color: 'var(--warn)' }
+              : { background: 'var(--danger-soft)', color: 'var(--danger)' }
+          }
+        >
           {progress.error}
+          {paused && <div className="mt-1">{t('progress.pausedHint')}</div>}
+        </div>
+      )}
+
+      {progress.stats.stoppedAtLimit && (
+        <div className="rounded-lg px-2.5 py-1.5 text-xs" style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}>
+          {t('progress.stoppedAtLimit')}
         </div>
       )}
     </div>
@@ -126,7 +141,8 @@ function AccountCard({
 }): ReactNode {
   const { t, i18n } = useTranslation();
   const account = overview.account;
-  const running = overview.running || (progress ? !['done', 'failed', 'cancelled'].includes(progress.phase) : false);
+  const running =
+    overview.running || (progress ? !['done', 'failed', 'cancelled', 'paused'].includes(progress.phase) : false);
   const lastRun = overview.lastRun as { started_at?: string; status?: string } | null;
 
   const stats = [
@@ -161,8 +177,12 @@ function AccountCard({
                 <Badge tone="accent">{t('dashboard.running')}</Badge>
               </span>
             ) : (
-              <Badge tone={lastRun?.status === 'failed' ? 'danger' : 'ok'}>
-                {lastRun?.status === 'failed' ? t('progress.failed') : t('dashboard.idle')}
+              <Badge tone={lastRun?.status === 'failed' ? 'danger' : lastRun?.status === 'paused' ? 'warn' : 'ok'}>
+                {lastRun?.status === 'failed'
+                  ? t('progress.failed')
+                  : lastRun?.status === 'paused'
+                    ? t('progress.paused')
+                    : t('dashboard.idle')}
               </Badge>
             )}
           </div>

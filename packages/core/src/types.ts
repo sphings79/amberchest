@@ -51,6 +51,13 @@ export interface AccountSettings {
    * the mailbox.
    */
   allowServerRemoval: boolean;
+  /**
+   * A run stops cleanly once it has downloaded this many megabytes, and the
+   * rest follows in the next run. Zero means no limit.
+   *
+   * For hosts that cut a connection off after a certain amount of data.
+   */
+  maxMegabytesPerRun: number;
 }
 
 /** Where exported attachments are laid out inside the target directory. */
@@ -341,6 +348,8 @@ export interface SyncStats {
   messagesRestored: number;
   flagsUpdated: number;
   bytesDownloaded: number;
+  /** The run ended at the limit set for the account; the rest follows next time. */
+  stoppedAtLimit?: boolean;
 }
 
 export type SyncPhase =
@@ -352,6 +361,8 @@ export type SyncPhase =
   | 'finalizing'
   | 'done'
   | 'cancelled'
+  /** The server closed the connection or named a limit; a later run carries on. */
+  | 'paused'
   | 'failed';
 
 export interface SyncProgress {
