@@ -149,7 +149,10 @@ function AccountCard({
           {account.name.slice(0, 2).toUpperCase()}
         </div>
 
-        <div className="min-w-0 flex-1">
+        {/* The minimum width is what makes the buttons wrap onto their own row
+            when they do not fit; without it this block shrinks to a few pixels
+            and the name and the status are cut off. */}
+        <div className="min-w-[14rem] flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate font-semibold">{account.name}</span>
             {running ? (
