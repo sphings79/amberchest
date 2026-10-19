@@ -240,6 +240,8 @@ export interface ScanOptions {
   /** Pause between two blocks, in milliseconds. */
   pauseMs?: number;
   shouldCancel?: () => boolean;
+  /** Called after each block, for the log. */
+  onBlock?: (block: { index: number; blocks: number; range: string; messages: number; ms: number }) => void;
 }
 
 /** The UID ranges one scan is made of, as IMAP sequence strings. */
@@ -293,6 +295,8 @@ export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): P
     if (options.shouldCancel?.()) return messages;
     if (index > 0 && (options.pauseMs ?? 0) > 0) await sleep(options.pauseMs as number);
 
+    const startedAt = Date.now();
+    const before = messages.length;
     for await (const message of client.fetch(
       range,
       { uid: true, flags: true, internalDate: true, size: true, envelope: true },
@@ -321,6 +325,13 @@ export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): P
       messages.push(scanned);
       options.onProgress?.(messages.length, total);
     }
+    options.onBlock?.({
+      index: index + 1,
+      blocks: ranges.length,
+      range,
+      messages: messages.length - before,
+      ms: Date.now() - startedAt,
+    });
   }
 
   return messages;

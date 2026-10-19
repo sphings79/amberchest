@@ -339,6 +339,12 @@ export class SyncEngine extends EventEmitter {
       blockSize: SCAN_BLOCK_SIZE,
       pauseMs: this.account.settings.requestDelayMs,
       shouldCancel: () => this.cancelled,
+      onBlock: (block) =>
+        logger.debug(
+          `${remote.path}: scan block ${block.index}/${block.blocks} (UID ${block.range}), ` +
+            `${block.messages} message(s) in ${block.ms} ms`,
+          { accountId: this.account.id },
+        ),
       onProgress: (done, total) => {
         this.folderDone = done;
         this.folderTotal = total;

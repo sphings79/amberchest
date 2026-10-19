@@ -141,6 +141,20 @@ describe('scanning in blocks', () => {
     expect(scanned).toHaveLength(2500);
   });
 
+  it('reports every block', async () => {
+    const { stub } = fakeServer({ count: 2500 });
+    const blocks: Array<{ index: number; blocks: number; range: string; messages: number }> = [];
+    await scanFolder(stub as never, {
+      blockSize: 1000,
+      onBlock: ({ index, blocks: total, range, messages }) => blocks.push({ index, blocks: total, range, messages }),
+    });
+    expect(blocks).toEqual([
+      { index: 1, blocks: 3, range: '1:1000', messages: 1000 },
+      { index: 2, blocks: 3, range: '1001:2000', messages: 1000 },
+      { index: 3, blocks: 3, range: '2001:2500', messages: 500 },
+    ]);
+  });
+
   it('keeps to one command when no block size is given', async () => {
     const { stub, scanRanges } = fakeServer({ count: 2500 });
     await scanFolder(stub as never);
