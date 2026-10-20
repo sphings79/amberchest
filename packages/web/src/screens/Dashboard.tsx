@@ -3,6 +3,7 @@ import {
   ArrowRightLeft,
   CalendarClock,
   FolderTree,
+  Layers,
   Mail,
   Paperclip,
   Pencil,
@@ -27,6 +28,7 @@ import { FolderPicker } from './FolderPicker.js';
 import { RestoreDialog } from './RestoreDialog.js';
 import { TransferDialog } from './TransferDialog.js';
 import { RemovalDialog } from './RemovalDialog.js';
+import { DedupeDialog } from './DedupeDialog.js';
 import { VerifyDialog } from './VerifyDialog.js';
 
 function formatBytes(bytes: number): string {
@@ -125,6 +127,7 @@ function AccountCard({
   onRestore,
   onVerify,
   onRemoval,
+  onDedupe,
   onTransfer,
   onChanged,
 }: {
@@ -136,6 +139,7 @@ function AccountCard({
   onRestore: () => void;
   onVerify: () => void;
   onRemoval: () => void;
+  onDedupe: () => void;
   onTransfer: () => void;
   onChanged: () => void;
 }): ReactNode {
@@ -228,6 +232,10 @@ function AccountCard({
             <ShieldCheck size={15} />
             {t('verify.open')}
           </Button>
+          <Button onClick={onDedupe} disabled={overview.messageCount === 0}>
+            <Layers size={15} />
+            {t('dedupe.open')}
+          </Button>
           {account.settings.allowServerRemoval && (
             <Button onClick={onRemoval} disabled={overview.messageCount === 0}>
               <CloudOff size={15} />
@@ -296,6 +304,7 @@ export function Dashboard(): ReactNode {
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
   const [verifyFor, setVerifyFor] = useState<AccountOverview | null>(null);
   const [removalFor, setRemovalFor] = useState<AccountOverview | null>(null);
+  const [dedupeFor, setDedupeFor] = useState<AccountOverview | null>(null);
   const [transferFor, setTransferFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
@@ -366,6 +375,7 @@ export function Dashboard(): ReactNode {
               onRestore={() => setRestoreFor(overview)}
               onVerify={() => setVerifyFor(overview)}
               onRemoval={() => setRemovalFor(overview)}
+              onDedupe={() => setDedupeFor(overview)}
               onTransfer={() => setTransferFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
@@ -387,6 +397,8 @@ export function Dashboard(): ReactNode {
       {verifyFor && <VerifyDialog overview={verifyFor} onClose={() => setVerifyFor(null)} />}
 
       {removalFor && <RemovalDialog overview={removalFor} onClose={() => setRemovalFor(null)} />}
+
+      {dedupeFor && <DedupeDialog overview={dedupeFor} onClose={() => setDedupeFor(null)} />}
 
       {transferFor && (
         <TransferDialog overview={transferFor} onClose={() => setTransferFor(null)} />

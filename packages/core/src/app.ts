@@ -52,6 +52,8 @@ import { writeRegister, type RegisterResult } from './register/writer.js';
 import { OAuthManager } from './oauth/manager.js';
 import { diskSpace, type DiskSpace } from './storage/disk.js';
 import { RemovalManager } from './removal/manager.js';
+import { DedupeManager } from './dedupe/manager.js';
+import { planDedupe, type DedupePlan, type DedupeProgress } from './dedupe/engine.js';
 import { planRemoval, type RemovalOptions, type RemovalPlan, type RemovalProgress } from './removal/engine.js';
 import { VerifyManager } from './verify/manager.js';
 import type { VerifyProgress } from './verify/engine.js';
@@ -124,6 +126,7 @@ export class AmberChestApp {
   readonly oauth: OAuthManager;
   readonly verify: VerifyManager;
   readonly removal: RemovalManager;
+  readonly dedupe: DedupeManager;
   readonly notifier: Notifier;
   readonly adopt: AdoptManager;
   readonly transfer: TransferManager;
@@ -182,6 +185,15 @@ export class AmberChestApp {
       encryptionKey: () => this.config.archiveKey,
       connectionFor: (account) => this.connectionFor(account),
       isSyncing: (accountId) => this.sync.isRunning(accountId),
+    });
+    this.dedupe = new DedupeManager({
+      db: this.db,
+      archiveBaseDir: () => this.config.getSettings().archivePath,
+      encryptionKey: () => this.config.archiveKey,
+      isBusy: (accountId) =>
+        this.sync.isRunning(accountId) ||
+        this.verify.isRunning(accountId) ||
+        this.removal.isRunning(accountId),
     });
     this.notifier = new Notifier(() => this.config.getSettings().notifications);
     this.transfer = new TransferManager({
@@ -1018,6 +1030,29 @@ export class AmberChestApp {
 
   cancelServerRemoval(accountId: string): boolean {
     return this.removal.cancel(accountId);
+  }
+
+  /** What storing duplicates once would take, from the index alone. */
+  planDedupe(accountId: string): DedupePlan {
+    this.requireAccount(accountId);
+    return planDedupe(this.db, accountId);
+  }
+
+  /**
+   * Replaces copies of a message in several folders by links to one file.
+   * With `enableLinking` the account's "Store a message only once" is switched
+   * on first, otherwise the next backup would fetch the copies again.
+   */
+  async startDedupe(accountId: string, enableLinking: boolean): Promise<DedupeProgress> {
+    const account = this.requireAccount(accountId);
+    if (enableLinking && !account.settings.linkDuplicates) {
+      await this.updateAccount(accountId, { settings: { ...account.settings, linkDuplicates: true } });
+    }
+    return this.dedupe.start(this.requireAccount(accountId));
+  }
+
+  cancelDedupe(accountId: string): boolean {
+    return this.dedupe.cancel(accountId);
   }
 
   startSync(accountId: string): Promise<SyncProgress | undefined> {

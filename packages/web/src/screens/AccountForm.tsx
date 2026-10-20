@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   deletedRetentionDays: null,
   autoSelectNewFolders: false,
   ownAddresses: [],
-  linkDuplicates: false,
+  linkDuplicates: true,
   protectBeforeDate: null,
   allowServerRemoval: false,
   maxMegabytesPerRun: 0,

@@ -796,6 +796,45 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     return { run: app.removal.getProgress(id) ?? null, running: app.removal.isRunning(id) };
   });
 
+  // ----------------------------------------------- store duplicates once
+
+  /** What merging would take; reads the index, touches nothing. */
+  server.get('/api/accounts/:id/dedupe/plan', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return app.planDedupe(id);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+  });
+
+  server.post('/api/accounts/:id/dedupe', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = z.object({ enableLinking: z.boolean().default(true) }).safeParse(request.body ?? {});
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+    try {
+      app.requireAccount(id);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+    if (app.dedupe.isRunning(id)) return fail(reply, 409, 'Merging duplicates is already running');
+
+    void app
+      .startDedupe(id, body.data.enableLinking)
+      .catch((error: Error) => logger.error(`Merging duplicates failed: ${error.message}`));
+    return { started: true };
+  });
+
+  server.post('/api/accounts/:id/dedupe/cancel', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { cancelled: app.cancelDedupe(id) };
+  });
+
+  server.get('/api/accounts/:id/dedupe', { preHandler: requireUnlocked }, async (request) => {
+    const { id } = request.params as { id: string };
+    return { run: app.dedupe.getProgress(id) ?? null, running: app.dedupe.isRunning(id) };
+  });
+
   // ------------------------------------------------------------------ oauth
 
   const oauthProviderSchema = z.enum(['google', 'microsoft', 'custom']);
@@ -1483,6 +1522,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     const onMigrationProgress = (progress: unknown): void => send('migration-progress', progress);
     const onVerifyProgress = (progress: unknown): void => send('verify-progress', progress);
     const onRemovalProgress = (progress: unknown): void => send('removal-progress', progress);
+    const onDedupeProgress = (progress: unknown): void => send('dedupe-progress', progress);
     const onAdoptProgress = (progress: unknown): void => send('adopt-progress', progress);
     const onTransferProgress = (progress: unknown): void => send('transfer-progress', progress);
     const onLog = (entry: LogEntry): void => send('log', entry);
@@ -1495,6 +1535,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     app.migration.on('progress', onMigrationProgress);
     app.verify.on('progress', onVerifyProgress);
     app.removal.on('progress', onRemovalProgress);
+    app.dedupe.on('progress', onDedupeProgress);
     app.adopt.on('progress', onAdoptProgress);
     app.transfer.on('progress', onTransferProgress);
     logger.on('entry', onLog);
@@ -1508,6 +1549,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       app.migration.off('progress', onMigrationProgress);
       app.verify.off('progress', onVerifyProgress);
       app.removal.off('progress', onRemovalProgress);
+      app.dedupe.off('progress', onDedupeProgress);
       app.adopt.off('progress', onAdoptProgress);
       app.transfer.off('progress', onTransferProgress);
       logger.off('entry', onLog);

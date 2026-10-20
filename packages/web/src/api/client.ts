@@ -15,6 +15,8 @@ import type {
   PublicAccount,
   RemovalPlan,
   RemovalProgress,
+  DedupePlan,
+  DedupeProgress,
   SearchResult,
   TransferProgress,
   VerifyProgress,
@@ -446,6 +448,14 @@ export const api = {
     }),
   cancelRemoval: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/removal/cancel`, { method: 'POST' }),
+  planDedupe: (id: string) => request<DedupePlan>(`/accounts/${id}/dedupe/plan`),
+  startDedupe: (id: string, body: { enableLinking: boolean }) =>
+    request<{ started: boolean }>(`/accounts/${id}/dedupe`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  cancelDedupe: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/dedupe/cancel`, { method: 'POST' }),
   lastRemoval: (id: string) =>
     request<{ run: RemovalProgress | null; running: boolean }>(`/accounts/${id}/removal`),
 

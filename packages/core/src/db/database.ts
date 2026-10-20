@@ -34,6 +34,26 @@ export interface LargestMessage {
   attachmentCount: number;
 }
 
+export interface DuplicateCandidate {
+  id: number;
+  folder_id: number;
+  folder_path: string;
+  local_path: string;
+  uid: number;
+  uidvalidity: number;
+  message_id: string | null;
+  fingerprint: string;
+  internal_date: string;
+  size: number;
+  subject: string | null;
+  from_addr: string | null;
+  to_addr: string | null;
+  flags: string;
+  file_name: string;
+  sha256: string | null;
+  server_removed_at: string | null;
+}
+
 export interface MessageRow {
   id: number;
   account_id: string;
@@ -503,6 +523,42 @@ export class ArchiveDatabase {
           LIMIT 1`,
       )
       .get(accountId, fingerprint, excludeFolderId) as MessageRow | undefined;
+  }
+
+  /**
+   * Active messages that share a fingerprint with a message in another folder,
+   * and own their bytes. These are the candidates for storing a mail once.
+   */
+  listDuplicateCandidates(accountId: string): DuplicateCandidate[] {
+    return this.db
+      .prepare(
+        `SELECT m.id, m.folder_id, f.path AS folder_path, f.local_path AS local_path, m.uid,
+                m.uidvalidity, m.message_id, m.fingerprint, m.internal_date, m.size, m.subject,
+                m.from_addr, m.to_addr, m.flags, m.file_name, m.sha256, m.server_removed_at
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE m.account_id = ? AND m.state = 'active' AND m.linked_to IS NULL
+            AND m.fingerprint IN (
+              SELECT fingerprint FROM messages
+               WHERE account_id = ? AND state = 'active' AND linked_to IS NULL
+               GROUP BY fingerprint HAVING COUNT(DISTINCT folder_id) > 1)
+          ORDER BY m.fingerprint, m.id`,
+      )
+      .all(accountId, accountId) as DuplicateCandidate[];
+  }
+
+  /**
+   * Turns a message that owns a file into a link to another one's file.
+   *
+   * Whatever pointed at it now points at the new owner, in the same step, so
+   * no row is ever left linked to a file that is about to go.
+   */
+  convertToLink(messageId: number, ownerId: number, ownerFileName: string): void {
+    this.transaction(() => {
+      this.db
+        .prepare('UPDATE messages SET linked_to = ?, file_name = ? WHERE id = ?')
+        .run(ownerId, ownerFileName, messageId);
+      this.relinkTo(messageId, ownerId);
+    });
   }
 
   /** One message by its file name, for adopting an archive without duplicates. */
