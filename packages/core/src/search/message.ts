@@ -95,7 +95,7 @@ export async function loadMessage(
   const attachments = parsed.attachments.map((attachment, index) => ({
     index,
     name: attachment.filename ?? `attachment-${index + 1}`,
-    contentType: attachment.contentType ?? null,
+    contentType: typeof attachment.contentType === 'string' && attachment.contentType ? attachment.contentType : null,
     size: attachment.size ?? 0,
     inline: attachment.related === true || attachment.contentDisposition === 'inline',
   }));
@@ -106,7 +106,7 @@ export async function loadMessage(
         rawHtml,
         parsed.attachments.map((attachment) => ({
           cid: attachment.cid,
-          contentType: attachment.contentType,
+          contentType: typeof attachment.contentType === 'string' ? attachment.contentType : undefined,
           content: attachment.content as Buffer,
           size: attachment.size ?? 0,
         })),
