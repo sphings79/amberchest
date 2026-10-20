@@ -212,6 +212,16 @@ const MIGRATIONS: string[] = [
    */
   ALTER TABLE messages ADD COLUMN server_removed_at TEXT;
   `,
+
+  // 10 - when a folder was last read in full
+  `
+  /*
+   * A backup only asks for the envelopes of new UIDs and relies on the stored
+   * ones for the rest. Every so often the whole folder is read anyway, so
+   * anything that slipped past that shortcut is caught.
+   */
+  ALTER TABLE folders ADD COLUMN last_full_scan TEXT;
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

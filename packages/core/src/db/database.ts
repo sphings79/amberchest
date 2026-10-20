@@ -19,6 +19,8 @@ export interface FolderRow {
   selected: number;
   first_seen: string;
   last_sync: string | null;
+  /** When every envelope of the folder was last read, not only the new ones. */
+  last_full_scan: string | null;
 }
 
 /** A row of the "largest messages" lists on the statistics screen. */
@@ -226,17 +228,66 @@ export class ArchiveDatabase {
 
   updateFolderSyncState(
     folderId: number,
-    state: { uidvalidity?: number | null; uidnext?: number | null; lastSync?: string | null },
+    state: {
+      uidvalidity?: number | null;
+      uidnext?: number | null;
+      lastSync?: string | null;
+      lastFullScan?: string | null;
+    },
   ): void {
     this.db
       .prepare(
         `UPDATE folders
-            SET uidvalidity = COALESCE(?, uidvalidity),
-                uidnext     = COALESCE(?, uidnext),
-                last_sync   = COALESCE(?, last_sync)
+            SET uidvalidity   = COALESCE(?, uidvalidity),
+                uidnext       = COALESCE(?, uidnext),
+                last_sync     = COALESCE(?, last_sync),
+                last_full_scan = COALESCE(?, last_full_scan)
           WHERE id = ?`,
       )
-      .run(state.uidvalidity ?? null, state.uidnext ?? null, state.lastSync ?? null, folderId);
+      .run(
+        state.uidvalidity ?? null,
+        state.uidnext ?? null,
+        state.lastSync ?? null,
+        state.lastFullScan ?? null,
+        folderId,
+      );
+  }
+
+  /**
+   * What the archive knows of a folder's messages under this UIDVALIDITY.
+   *
+   * Active ones, and the tombstones of thrown-out ones: the latter are still
+   * on the server and would otherwise have their envelope read at every run.
+   */
+  listKnownForScan(
+    folderId: number,
+    uidvalidity: number,
+  ): Array<{
+    uid: number;
+    message_id: string | null;
+    subject: string | null;
+    from_addr: string | null;
+    to_addr: string | null;
+    internal_date: string;
+    size: number;
+    fingerprint: string;
+  }> {
+    return this.db
+      .prepare(
+        `SELECT uid, message_id, subject, from_addr, to_addr, internal_date, size, fingerprint
+           FROM messages
+          WHERE folder_id = ? AND uidvalidity = ? AND state IN ('active', 'discarded')`,
+      )
+      .all(folderId, uidvalidity) as Array<{
+      uid: number;
+      message_id: string | null;
+      subject: string | null;
+      from_addr: string | null;
+      to_addr: string | null;
+      internal_date: string;
+      size: number;
+      fingerprint: string;
+    }>;
   }
 
   /**

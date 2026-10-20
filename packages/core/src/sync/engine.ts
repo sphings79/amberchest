@@ -11,6 +11,7 @@ import {
   listRemoteFolders,
   openFolderReadOnly,
   scanFolder,
+  type KnownMessage,
   serverPauseReason,
   withConnection,
   type ScannedMessage,
@@ -84,6 +85,9 @@ export interface SyncEngineOptions {
 
 /** How many UIDs one command of the scan asks for. */
 const SCAN_BLOCK_SIZE = 1000;
+
+/** How long a folder may go on relying on stored envelopes before it is read in full. */
+const FULL_SCAN_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Archives one account.
@@ -305,6 +309,22 @@ export class SyncEngine extends EventEmitter {
     }
   }
 
+  private knownMessages(folderId: number, uidValidity: number): Map<number, KnownMessage> {
+    const known = new Map<number, KnownMessage>();
+    for (const row of this.db.listKnownForScan(folderId, uidValidity)) {
+      known.set(row.uid, {
+        messageId: row.message_id,
+        subject: row.subject,
+        fromAddress: row.from_addr,
+        toAddress: row.to_addr,
+        internalDate: new Date(row.internal_date),
+        size: row.size,
+        fingerprint: row.fingerprint,
+      });
+    }
+    return known;
+  }
+
   private async scanOneFolder(client: ImapFlow, remote: RemoteFolder): Promise<FolderPlan | null> {
     this.currentFolder = remote.path;
     this.folderDone = 0;
@@ -334,14 +354,28 @@ export class SyncEngine extends EventEmitter {
     }
 
     const since = this.account.settings.sinceDate ? new Date(this.account.settings.sinceDate) : null;
+
+    /*
+     * An envelope cannot change under a UID, so what the archive already has
+     * is not asked for again - only the flags are. A folder is read in full
+     * when its UIDVALIDITY is new or different, and now and then regardless,
+     * so nothing that slipped past the shortcut stays hidden.
+     */
+    const fullScanDue =
+      !folder.last_full_scan ||
+      Date.now() - new Date(folder.last_full_scan).getTime() > FULL_SCAN_EVERY_MS;
+    const incremental = !fullScanDue && folder.uidvalidity === state.uidValidity;
+    const known = incremental ? this.knownMessages(folder.id, state.uidValidity) : undefined;
+
     const scanned = await scanFolder(client, {
       since,
+      ...(known && known.size > 0 ? { known } : {}),
       blockSize: SCAN_BLOCK_SIZE,
       pauseMs: this.account.settings.requestDelayMs,
       shouldCancel: () => this.cancelled,
       onBlock: (block) =>
         logger.debug(
-          `${remote.path}: scan block ${block.index}/${block.blocks} (UID ${block.range}), ` +
+          `${remote.path}: ${block.kind === 'flags' ? 'flag' : 'scan'} block ${block.index}/${block.blocks} (UID ${block.range}), ` +
             `${block.messages} message(s) in ${block.ms} ms`,
           { accountId: this.account.id },
         ),
@@ -433,6 +467,7 @@ export class SyncEngine extends EventEmitter {
     this.db.updateFolderSyncState(folder.id, {
       uidvalidity: state.uidValidity,
       uidnext: state.uidNext,
+      ...(known && known.size > 0 ? {} : { lastFullScan: new Date().toISOString() }),
     });
 
     return {

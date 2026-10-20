@@ -241,7 +241,35 @@ export interface ScanOptions {
   pauseMs?: number;
   shouldCancel?: () => boolean;
   /** Called after each block, for the log. */
-  onBlock?: (block: { index: number; blocks: number; range: string; messages: number; ms: number }) => void;
+  onBlock?: (block: {
+    index: number;
+    blocks: number;
+    range: string;
+    messages: number;
+    ms: number;
+    kind: 'envelope' | 'flags';
+  }) => void;
+  /**
+   * Messages the archive already has, by UID.
+   *
+   * For those the envelope is not asked for again - it cannot change under a
+   * UID - only their flags. What the folder holds is then read with one cheap
+   * `UID SEARCH`, and the heavy command is left for the UIDs that are new.
+   */
+  known?: Map<number, KnownMessage>;
+  /** UIDs per command when only flags are asked for; they are cheap. */
+  flagBlockSize?: number;
+}
+
+/** What the archive remembers of a message, enough to stand in for its envelope. */
+export interface KnownMessage {
+  messageId: string | null;
+  subject: string | null;
+  fromAddress: string | null;
+  toAddress: string | null;
+  internalDate: Date;
+  size: number;
+  fingerprint: string;
 }
 
 /** The UID ranges one scan is made of, as IMAP sequence strings. */
@@ -276,66 +304,120 @@ function scanRanges(uids: number[] | null, uidNext: number, blockSize: number): 
  * with a closed connection.
  */
 export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): Promise<ScannedMessage[]> {
-  let uids: number[] | null = null;
+  const known = options.known && options.known.size > 0 ? options.known : null;
+  const mailbox = client.mailbox && typeof client.mailbox === 'object' ? client.mailbox : null;
+  const total = mailbox ? mailbox.exists : 0;
+  const uidNext = mailbox ? Number(mailbox.uidNext) : 0;
+  const blockSize = options.blockSize ?? 0;
 
-  if (options.since) {
-    const found = await client.search({ since: options.since }, { uid: true });
+  let uids: number[] | null = null;
+  if (options.since || known) {
+    const found = await client.search(options.since ? { since: options.since } : { all: true }, {
+      uid: true,
+    });
     if (!found || !Array.isArray(found) || found.length === 0) return [];
     uids = found;
   }
 
-  const mailbox = client.mailbox && typeof client.mailbox === 'object' ? client.mailbox : null;
-  const total = mailbox ? mailbox.exists : 0;
-  const uidNext = mailbox ? Number(mailbox.uidNext) : 0;
-  const ranges = scanRanges(uids, uidNext, options.blockSize ?? 0);
-
   const messages: ScannedMessage[] = [];
+  const fetchEnvelopes = async (ranges: string[]): Promise<boolean> => {
+    for (const [index, range] of ranges.entries()) {
+      if (options.shouldCancel?.()) return false;
+      if (index > 0 && (options.pauseMs ?? 0) > 0) await sleep(options.pauseMs as number);
 
-  for (const [index, range] of ranges.entries()) {
+      const startedAt = Date.now();
+      const before = messages.length;
+      for await (const message of client.fetch(
+        range,
+        { uid: true, flags: true, internalDate: true, size: true, envelope: true },
+        { uid: true },
+      )) {
+        const internalDate = toDate(message.internalDate);
+        const envelope = message.envelope;
+        const scanned: ScannedMessage = {
+          uid: message.uid,
+          flags: message.flags ? [...message.flags] : [],
+          internalDate,
+          size: message.size ?? 0,
+          messageId: envelope?.messageId ?? null,
+          subject: envelope?.subject ?? null,
+          fromAddress: firstAddress(envelope?.from),
+          toAddress: firstAddress(envelope?.to),
+          fingerprint: '',
+        };
+        scanned.fingerprint = messageFingerprint({
+          messageId: scanned.messageId,
+          internalDate,
+          fromAddress: scanned.fromAddress,
+          subject: scanned.subject,
+          size: scanned.size,
+        });
+        messages.push(scanned);
+        options.onProgress?.(messages.length, total);
+      }
+      options.onBlock?.({
+        index: index + 1,
+        blocks: ranges.length,
+        range,
+        messages: messages.length - before,
+        ms: Date.now() - startedAt,
+        kind: 'envelope',
+      });
+    }
+    return true;
+  };
+
+  if (!known || !uids) {
+    await fetchEnvelopes(scanRanges(uids, uidNext, blockSize));
+    return messages;
+  }
+
+  // New UIDs get their envelope; the ones already archived only their flags.
+  const sorted = [...uids].sort((a, b) => a - b);
+  const fresh = sorted.filter((uid) => !known.has(uid));
+  const archived = sorted.filter((uid) => known.has(uid));
+
+  if (fresh.length > 0 && !(await fetchEnvelopes(scanRanges(fresh, 0, blockSize)))) return messages;
+
+  const flagBlock = options.flagBlockSize ?? FLAG_BLOCK_SIZE;
+  const flagRanges = scanRanges(archived, 0, flagBlock);
+  for (const [index, range] of flagRanges.entries()) {
     if (options.shouldCancel?.()) return messages;
     if (index > 0 && (options.pauseMs ?? 0) > 0) await sleep(options.pauseMs as number);
 
     const startedAt = Date.now();
     const before = messages.length;
-    for await (const message of client.fetch(
-      range,
-      { uid: true, flags: true, internalDate: true, size: true, envelope: true },
-      { uid: true },
-    )) {
-      const internalDate = toDate(message.internalDate);
-      const envelope = message.envelope;
-      const scanned: ScannedMessage = {
+    for await (const message of client.fetch(range, { uid: true, flags: true }, { uid: true })) {
+      const stored = known.get(message.uid);
+      if (!stored) continue;
+      messages.push({
         uid: message.uid,
         flags: message.flags ? [...message.flags] : [],
-        internalDate,
-        size: message.size ?? 0,
-        messageId: envelope?.messageId ?? null,
-        subject: envelope?.subject ?? null,
-        fromAddress: firstAddress(envelope?.from),
-        toAddress: firstAddress(envelope?.to),
-        fingerprint: '',
-      };
-      scanned.fingerprint = messageFingerprint({
-        messageId: scanned.messageId,
-        internalDate,
-        fromAddress: scanned.fromAddress,
-        subject: scanned.subject,
-        size: scanned.size,
+        internalDate: stored.internalDate,
+        size: stored.size,
+        messageId: stored.messageId,
+        subject: stored.subject,
+        fromAddress: stored.fromAddress,
+        toAddress: stored.toAddress,
+        fingerprint: stored.fingerprint,
       });
-      messages.push(scanned);
       options.onProgress?.(messages.length, total);
     }
     options.onBlock?.({
       index: index + 1,
-      blocks: ranges.length,
+      blocks: flagRanges.length,
       range,
       messages: messages.length - before,
       ms: Date.now() - startedAt,
+      kind: 'flags',
     });
   }
 
-  return messages;
+  return messages.sort((a, b) => a.uid - b.uid);
 }
+
+/** Flags are small, so far more UIDs fit in one command than envelopes do. */
+const FLAG_BLOCK_SIZE = 5000;
 
 /**
  * Downloads the raw RFC 5322 source of the given UIDs in batches.
