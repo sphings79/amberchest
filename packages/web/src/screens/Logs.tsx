@@ -1,6 +1,8 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { Download } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card } from '../components/ui.js';
+import { api, saveFile } from '../api/client.js';
+import { Button, Card } from '../components/ui.js';
 import { useApp } from '../state.js';
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -14,6 +16,15 @@ export function Logs(): ReactNode {
   const { t, i18n } = useTranslation();
   const { logs } = useApp();
   const endRef = useRef<HTMLDivElement>(null);
+  const [fileLogging, setFileLogging] = useState(false);
+
+  // The download only makes sense while a file is being written.
+  useEffect(() => {
+    void api
+      .settings()
+      .then((settings) => setFileLogging(settings.logging.toFile))
+      .catch(() => setFileLogging(false));
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
@@ -21,7 +32,15 @@ export function Logs(): ReactNode {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-semibold tracking-tight">{t('logs.title')}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">{t('logs.title')}</h1>
+        {fileLogging && (
+          <Button onClick={() => void saveFile('/logs/file', 'amberchest.log')}>
+            <Download size={14} />
+            {t('logs.download')}
+          </Button>
+        )}
+      </div>
 
       <Card className="!p-0">
         <div className="max-h-[70vh] overflow-y-auto p-3 font-mono text-xs leading-relaxed">

@@ -160,6 +160,15 @@ describe('extractAttachments', () => {
   });
 });
 
+describe('extractAttachments with an empty Content-Type', () => {
+  it('reports no type instead of a non-string value', async () => {
+    const source = buildMessage([{ contentType: '', name: 'invite.ics', disposition: 'attachment', content: 'BEGIN:VCALENDAR' }]);
+    const [attachment] = await extractAttachments(source);
+    expect(attachment?.contentType).toBeNull();
+    expect(attachment?.originalName).toBe('invite.ics');
+  });
+});
+
 describe('extensionOf', () => {
   it('returns the lower case extension', () => {
     expect(extensionOf('Rechnung.PDF')).toBe('pdf');

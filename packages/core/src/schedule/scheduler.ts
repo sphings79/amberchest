@@ -75,6 +75,15 @@ export class Scheduler extends EventEmitter {
           continue;
         }
 
+        const waitUntil = this.options.app.pausedUntil(account.id);
+        if (waitUntil) {
+          logger.info(
+            `Skipping ${account.name}: its last run was paused by the server, trying again after ` +
+              waitUntil.toISOString(),
+          );
+          continue;
+        }
+
         logger.info(`Scheduled backup for ${account.name}`);
         await this.options.app.startSyncAndIndex(account.id);
 

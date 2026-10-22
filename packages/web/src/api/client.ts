@@ -13,6 +13,10 @@ import type {
   DeviceCode,
   MqttStatus,
   PublicAccount,
+  RemovalPlan,
+  RemovalProgress,
+  DedupePlan,
+  DedupeProgress,
   SearchResult,
   TransferProgress,
   VerifyProgress,
@@ -191,6 +195,10 @@ export interface AccountSettingsValues {
   autoSelectNewFolders: boolean;
   linkDuplicates: boolean;
   protectBeforeDate: string | null;
+  /** Lets the archive delete mail on the server once it is archived. */
+  allowServerRemoval: boolean;
+  /** A run stops after this many megabytes; zero is no limit. */
+  maxMegabytesPerRun: number;
   /** Aliases beside the account address, for "sent to myself". */
   ownAddresses: string[];
 }
@@ -424,6 +432,32 @@ export const api = {
     request<{ cancelled: boolean }>(`/accounts/${id}/verify/cancel`, { method: 'POST' }),
   lastVerify: (id: string) =>
     request<{ run: VerifyProgress | null; running: boolean }>(`/accounts/${id}/verify`),
+
+  planRemoval: (id: string, body: { folders: string[]; olderThanDays: number | null }) =>
+    request<RemovalPlan>(`/accounts/${id}/removal/plan`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  startRemoval: (
+    id: string,
+    body: { folders: string[]; olderThanDays: number | null; confirmName: string },
+  ) =>
+    request<{ started: boolean }>(`/accounts/${id}/removal`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  cancelRemoval: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/removal/cancel`, { method: 'POST' }),
+  planDedupe: (id: string) => request<DedupePlan>(`/accounts/${id}/dedupe/plan`),
+  startDedupe: (id: string, body: { enableLinking: boolean }) =>
+    request<{ started: boolean }>(`/accounts/${id}/dedupe`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  cancelDedupe: (id: string) =>
+    request<{ cancelled: boolean }>(`/accounts/${id}/dedupe/cancel`, { method: 'POST' }),
+  lastRemoval: (id: string) =>
+    request<{ run: RemovalProgress | null; running: boolean }>(`/accounts/${id}/removal`),
 
   oauthProviders: () =>
     request<{

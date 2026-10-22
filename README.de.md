@@ -29,7 +29,8 @@ eigenen Platte, in einem Format, das jedes Mailprogramm lesen kann, ist die
 einzige Kopie, die wirklich dir gehört.
 
 AmberChest lädt dein Postfach herunter und lässt es exakt so zurück, wie es
-war: **auf dem Server wird nichts gelöscht und nichts als gelesen markiert.**
+war: **nichts wird als gelesen markiert, und auf dem Server wird nichts
+gelöscht, solange du das nicht für ein Konto selbst einschaltest.**
 Ordner werden schreibgeschützt geöffnet, Nachrichten mit `BODY.PEEK` abgeholt —
 genau dem IMAP-Befehl, den es dafür gibt, eine Mail zu lesen, ohne ihr
 `\Seen`-Flag anzufassen.
@@ -142,8 +143,13 @@ zur Docker-Anleitung.</em>
 
 - **IMAP über SSL/TLS, STARTTLS oder unverschlüsselt**, auf Wunsch mit
   Akzeptanz selbstsignierter Zertifikate
-- **Von Grund auf schreibgeschützt** — keine `\Seen`-Flags, kein Löschen, kein
-  `EXPUNGE`
+- **Von Grund auf schreibgeschützt** — keine `\Seen`-Flags, und kein Löschen
+  oder `EXPUNGE`, solange du „Vom Server entfernen“ nicht für ein Konto
+  erlaubst (standardmäßig aus)
+- **Server entlasten** — auf Wunsch Mails auf dem Server löschen, sobald sie
+  sicher archiviert sind. Jede Nachricht wird direkt davor gegen ihre
+  archivierte Kopie geprüft, nur genau diese UIDs werden gelöscht, und vorher
+  gibt es eine Vorschau mit der Anzahl
 - **Ordnerbaum mit Checkboxen.** Die Auswahl wird pro Konto gespeichert und
   beim nächsten Mal wieder angezeigt; seit dem letzten Lauf neu aufgetauchte
   Ordner werden hervorgehoben, aber nicht vorausgewählt
@@ -352,7 +358,7 @@ services:
 | `AMBERCHEST_PORT` | Port im Container, Standard 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Nach jedem Lauf auch Anhänge exportieren |
 | `PUID` / `PGID` | Benutzer und Gruppe, denen die Volumes gehören, Standard 1000 |
-| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` oder `error` |
+| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` oder `error`; der Startwert. Ein unter **Einstellungen → Protokoll** gewählter Detailgrad ersetzt ihn |
 | `TZ` | Zeitzone, nach der sich der Zeitplan richtet |
 
 Ist `AMBERCHEST_UI_PASSWORD_READONLY` gesetzt, hat die Oberfläche einen zweiten
@@ -530,6 +536,30 @@ ab und schreibt das ins Protokoll.
 Dieselbe Übernahme läuft auch allein: `POST /api/accounts/<id>/adopt` nimmt ein
 Archivverzeichnis in Betrieb, das schon da liegt — so wird eine verlorene
 Index-Datenbank wieder aufgebaut.
+
+## Wenn der Anbieter einen Lauf abbricht
+
+Manche Anbieter schließen die Verbindung nach einer bestimmten Datenmenge oder
+Zeit oder melden „Account exceeded command or bandwidth limits“ (Gmail tut das).
+Ein großes Postfach lässt sich dann nicht in einem Lauf kopieren.
+
+AmberChest behandelt das nicht als Fehler. Ein Lauf, den der Server beendet, ist
+**pausiert**: Was heruntergeladen wurde, bleibt erhalten, das Konto zeigt ein
+gelbes „Pausiert“ statt eines roten „Fehlgeschlagen“, und der nächste Lauf macht
+dort weiter. Eine Benachrichtigung gibt es beim ersten Pausieren, nicht bei
+jedem Versuch.
+
+- **Der Zeitplan wartet.** Nach einer Pause überspringen geplante Läufe das Konto
+  6 Stunden, dann 12, 24 und höchstens 48, wenn es sich wiederholt, denn ein
+  stündlicher Versuch hält den Anbieter womöglich nur geschlossen. Ein von Hand
+  gestarteter Lauf wird nie aufgehalten, und ein Lauf, der durchkommt, beginnt
+  die Zählung von vorn.
+- **Höchstmenge pro Lauf** (Konto, Erweitert): Ein Lauf endet sauber, als normal
+  beendeter Lauf, sobald er so viele Megabyte heruntergeladen hat, der Rest folgt
+  im nächsten Lauf. Standardmäßig aus; stell es etwas unter die Menge, bei der
+  dein Anbieter abbricht.
+- **Der Scan läuft in Blöcken** zu 1.000 UIDs, mit der „Pause zwischen Abrufen“
+  des Kontos dazwischen, statt in einem Befehl für den ganzen Ordner.
 
 ## Gmail: eine Nachricht, mehrere Ordner
 
@@ -776,7 +806,16 @@ Nein. Ordner werden mit `EXAMINE` (schreibgeschützt) geöffnet und Inhalte mit
 `BODY.PEEK[]` geholt — genau dafür gibt es diesen IMAP-Befehl.
 
 **Löscht es etwas auf dem Server?**
-Nein. `\Deleted` wird nie gesetzt, `EXPUNGE` nie gesendet.
+Von selbst nicht, und nur, wenn du es erlaubst. Solange „Archivierte Mails vom
+Server entfernen erlauben“ aus ist (Standard), wird `\Deleted` nie gesetzt und
+`EXPUNGE` nie gesendet. Mit der Einstellung bekommt die Konto-Karte einen Knopf
+„Vom Server entfernen“. Er löscht nur Mails, deren archivierte Datei lesbar ist
+und zur beim Download genommenen Prüfsumme passt, deren UID auf dem Server noch
+dieselbe Nachricht bezeichnet und deren Ordner seine UIDVALIDITY behalten hat.
+Der Server braucht UIDPLUS, und vorher musst du den Kontonamen eintippen. Das
+nächste Backup lässt das Archiv in Ruhe, egal was bei „auf dem Server gelöschte
+Mails“ eingestellt ist. Bei Gmail entfernt das Löschen in einem Label-Ordner nur
+das Label; die Mail bleibt in „Alle Nachrichten“.
 
 **Was passiert, wenn ich eine Mail auf dem Server lösche?**
 Was du pro Konto eingestellt hast: lokale Kopie behalten, nach `_deleted/`
