@@ -88,7 +88,14 @@ export function describeImapError(error: unknown): string {
     reason?: string;
     command?: string;
   };
-  if (err?.authenticationFailed) return 'Authentication failed - check user name and password';
+  if (err?.authenticationFailed) {
+    // The text the server sent often says more than a wrong password, such as a
+    // lock after too many logins.
+    const said = err.responseText?.trim();
+    return said
+      ? `Authentication failed - check user name and password (server said: ${said})`
+      : 'Authentication failed - check user name and password';
+  }
   switch (err?.code) {
     case 'ENOTFOUND':
       return 'Server not found - check the host name';
