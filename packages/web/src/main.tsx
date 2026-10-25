@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isDesktop } from './api/client.js';
 import { App } from './App.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 import './i18n/index.js';
 import { AppProvider } from './state.js';
 import './styles.css';
@@ -11,9 +12,11 @@ if (!container) throw new Error('Root element missing');
 
 createRoot(container).render(
   <StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
 

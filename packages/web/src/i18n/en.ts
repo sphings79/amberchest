@@ -187,6 +187,11 @@ export const en: Translations = {
       'And as the Home Assistant App (add-on), AmberChest runs on Home Assistant OS itself - in the sidebar through ingress, which means inside the Home Assistant app on your phone too.',
     addonLink: 'Home Assistant App on GitHub',
   },
+  crash: {
+    title: 'Something went wrong',
+    hint: 'The page could not be shown. Reloading often helps. If it keeps happening, the message below (and the browser console, F12) helps to find the cause.',
+    reload: 'Reload',
+  },
   oauth: {
     title: 'OAuth clients',
     intro:
