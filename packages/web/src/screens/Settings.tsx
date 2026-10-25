@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { api, type SettingsPatch, type OperatorSettings } from '../api/client.js';
 import { Button, Card, Field, Input, ProgressBar, Select, Toggle } from '../components/ui.js';
 import { DOCKER_DOCS_URL, REPO_URL } from '../constants.js';
+import { LogSettings } from './LogSettings.js';
 import { NotificationSettings } from './NotificationSettings.js';
 import { OAuthSettings } from './OAuthSettings.js';
 import { UpdateCard } from './UpdateCard.js';
@@ -51,6 +52,7 @@ export function Settings(): ReactNode {
       accentColor: 'violet',
       search: { indexAttachments: true, maxAttachmentBytes: 25 * 1024 * 1024, autoIndex: true },
       encryptArchive: false,
+      logging: { level: null, toFile: false },
       mcp: {
         enabled: false,
         httpEnabled: false,
@@ -388,6 +390,8 @@ export function Settings(): ReactNode {
         space={space}
         onChange={(part) => void update(part, true)}
       />
+
+      <LogSettings logging={values.logging} onChange={(part) => void update(part, true)} />
 
       <OAuthSettings
         settings={values.oauth}

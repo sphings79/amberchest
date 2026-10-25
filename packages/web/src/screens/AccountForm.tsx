@@ -15,8 +15,10 @@ const DEFAULT_SETTINGS: AccountSettingsValues = {
   deletedRetentionDays: null,
   autoSelectNewFolders: false,
   ownAddresses: [],
-  linkDuplicates: false,
+  linkDuplicates: true,
   protectBeforeDate: null,
+  allowServerRemoval: false,
+  maxMegabytesPerRun: 0,
 };
 
 const PORT_BY_SECURITY: Record<string, number> = { tls: 993, starttls: 143, none: 143 };
@@ -111,7 +113,8 @@ export function AccountForm({
     values.name.trim() !== '' &&
     values.host.trim() !== '' &&
     values.username.trim() !== '' &&
-    (account !== undefined || (values.password ?? '') !== '');
+    // An OAuth account has no password; it is connected after the first save.
+    (account !== undefined || authType === 'oauth' || (values.password ?? '') !== '');
 
   return (
     <Modal
@@ -292,6 +295,17 @@ export function AccountForm({
               </Field>
             </div>
 
+            <Field label={t('account.maxPerRun')} hint={t('account.maxPerRunHint')}>
+              <Input
+                type="number"
+                min={0}
+                value={settings.maxMegabytesPerRun}
+                onChange={(event) =>
+                  setSettings({ ...settings, maxMegabytesPerRun: Math.max(0, Math.floor(Number(event.target.value) || 0)) })
+                }
+              />
+            </Field>
+
             <Field label={t('account.sinceDate')} hint={t('account.sinceDateHint')}>
               <Input
                 type="date"
@@ -367,6 +381,13 @@ export function AccountForm({
               onChange={(linkDuplicates) => setSettings({ ...settings, linkDuplicates })}
               label={t('account.linkDuplicates')}
               hint={t('account.linkDuplicatesHint')}
+            />
+
+            <Toggle
+              checked={settings.allowServerRemoval}
+              onChange={(allowServerRemoval) => setSettings({ ...settings, allowServerRemoval })}
+              label={t('account.allowRemoval')}
+              hint={t('account.allowRemovalHint')}
             />
           </div>
         )}

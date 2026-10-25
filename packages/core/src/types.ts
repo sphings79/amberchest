@@ -44,6 +44,20 @@ export interface AccountSettings {
    * For emptying a mailbox to win back space while the archive keeps it.
    */
   protectBeforeDate: string | null;
+  /**
+   * Lets the archive delete mail on the server once it is safely archived.
+   *
+   * Off unless a person turns it on: it is the only thing here that writes to
+   * the mailbox.
+   */
+  allowServerRemoval: boolean;
+  /**
+   * A run stops cleanly once it has downloaded this many megabytes, and the
+   * rest follows in the next run. Zero means no limit.
+   *
+   * For hosts that cut a connection off after a certain amount of data.
+   */
+  maxMegabytesPerRun: number;
 }
 
 /** Where exported attachments are laid out inside the target directory. */
@@ -213,6 +227,13 @@ export interface StorageSettings {
   stopBelowGb: number;
 }
 
+export interface LoggingSettings {
+  /** Null keeps the level the start-up chose. */
+  level: LogLevel | null;
+  /** Also write the log to a file beside the configuration. */
+  toFile: boolean;
+}
+
 export interface NotificationSettings {
   enabled: boolean;
   url: string;
@@ -237,6 +258,7 @@ export interface AppSettings {
   mqtt: MqttSettings;
   oauth: OAuthSettings;
   storage: StorageSettings;
+  logging: LoggingSettings;
   notifications: NotificationSettings;
   /**
    * Encrypt the .eml files in the archive. Off by default: encrypted files can
@@ -326,6 +348,8 @@ export interface SyncStats {
   messagesRestored: number;
   flagsUpdated: number;
   bytesDownloaded: number;
+  /** The run ended at the limit set for the account; the rest follows next time. */
+  stoppedAtLimit?: boolean;
 }
 
 export type SyncPhase =
@@ -337,6 +361,8 @@ export type SyncPhase =
   | 'finalizing'
   | 'done'
   | 'cancelled'
+  /** The server closed the connection or named a limit; a later run carries on. */
+  | 'paused'
   | 'failed';
 
 export interface SyncProgress {

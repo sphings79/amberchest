@@ -201,6 +201,27 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX idx_messages_linked_to ON messages (linked_to);
   `,
+
+  // 9 - mail removed from the server on purpose
+  `
+  /*
+   * When this archive deleted the message on the server, because a person asked
+   * it to. The next backup finds the mail gone there, and without this mark
+   * that looks exactly like a deletion made elsewhere - which the "mirror"
+   * policy would answer by deleting the only copy that is left.
+   */
+  ALTER TABLE messages ADD COLUMN server_removed_at TEXT;
+  `,
+
+  // 10 - when a folder was last read in full
+  `
+  /*
+   * A backup only asks for the envelopes of new UIDs and relies on the stored
+   * ones for the rest. Every so often the whole folder is read anyway, so
+   * anything that slipped past that shortcut is caught.
+   */
+  ALTER TABLE folders ADD COLUMN last_full_scan TEXT;
+  `,
 ];
 
 export function migrate(db: BetterSqlite3.Database): void {

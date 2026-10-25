@@ -28,10 +28,10 @@ stolen, a sync can go wrong. A backup that lives on your own disk, in a format
 every mail client can read, is the only copy that is really yours.
 
 AmberChest downloads your mailbox and leaves it exactly as it was: **nothing
-is deleted on the server, nothing is marked as read.** Folders are opened
-read-only and message bodies are fetched with `BODY.PEEK`, the IMAP command
-that exists precisely so a client can read a message without touching its
-`\Seen` flag.
+is marked as read, and nothing is deleted on the server unless you switch that
+on for an account yourself.** Folders are opened read-only and message bodies
+are fetched with `BODY.PEEK`, the IMAP command that exists precisely so a
+client can read a message without touching its `\Seen` flag.
 
 > **Everything on the roadmap is done.** Backup, attachment export, search,
 > viewer, exports, MCP, restore, the container, the remote mode, OAuth, the
@@ -139,7 +139,12 @@ to the Docker guide.</em>
 
 - **IMAP over SSL/TLS, STARTTLS or plain**, with optional acceptance of
   self-signed certificates
-- **Read-only by design** — no `\Seen` flags, no deletions, no `EXPUNGE`
+- **Read-only by design** — no `\Seen` flags, and no deletions or `EXPUNGE`
+  unless you allow "Remove from the server" for an account (off by default)
+- **Free up the server** — optionally delete mail on the server once it is
+  safely archived. Each message is checked against its archived copy right
+  before it goes, only the exact UIDs are expunged, and a preview with the
+  count comes first
 - **Folder tree with checkboxes.** The selection is stored per account and
   shown again next time; folders that appeared since the last run are
   highlighted but stay unchecked
@@ -337,7 +342,7 @@ services:
 | `AMBERCHEST_PORT` | Port inside the container, default 8484 |
 | `AMBERCHEST_CRON_EXPORT_ATTACHMENTS` | Also export attachments after each scheduled run |
 | `PUID` / `PGID` | User and group the volumes belong to, default 1000 |
-| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error` |
+| `AMBERCHEST_LOG_LEVEL` | `debug`, `info`, `warn` or `error`; the starting level. A level chosen under **Settings → Log** replaces it |
 | `TZ` | Time zone the schedule follows |
 
 With `AMBERCHEST_UI_PASSWORD_READONLY` set, the interface has a second login. It
@@ -408,7 +413,46 @@ Where the browser lands afterwards depends on the redirect you choose:
 
 While the project is in testing mode, Google expires the refresh token after
 seven days and you have to connect again. Publishing the project (still as
-your own private client) removes that limit.
+your own private client) removes that limit — see the next section.
+
+### Publishing the Google project for a private install
+
+For a backup that runs unattended, set the project to **In production** under
+**Google Auth Platform → Audience → Publish app**. What to expect, as far as
+Google documents it:
+
+- **The app stays unverified.** `https://mail.google.com/` is a restricted
+  scope, so Google shows "Google hasn't verified this app" when you connect
+  (**Advanced** → **Go to … (unsafe)**). That is one click per account. Google
+  exempts apps for personal use with fewer than 100 users from verification
+  ([When is verification not needed](https://support.google.com/cloud/answer/13464323)).
+  Verification, with its security assessment, is neither needed nor realistic
+  for a private install.
+- **The 100-user cap** of unverified apps counts over the whole life of the
+  project and cannot be reset. Two or three of your own mailboxes are far
+  from it.
+- **Homepage and privacy policy.** Google asks for both in the branding
+  settings. Its documentation ties them to *verification*: there the homepage
+  has to be on a domain you own and verified, and the privacy policy has to
+  say how Google user data is used
+  ([Branding requirements](https://support.google.com/cloud/answer/13464321)).
+  It does not say what the **Publish app** dialog itself accepts for a private
+  project, and this has not been tried here. If the fields can stay empty, leave
+  them; if Google insists, the address of this repository and the paragraph
+  below are the honest answer.
+- **Tokens still end** if you revoke the access, if the token is not used for
+  six months, or when the password of the Google account changes. Then
+  **Connect again** on the account.
+- **One client, several accounts.** Each mailbox consents on its own and gets
+  its own refresh token; in production none of them has the seven-day limit.
+
+**Privacy of a private install.** AmberChest runs on your machine. The mail
+and the tokens travel between your machine and Google, and are stored on your
+machine only: in the archive and in the encrypted `config.enc`. There is no
+AmberChest server that receives anything. Besides your mail provider, the
+interface asks GitHub for the latest release to show an update notice, which
+sends no mail data. Anything else only happens where you set it up yourself,
+such as notifications, MQTT or moving an archive to another instance.
 
 ### More than one account at the same provider
 
@@ -509,6 +553,29 @@ and says so in its log.
 The same adoption also runs on its own: `POST /api/accounts/<id>/adopt` takes
 over an archive directory that is already in place — which is how an index
 database is rebuilt after it was lost.
+
+## When the host cuts a run off
+
+Some hosts close the connection after a certain amount of data or time, or say
+"Account exceeded command or bandwidth limits" (Gmail does). A big mailbox then
+cannot be copied in one run.
+
+AmberChest does not treat this as a failure. A run that the server ends is
+**paused**: what was downloaded is kept, the account shows a yellow "Paused"
+instead of a red "Failed", and the next run carries on from there. You get one
+notification at the first pause, not one per attempt.
+
+- **The schedule waits.** After a pause, scheduled runs skip that account for 6
+  hours, then 12, 24 and at most 48 if it keeps happening, because trying again
+  every hour may only keep the host closed. A run started by hand is never held
+  back, and a run that gets through starts the count afresh.
+- **Most data per run** (account, Advanced): a run ends cleanly, as a normal
+  finished run, once it has downloaded this many megabytes, and the rest follows
+  in the next run. It is off by default; set it to a little below the point where
+  your host cuts you off.
+- **The scan is done in blocks** of 1,000 UIDs, with the "pause between
+  fetches" of the account between them, instead of one command for a whole
+  folder.
 
 ## Gmail: one message, several folders
 
@@ -747,7 +814,16 @@ No. Folders are opened with `EXAMINE` (read-only) and bodies are fetched with
 `BODY.PEEK[]`, which is the whole point of that IMAP command.
 
 **Does it delete anything on the server?**
-No. `\Deleted` is never set and `EXPUNGE` is never sent.
+Not by itself, and not unless you allow it. `\Deleted` is never set and
+`EXPUNGE` is never sent while "Allow removing archived mail from the server"
+is off, which is the default. With it on for an account, the account card gets
+a "Remove from the server" button. It deletes only mail whose archived file is
+readable and matches the checksum taken at download, whose UID still names
+that same message on the server, and in a folder whose UIDVALIDITY has not
+changed. It needs a server with UIDPLUS, and it asks you to type the account
+name first. The next backup leaves the archive alone, whatever the "mail
+deleted on the server" policy says. On Gmail, deleting from a label folder only
+removes the label; the mail stays in All Mail.
 
 **What happens when I delete a mail on the server?**
 Whatever you configured per account: keep the local copy, move it into

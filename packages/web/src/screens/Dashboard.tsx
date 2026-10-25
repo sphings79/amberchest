@@ -3,6 +3,7 @@ import {
   ArrowRightLeft,
   CalendarClock,
   FolderTree,
+  Layers,
   Mail,
   Paperclip,
   Pencil,
@@ -11,6 +12,7 @@ import {
   Search as SearchIcon,
   Server,
   ShieldCheck,
+  CloudOff,
   Square,
   Trash2,
   Upload,
@@ -25,6 +27,8 @@ import { AttachmentExport } from './AttachmentExport.js';
 import { FolderPicker } from './FolderPicker.js';
 import { RestoreDialog } from './RestoreDialog.js';
 import { TransferDialog } from './TransferDialog.js';
+import { RemovalDialog } from './RemovalDialog.js';
+import { DedupeDialog } from './DedupeDialog.js';
 import { VerifyDialog } from './VerifyDialog.js';
 
 function formatBytes(bytes: number): string {
@@ -46,7 +50,8 @@ function formatDate(iso: string | null | undefined, locale: string, never: strin
 
 function ProgressSection({ progress }: { progress: SyncProgress }): ReactNode {
   const { t, i18n } = useTranslation();
-  const active = !['done', 'failed', 'cancelled'].includes(progress.phase);
+  const active = !['done', 'failed', 'cancelled', 'paused'].includes(progress.phase);
+  const paused = progress.phase === 'paused';
   const ratio =
     progress.folderMessagesTotal > 0 ? progress.folderMessagesDone / progress.folderMessagesTotal : 0;
 
@@ -91,8 +96,22 @@ function ProgressSection({ progress }: { progress: SyncProgress }): ReactNode {
       </div>
 
       {progress.error && (
-        <div className="rounded-lg px-2.5 py-1.5 text-xs" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+        <div
+          className="rounded-lg px-2.5 py-1.5 text-xs"
+          style={
+            paused
+              ? { background: 'var(--warn-soft)', color: 'var(--warn)' }
+              : { background: 'var(--danger-soft)', color: 'var(--danger)' }
+          }
+        >
           {progress.error}
+          {paused && <div className="mt-1">{t('progress.pausedHint')}</div>}
+        </div>
+      )}
+
+      {progress.stats.stoppedAtLimit && (
+        <div className="rounded-lg px-2.5 py-1.5 text-xs" style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}>
+          {t('progress.stoppedAtLimit')}
         </div>
       )}
     </div>
@@ -107,6 +126,8 @@ function AccountCard({
   onAttachments,
   onRestore,
   onVerify,
+  onRemoval,
+  onDedupe,
   onTransfer,
   onChanged,
 }: {
@@ -117,12 +138,15 @@ function AccountCard({
   onAttachments: () => void;
   onRestore: () => void;
   onVerify: () => void;
+  onRemoval: () => void;
+  onDedupe: () => void;
   onTransfer: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
   const account = overview.account;
-  const running = overview.running || (progress ? !['done', 'failed', 'cancelled'].includes(progress.phase) : false);
+  const running =
+    overview.running || (progress ? !['done', 'failed', 'cancelled', 'paused'].includes(progress.phase) : false);
   const lastRun = overview.lastRun as { started_at?: string; status?: string } | null;
 
   const stats = [
@@ -145,7 +169,10 @@ function AccountCard({
           {account.name.slice(0, 2).toUpperCase()}
         </div>
 
-        <div className="min-w-0 flex-1">
+        {/* The minimum width is what makes the buttons wrap onto their own row
+            when they do not fit; without it this block shrinks to a few pixels
+            and the name and the status are cut off. */}
+        <div className="min-w-[14rem] flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate font-semibold">{account.name}</span>
             {running ? (
@@ -154,8 +181,12 @@ function AccountCard({
                 <Badge tone="accent">{t('dashboard.running')}</Badge>
               </span>
             ) : (
-              <Badge tone={lastRun?.status === 'failed' ? 'danger' : 'ok'}>
-                {lastRun?.status === 'failed' ? t('progress.failed') : t('dashboard.idle')}
+              <Badge tone={lastRun?.status === 'failed' ? 'danger' : lastRun?.status === 'paused' ? 'warn' : 'ok'}>
+                {lastRun?.status === 'failed'
+                  ? t('progress.failed')
+                  : lastRun?.status === 'paused'
+                    ? t('progress.paused')
+                    : t('dashboard.idle')}
               </Badge>
             )}
           </div>
@@ -201,6 +232,16 @@ function AccountCard({
             <ShieldCheck size={15} />
             {t('verify.open')}
           </Button>
+          <Button onClick={onDedupe} disabled={overview.messageCount === 0}>
+            <Layers size={15} />
+            {t('dedupe.open')}
+          </Button>
+          {account.settings.allowServerRemoval && (
+            <Button onClick={onRemoval} disabled={overview.messageCount === 0}>
+              <CloudOff size={15} />
+              {t('removal.open')}
+            </Button>
+          )}
           <Button onClick={onRestore} disabled={overview.messageCount === 0}>
             <Upload size={15} />
             {t('restore.open')}
@@ -262,6 +303,8 @@ export function Dashboard(): ReactNode {
   const [attachmentsFor, setAttachmentsFor] = useState<AccountOverview | null>(null);
   const [restoreFor, setRestoreFor] = useState<AccountOverview | null>(null);
   const [verifyFor, setVerifyFor] = useState<AccountOverview | null>(null);
+  const [removalFor, setRemovalFor] = useState<AccountOverview | null>(null);
+  const [dedupeFor, setDedupeFor] = useState<AccountOverview | null>(null);
   const [transferFor, setTransferFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
@@ -331,6 +374,8 @@ export function Dashboard(): ReactNode {
               onAttachments={() => setAttachmentsFor(overview)}
               onRestore={() => setRestoreFor(overview)}
               onVerify={() => setVerifyFor(overview)}
+              onRemoval={() => setRemovalFor(overview)}
+              onDedupe={() => setDedupeFor(overview)}
               onTransfer={() => setTransferFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
@@ -350,6 +395,10 @@ export function Dashboard(): ReactNode {
       {restoreFor && <RestoreDialog overview={restoreFor} onClose={() => setRestoreFor(null)} />}
 
       {verifyFor && <VerifyDialog overview={verifyFor} onClose={() => setVerifyFor(null)} />}
+
+      {removalFor && <RemovalDialog overview={removalFor} onClose={() => setRemovalFor(null)} />}
+
+      {dedupeFor && <DedupeDialog overview={dedupeFor} onClose={() => setDedupeFor(null)} />}
 
       {transferFor && (
         <TransferDialog overview={transferFor} onClose={() => setTransferFor(null)} />

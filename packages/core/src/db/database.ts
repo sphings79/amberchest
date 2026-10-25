@@ -19,6 +19,8 @@ export interface FolderRow {
   selected: number;
   first_seen: string;
   last_sync: string | null;
+  /** When every envelope of the folder was last read, not only the new ones. */
+  last_full_scan: string | null;
 }
 
 /** A row of the "largest messages" lists on the statistics screen. */
@@ -32,6 +34,26 @@ export interface LargestMessage {
   size: number;
   attachmentBytes: number;
   attachmentCount: number;
+}
+
+export interface DuplicateCandidate {
+  id: number;
+  folder_id: number;
+  folder_path: string;
+  local_path: string;
+  uid: number;
+  uidvalidity: number;
+  message_id: string | null;
+  fingerprint: string;
+  internal_date: string;
+  size: number;
+  subject: string | null;
+  from_addr: string | null;
+  to_addr: string | null;
+  flags: string;
+  file_name: string;
+  sha256: string | null;
+  server_removed_at: string | null;
 }
 
 export interface MessageRow {
@@ -53,6 +75,8 @@ export interface MessageRow {
   sha256: string | null;
   /** Set when the bytes live with another message of the same account. */
   linked_to: number | null;
+  /** When this archive removed the message from the server on request; null otherwise. */
+  server_removed_at: string | null;
   /**
    * active   - in the archive
    * deleted  - gone from the server, kept here
@@ -204,17 +228,66 @@ export class ArchiveDatabase {
 
   updateFolderSyncState(
     folderId: number,
-    state: { uidvalidity?: number | null; uidnext?: number | null; lastSync?: string | null },
+    state: {
+      uidvalidity?: number | null;
+      uidnext?: number | null;
+      lastSync?: string | null;
+      lastFullScan?: string | null;
+    },
   ): void {
     this.db
       .prepare(
         `UPDATE folders
-            SET uidvalidity = COALESCE(?, uidvalidity),
-                uidnext     = COALESCE(?, uidnext),
-                last_sync   = COALESCE(?, last_sync)
+            SET uidvalidity   = COALESCE(?, uidvalidity),
+                uidnext       = COALESCE(?, uidnext),
+                last_sync     = COALESCE(?, last_sync),
+                last_full_scan = COALESCE(?, last_full_scan)
           WHERE id = ?`,
       )
-      .run(state.uidvalidity ?? null, state.uidnext ?? null, state.lastSync ?? null, folderId);
+      .run(
+        state.uidvalidity ?? null,
+        state.uidnext ?? null,
+        state.lastSync ?? null,
+        state.lastFullScan ?? null,
+        folderId,
+      );
+  }
+
+  /**
+   * What the archive knows of a folder's messages under this UIDVALIDITY.
+   *
+   * Active ones, and the tombstones of thrown-out ones: the latter are still
+   * on the server and would otherwise have their envelope read at every run.
+   */
+  listKnownForScan(
+    folderId: number,
+    uidvalidity: number,
+  ): Array<{
+    uid: number;
+    message_id: string | null;
+    subject: string | null;
+    from_addr: string | null;
+    to_addr: string | null;
+    internal_date: string;
+    size: number;
+    fingerprint: string;
+  }> {
+    return this.db
+      .prepare(
+        `SELECT uid, message_id, subject, from_addr, to_addr, internal_date, size, fingerprint
+           FROM messages
+          WHERE folder_id = ? AND uidvalidity = ? AND state IN ('active', 'discarded')`,
+      )
+      .all(folderId, uidvalidity) as Array<{
+      uid: number;
+      message_id: string | null;
+      subject: string | null;
+      from_addr: string | null;
+      to_addr: string | null;
+      internal_date: string;
+      size: number;
+      fingerprint: string;
+    }>;
   }
 
   /**
@@ -503,6 +576,42 @@ export class ArchiveDatabase {
       .get(accountId, fingerprint, excludeFolderId) as MessageRow | undefined;
   }
 
+  /**
+   * Active messages that share a fingerprint with a message in another folder,
+   * and own their bytes. These are the candidates for storing a mail once.
+   */
+  listDuplicateCandidates(accountId: string): DuplicateCandidate[] {
+    return this.db
+      .prepare(
+        `SELECT m.id, m.folder_id, f.path AS folder_path, f.local_path AS local_path, m.uid,
+                m.uidvalidity, m.message_id, m.fingerprint, m.internal_date, m.size, m.subject,
+                m.from_addr, m.to_addr, m.flags, m.file_name, m.sha256, m.server_removed_at
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE m.account_id = ? AND m.state = 'active' AND m.linked_to IS NULL
+            AND m.fingerprint IN (
+              SELECT fingerprint FROM messages
+               WHERE account_id = ? AND state = 'active' AND linked_to IS NULL
+               GROUP BY fingerprint HAVING COUNT(DISTINCT folder_id) > 1)
+          ORDER BY m.fingerprint, m.id`,
+      )
+      .all(accountId, accountId) as DuplicateCandidate[];
+  }
+
+  /**
+   * Turns a message that owns a file into a link to another one's file.
+   *
+   * Whatever pointed at it now points at the new owner, in the same step, so
+   * no row is ever left linked to a file that is about to go.
+   */
+  convertToLink(messageId: number, ownerId: number, ownerFileName: string): void {
+    this.transaction(() => {
+      this.db
+        .prepare('UPDATE messages SET linked_to = ?, file_name = ? WHERE id = ?')
+        .run(ownerId, ownerFileName, messageId);
+      this.relinkTo(messageId, ownerId);
+    });
+  }
+
   /** One message by its file name, for adopting an archive without duplicates. */
   findMessageByFile(accountId: string, folderId: number, fileName: string): MessageRow | undefined {
     return this.db
@@ -766,6 +875,48 @@ export class ArchiveDatabase {
 
   // ------------------------------------------------------------ attachments
 
+  /**
+   * The messages that could be removed from the server: archived, and not
+   * removed there before. Whether each one is really safe is decided one by one
+   * at the time it is deleted.
+   */
+  listRemovalCandidates(
+    accountId: string,
+    options: { folderPaths?: string[]; olderThanIso?: string | null } = {},
+  ): Array<MessageRow & { folder_path: string }> {
+    const where = ["m.account_id = ?", "m.state = 'active'", 'm.server_removed_at IS NULL'];
+    const params: unknown[] = [accountId];
+    if (options.folderPaths && options.folderPaths.length > 0) {
+      where.push(`f.path IN (${options.folderPaths.map(() => '?').join(',')})`);
+      params.push(...options.folderPaths);
+    }
+    if (options.olderThanIso) {
+      where.push('m.internal_date < ?');
+      params.push(options.olderThanIso);
+    }
+    return this.db
+      .prepare(
+        `SELECT m.*, f.path AS folder_path
+           FROM messages m JOIN folders f ON f.id = m.folder_id
+          WHERE ${where.join(' AND ')}
+          ORDER BY f.path, m.uid`,
+      )
+      .all(...params) as Array<MessageRow & { folder_path: string }>;
+  }
+
+  /** Records that these messages were deleted on the server by this archive. */
+  markServerRemoved(ids: number[], removedAt = new Date().toISOString()): void {
+    this.transaction(() => {
+      const statement = this.db.prepare('UPDATE messages SET server_removed_at = ? WHERE id = ?');
+      for (const id of ids) statement.run(removedAt, id);
+    });
+  }
+
+  /** The message is on the server again, so the mark no longer applies. */
+  clearServerRemoved(id: number): void {
+    this.db.prepare('UPDATE messages SET server_removed_at = NULL WHERE id = ?').run(id);
+  }
+
   /** Every message of an account that is still present locally. */
   listMessagesForExport(
     accountId: string,
@@ -958,10 +1109,31 @@ export class ArchiveDatabase {
       .run(runId, accountId, new Date().toISOString());
   }
 
-  finishRun(runId: string, status: 'done' | 'cancelled' | 'failed', stats: SyncStats, error?: string): void {
+  finishRun(
+    runId: string,
+    status: 'done' | 'cancelled' | 'failed' | 'paused',
+    stats: SyncStats,
+    error?: string,
+  ): void {
     this.db
       .prepare('UPDATE sync_runs SET finished_at = ?, status = ?, stats = ?, error = ? WHERE id = ?')
       .run(new Date().toISOString(), status, JSON.stringify(stats), error ?? null, runId);
+  }
+
+  /**
+   * How many runs in a row, newest first, ended paused, and when the last one
+   * did. Anything else ends the row: a run that got through starts afresh.
+   */
+  pauseState(accountId: string): { consecutive: number; lastPausedAt: string | null } {
+    const rows = this.db
+      .prepare('SELECT status, finished_at FROM sync_runs WHERE account_id = ? ORDER BY started_at DESC LIMIT 20')
+      .all(accountId) as Array<{ status: string; finished_at: string | null }>;
+    let consecutive = 0;
+    for (const row of rows) {
+      if (row.status !== 'paused') break;
+      consecutive += 1;
+    }
+    return { consecutive, lastPausedAt: consecutive > 0 ? (rows[0]?.finished_at ?? null) : null };
   }
 
   listRuns(accountId: string, limit = 25): Array<Record<string, unknown>> {

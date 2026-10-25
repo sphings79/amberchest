@@ -67,7 +67,8 @@ export async function extractAttachments(source: Buffer): Promise<ExtractedAttac
     const content = Buffer.isBuffer(attachment.content)
       ? attachment.content
       : Buffer.from(attachment.content as unknown as ArrayBuffer);
-    const contentType = attachment.contentType ?? null;
+    // mailparser gives `false` for an empty Content-Type header.
+    const contentType = typeof attachment.contentType === 'string' && attachment.contentType ? attachment.contentType : null;
     const originalName = attachment.filename ?? fallbackName(index, contentType);
 
     return {

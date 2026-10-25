@@ -11,6 +11,8 @@ import {
   listRemoteFolders,
   openFolderReadOnly,
   scanFolder,
+  type KnownMessage,
+  serverPauseReason,
   withConnection,
   type ScannedMessage,
 } from '../imap/client.js';
@@ -26,6 +28,7 @@ import {
   storeMessage,
 } from '../storage/archive.js';
 import { assertRoom } from '../storage/disk.js';
+import { appendJournal } from '../storage/journal.js';
 import { isBeforeCutoff } from './protect.js';
 import type { Account, RemoteFolder, SyncProgress, SyncStats } from '../types.js';
 import { mapWithConcurrency, sleep } from '../util/concurrency.js';
@@ -76,7 +79,15 @@ export interface SyncEngineOptions {
   encryptionKey?: Buffer | null;
   /** Prepared connection; an OAuth account arrives with a fresh token. */
   connection?: ImapConnectionOptions | undefined;
+  /** Replaceable so a test can run against a stand-in for the server. */
+  connect?: <T>(options: ImapConnectionOptions, fn: (client: ImapFlow) => Promise<T>) => Promise<T>;
 }
+
+/** How many UIDs one command of the scan asks for. */
+const SCAN_BLOCK_SIZE = 1000;
+
+/** How long a folder may go on relying on stored envelopes before it is read in full. */
+const FULL_SCAN_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Archives one account.
@@ -91,6 +102,8 @@ export class SyncEngine extends EventEmitter {
   readonly runId = randomUUID();
 
   private cancelled = false;
+  /** The download limit of the account was reached; no more is fetched. */
+  private limitReached = false;
   private readonly stats = emptyStats();
   private readonly layout: ArchiveLayout;
   private currentFolder: string | null = null;
@@ -140,15 +153,24 @@ export class SyncEngine extends EventEmitter {
 
     try {
       const connection = this.options.connection ?? connectionOptionsFromAccount(this.account);
-      const stats = await withConnection(connection, async (client) => {
+      const connect = this.options.connect ?? withConnection;
+      const stats = await connect(connection, async (client) => {
         return this.execute(client);
       });
+      if (this.limitReached) stats.stoppedAtLimit = true;
       this.db.finishRun(this.runId, 'done', stats);
       this.emitProgress('done');
       logger.info(
         `Backup finished for ${this.account.name}: ${stats.messagesNew} new, ${stats.messagesMoved} moved, ${stats.messagesDeleted} removed`,
         { accountId: this.account.id },
       );
+      if (this.limitReached) {
+        logger.info(
+          `${this.account.name}: stopped after ${Math.round(stats.bytesDownloaded / 1024 / 1024)} MB, ` +
+            'the limit set for this account; the rest follows in the next run',
+          { accountId: this.account.id },
+        );
+      }
       return stats;
     } catch (error) {
       if (error instanceof SyncCancelledError) {
@@ -156,6 +178,18 @@ export class SyncEngine extends EventEmitter {
         this.emitProgress('cancelled');
         logger.warn(`Backup cancelled for ${this.account.name}`, { accountId: this.account.id });
         return this.stats;
+      }
+      const pauseReason = serverPauseReason(error);
+      if (pauseReason) {
+        // What was downloaded is kept, and the next run carries on from it.
+        this.db.finishRun(this.runId, 'paused', this.stats, pauseReason);
+        this.emitProgress('paused', pauseReason);
+        logger.warn(
+          `Backup paused for ${this.account.name}: ${pauseReason}. What was downloaded is kept; ` +
+            'the next run carries on.',
+          { accountId: this.account.id, ...(error instanceof Error ? { detail: error.stack } : {}) },
+        );
+        throw error;
       }
       const message = describeImapError(error);
       this.db.finishRun(this.runId, 'failed', this.stats, message);
@@ -213,7 +247,9 @@ export class SyncEngine extends EventEmitter {
     this.emitProgress('downloading');
     for (const plan of plans) {
       this.checkCancelled();
+      if (this.limitReached) break;
       await this.downloadFolder(client, plan);
+      if (this.limitReached) break;
       this.stats.foldersDone += 1;
       this.emitProgress('downloading');
     }
@@ -241,7 +277,9 @@ export class SyncEngine extends EventEmitter {
 
       const protectedHere = this.db
         .listActiveMessages(local.id)
-        .some((message) => this.isProtected(message.internal_date));
+        .some(
+          (message) => this.isProtected(message.internal_date) || message.server_removed_at !== null,
+        );
       if (protectedHere) {
         logger.info(
           `Folder ${local.path} vanished on the server, but holds protected mail - keeping it`,
@@ -269,6 +307,22 @@ export class SyncEngine extends EventEmitter {
         });
       }
     }
+  }
+
+  private knownMessages(folderId: number, uidValidity: number): Map<number, KnownMessage> {
+    const known = new Map<number, KnownMessage>();
+    for (const row of this.db.listKnownForScan(folderId, uidValidity)) {
+      known.set(row.uid, {
+        messageId: row.message_id,
+        subject: row.subject,
+        fromAddress: row.from_addr,
+        toAddress: row.to_addr,
+        internalDate: new Date(row.internal_date),
+        size: row.size,
+        fingerprint: row.fingerprint,
+      });
+    }
+    return known;
   }
 
   private async scanOneFolder(client: ImapFlow, remote: RemoteFolder): Promise<FolderPlan | null> {
@@ -300,8 +354,31 @@ export class SyncEngine extends EventEmitter {
     }
 
     const since = this.account.settings.sinceDate ? new Date(this.account.settings.sinceDate) : null;
+
+    /*
+     * An envelope cannot change under a UID, so what the archive already has
+     * is not asked for again - only the flags are. A folder is read in full
+     * when its UIDVALIDITY is new or different, and now and then regardless,
+     * so nothing that slipped past the shortcut stays hidden.
+     */
+    const fullScanDue =
+      !folder.last_full_scan ||
+      Date.now() - new Date(folder.last_full_scan).getTime() > FULL_SCAN_EVERY_MS;
+    const incremental = !fullScanDue && folder.uidvalidity === state.uidValidity;
+    const known = incremental ? this.knownMessages(folder.id, state.uidValidity) : undefined;
+
     const scanned = await scanFolder(client, {
       since,
+      ...(known && known.size > 0 ? { known } : {}),
+      blockSize: SCAN_BLOCK_SIZE,
+      pauseMs: this.account.settings.requestDelayMs,
+      shouldCancel: () => this.cancelled,
+      onBlock: (block) =>
+        logger.debug(
+          `${remote.path}: ${block.kind === 'flags' ? 'flag' : 'scan'} block ${block.index}/${block.blocks} (UID ${block.range}), ` +
+            `${block.messages} message(s) in ${block.ms} ms`,
+          { accountId: this.account.id },
+        ),
       onProgress: (done, total) => {
         this.folderDone = done;
         this.folderTotal = total;
@@ -353,6 +430,17 @@ export class SyncEngine extends EventEmitter {
 
       seenRowIds.add(existing.id);
 
+      // Back on the server - put there again by a restore, say - so it is an
+      // ordinary message once more.
+      if (existing.server_removed_at) {
+        this.db.clearServerRemoved(existing.id);
+        await appendJournal(this.layout.folderDir(this.account, relativeFolder), {
+          op: 'server-return',
+          ts: new Date().toISOString(),
+          file: existing.file_name,
+        });
+      }
+
       if (uidValidityChanged || existing.uid !== message.uid) {
         this.db.moveMessage(existing.id, {
           folderId: folder.id,
@@ -379,6 +467,7 @@ export class SyncEngine extends EventEmitter {
     this.db.updateFolderSyncState(folder.id, {
       uidvalidity: state.uidValidity,
       uidnext: state.uidNext,
+      ...(known && known.size > 0 ? {} : { lastFullScan: new Date().toISOString() }),
     });
 
     return {
@@ -642,6 +731,11 @@ export class SyncEngine extends EventEmitter {
         continue;
       }
 
+      // Removed from the server by this archive, at a person's request. Being
+      // gone there is the whole point; the copy here is the one that is left,
+      // and no policy gets to dispose of it.
+      if (row.server_removed_at) continue;
+
       // Another folder may be showing the same message through this file. It
       // has to keep it, otherwise deleting one copy would lose both.
       if (await this.handOverFile(row, sourceDir)) continue;
@@ -711,6 +805,7 @@ export class SyncEngine extends EventEmitter {
     const taken = await listMessageFiles(folderDir);
     const scannedByUid = new Map(plan.scanned.map((message) => [message.uid, message]));
     const delay = this.account.settings.requestDelayMs;
+    const maxBytes = (this.account.settings.maxMegabytesPerRun ?? 0) * 1024 * 1024;
 
     await fetchSources(
       client,
@@ -769,12 +864,16 @@ export class SyncEngine extends EventEmitter {
         this.stats.bytesDownloaded += source.length;
         this.folderDone += 1;
         if (this.folderDone % 25 === 0) this.emitProgress('downloading');
+        if (maxBytes > 0 && this.stats.bytesDownloaded >= maxBytes) this.limitReached = true;
         if (delay > 0) await sleep(delay);
       },
-      () => this.cancelled,
+      () => this.cancelled || this.limitReached,
     );
 
     this.checkCancelled();
+    // A folder that was stopped half way is picked up again next time; it has
+    // not been synced in full.
+    if (this.limitReached) return;
     this.db.updateFolderSyncState(plan.folder.id, { lastSync: new Date().toISOString() });
     this.emitProgress('downloading');
   }
