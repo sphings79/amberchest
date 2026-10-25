@@ -156,6 +156,12 @@ export function OAuthConnect({
     }
   };
 
+  /** Opens the panel and goes straight to the provider, so one click is enough. */
+  const reconnect = (): void => {
+    setDone(false);
+    if (accountId && current?.configured) void startBrowser();
+  };
+
   const finish = async (): Promise<void> => {
     setBusy(true);
     setError(null);
@@ -176,7 +182,7 @@ export function OAuthConnect({
       <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs" style={{ background: 'var(--ok-soft)', color: 'var(--ok)' }}>
         <Check size={15} />
         {t('oauth.connected')}
-        <Button variant="ghost" className="ml-auto !py-1" onClick={() => setDone(false)}>
+        <Button variant="ghost" className="ml-auto !py-1" onClick={reconnect}>
           <RefreshCw size={13} />
           {t('oauth.reconnect')}
         </Button>

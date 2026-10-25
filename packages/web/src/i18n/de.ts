@@ -192,6 +192,11 @@ export const de = {
       'Und als Home Assistant App (Addon) läuft AmberChest direkt auf Home Assistant OS - per Ingress in der Seitenleiste, damit auch in der Home-Assistant-App auf dem Handy.',
     addonLink: 'Home Assistant App auf GitHub',
   },
+  crash: {
+    title: 'Hier ist etwas schiefgelaufen',
+    hint: 'Die Seite konnte nicht angezeigt werden. Ein Neuladen hilft oft. Bleibt es dabei, hilft die Meldung unten (und die Konsole des Browsers, F12) bei der Fehlersuche.',
+    reload: 'Neu laden',
+  },
   oauth: {
     title: 'OAuth-Zugänge',
     intro:
