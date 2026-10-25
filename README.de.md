@@ -431,7 +431,50 @@ Wo der Browser danach landet, hängt von der gewählten Rückleitung ab:
 
 Solange das Google-Projekt im Testmodus ist, verfällt der Refresh-Token nach
 sieben Tagen und du musst neu verbinden. Das Veröffentlichen des Projekts —
-weiterhin als dein eigener, privater Client — hebt die Grenze auf.
+weiterhin als dein eigener, privater Client — hebt die Grenze auf, siehe den
+nächsten Abschnitt.
+
+### Das Google-Projekt für eine private Installation veröffentlichen
+
+Für ein Backup, das unbeaufsichtigt läuft, das Projekt auf **In Produktion**
+setzen: **Google Auth Platform → Zielgruppe → App veröffentlichen**. Was dich
+erwartet, soweit Google es dokumentiert:
+
+- **Die App bleibt unbestätigt.** `https://mail.google.com/` ist ein
+  eingeschränkter Scope, deshalb zeigt Google beim Verbinden „Google hat diese
+  App nicht überprüft" (**Erweitert** → **… öffnen (unsicher)**). Das ist ein
+  Klick pro Konto. Google nimmt Apps für den persönlichen Gebrauch mit weniger
+  als 100 Nutzern von der Überprüfung aus
+  ([When is verification not needed](https://support.google.com/cloud/answer/13464323)).
+  Die Überprüfung samt Sicherheitsprüfung ist für eine private Installation
+  weder nötig noch realistisch.
+- **Die Grenze von 100 Nutzern** für unbestätigte Apps gilt über die gesamte
+  Lebenszeit des Projekts und lässt sich nicht zurücksetzen. Zwei oder drei
+  eigene Postfächer sind weit davon entfernt.
+- **Startseite und Datenschutzerklärung.** Google fragt beides in den
+  Branding-Einstellungen ab. Die Dokumentation knüpft das an die
+  *Überprüfung*: Dort muss die Startseite auf einer eigenen, bestätigten Domain
+  liegen, und die Datenschutzerklärung muss beschreiben, wie Google-Nutzerdaten
+  verwendet werden
+  ([Branding requirements](https://support.google.com/cloud/answer/13464321)).
+  Was der Dialog **App veröffentlichen** selbst für ein privates Projekt
+  annimmt, steht dort nicht, und hier ausprobiert wurde es nicht. Lassen sich
+  die Felder leer lassen, dann leer lassen; besteht Google darauf, ist die
+  Adresse dieses Repositorys mit dem Absatz unten die ehrliche Antwort.
+- **Tokens enden trotzdem**, wenn du den Zugriff widerrufst, wenn der Token
+  sechs Monate nicht benutzt wird oder wenn das Passwort des Google-Kontos
+  geändert wird. Dann am Konto **Erneut verbinden**.
+- **Ein Client, mehrere Konten.** Jedes Postfach stimmt einzeln zu und bekommt
+  seinen eigenen Refresh-Token; in Produktion hat keiner die Sieben-Tage-Grenze.
+
+**Datenschutz einer privaten Installation.** AmberChest läuft auf deinem
+Rechner. Die Mails und die Tokens gehen zwischen deinem Rechner und Google hin
+und her und werden nur bei dir gespeichert: im Archiv und in der verschlüsselten
+`config.enc`. Es gibt keinen AmberChest-Server, der etwas empfängt. Außer bei
+deinem Mailanbieter fragt die Oberfläche bei GitHub nach dem neuesten Release,
+um einen Hinweis auf Updates zu zeigen; das sendet keine Maildaten. Alles
+andere passiert nur dort, wo du es selbst einrichtest, etwa Benachrichtigungen,
+MQTT oder das Verschieben eines Archivs auf eine andere Instanz.
 
 ### Mehrere Konten beim selben Anbieter
 

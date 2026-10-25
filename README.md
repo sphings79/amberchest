@@ -413,7 +413,46 @@ Where the browser lands afterwards depends on the redirect you choose:
 
 While the project is in testing mode, Google expires the refresh token after
 seven days and you have to connect again. Publishing the project (still as
-your own private client) removes that limit.
+your own private client) removes that limit — see the next section.
+
+### Publishing the Google project for a private install
+
+For a backup that runs unattended, set the project to **In production** under
+**Google Auth Platform → Audience → Publish app**. What to expect, as far as
+Google documents it:
+
+- **The app stays unverified.** `https://mail.google.com/` is a restricted
+  scope, so Google shows "Google hasn't verified this app" when you connect
+  (**Advanced** → **Go to … (unsafe)**). That is one click per account. Google
+  exempts apps for personal use with fewer than 100 users from verification
+  ([When is verification not needed](https://support.google.com/cloud/answer/13464323)).
+  Verification, with its security assessment, is neither needed nor realistic
+  for a private install.
+- **The 100-user cap** of unverified apps counts over the whole life of the
+  project and cannot be reset. Two or three of your own mailboxes are far
+  from it.
+- **Homepage and privacy policy.** Google asks for both in the branding
+  settings. Its documentation ties them to *verification*: there the homepage
+  has to be on a domain you own and verified, and the privacy policy has to
+  say how Google user data is used
+  ([Branding requirements](https://support.google.com/cloud/answer/13464321)).
+  It does not say what the **Publish app** dialog itself accepts for a private
+  project, and this has not been tried here. If the fields can stay empty, leave
+  them; if Google insists, the address of this repository and the paragraph
+  below are the honest answer.
+- **Tokens still end** if you revoke the access, if the token is not used for
+  six months, or when the password of the Google account changes. Then
+  **Connect again** on the account.
+- **One client, several accounts.** Each mailbox consents on its own and gets
+  its own refresh token; in production none of them has the seven-day limit.
+
+**Privacy of a private install.** AmberChest runs on your machine. The mail
+and the tokens travel between your machine and Google, and are stored on your
+machine only: in the archive and in the encrypted `config.enc`. There is no
+AmberChest server that receives anything. Besides your mail provider, the
+interface asks GitHub for the latest release to show an update notice, which
+sends no mail data. Anything else only happens where you set it up yourself,
+such as notifications, MQTT or moving an archive to another instance.
 
 ### More than one account at the same provider
 
