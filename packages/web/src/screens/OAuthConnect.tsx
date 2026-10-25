@@ -181,7 +181,7 @@ export function OAuthConnect({
     return (
       <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs" style={{ background: 'var(--ok-soft)', color: 'var(--ok)' }}>
         <Check size={15} />
-        {t('oauth.connected')}
+        <span>{t('oauth.connected')}</span>
         <Button variant="ghost" className="ml-auto !py-1" onClick={reconnect}>
           <RefreshCw size={13} />
           {t('oauth.reconnect')}
@@ -201,8 +201,7 @@ export function OAuthConnect({
         <Select value={provider} onChange={(event) => pick(event.target.value as ProviderId)}>
           {providers.map((entry) => (
             <option key={entry.id} value={entry.id}>
-              {entry.name}
-              {entry.configured ? '' : ` — ${t('oauth.notConfigured')}`}
+              {entry.configured ? entry.name : `${entry.name} — ${t('oauth.notConfigured')}`}
             </option>
           ))}
         </Select>

@@ -1,2 +1,2 @@
 /** The version this build reports, in the update check and over MQTT. */
-export const APP_VERSION = '2.2.0-beta.11';
+export const APP_VERSION = '2.2.0-beta.12';
