@@ -1,5 +1,7 @@
-import type { AccountOverview, SyncProgress } from '@amberchest/core';
+import type { AccountOverview, ConnectionTestResult, SyncProgress } from '@amberchest/core';
 import {
+  Archive,
+  ArchiveRestore,
   ArrowRightLeft,
   CalendarClock,
   FolderTree,
@@ -20,6 +22,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
+import { describeTestError } from '../imapError.js';
 import { Badge, Button, Card, EmptyState, Input, ProgressBar } from '../components/ui.js';
 import { useApp } from '../state.js';
 import { AccountForm } from './AccountForm.js';
@@ -30,6 +33,7 @@ import { TransferDialog } from './TransferDialog.js';
 import { RemovalDialog } from './RemovalDialog.js';
 import { DedupeDialog } from './DedupeDialog.js';
 import { VerifyDialog } from './VerifyDialog.js';
+import { PassiveDialog } from './PassiveDialog.js';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -129,6 +133,7 @@ function AccountCard({
   onRemoval,
   onDedupe,
   onTransfer,
+  onPassive,
   onChanged,
 }: {
   overview: AccountOverview;
@@ -141,6 +146,7 @@ function AccountCard({
   onRemoval: () => void;
   onDedupe: () => void;
   onTransfer: () => void;
+  onPassive: () => void;
   onChanged: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
@@ -148,6 +154,9 @@ function AccountCard({
   const running =
     overview.running || (progress ? !['done', 'failed', 'cancelled', 'paused'].includes(progress.phase) : false);
   const lastRun = overview.lastRun as { started_at?: string; status?: string } | null;
+  const passive = account.passive;
+  // Said after switching back to active: whether the server still answers.
+  const [reactivation, setReactivation] = useState<Pick<ConnectionTestResult, 'ok' | 'error' | 'errorCode'> | null>(null);
 
   const stats = [
     { icon: <Mail size={14} />, label: t('dashboard.messages'), value: overview.messageCount.toLocaleString(i18n.language) },
@@ -175,7 +184,12 @@ function AccountCard({
         <div className="min-w-[14rem] flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate font-semibold">{account.name}</span>
-            {running ? (
+            {passive ? (
+              <Badge tone="neutral">
+                <Archive size={11} />
+                {t('passive.badge')}
+              </Badge>
+            ) : running ? (
               <span className="flex items-center gap-1.5">
                 <span className="animate-pulse-ring h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
                 <Badge tone="accent">{t('dashboard.running')}</Badge>
@@ -194,13 +208,20 @@ function AccountCard({
             <Server size={12} />
             {account.username} · {account.host}:{account.port}
           </div>
+          {passive && (
+            <div className="mt-0.5 text-xs" style={{ color: 'var(--text-faint)' }}>
+              {t('passive.cardHint')}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={onFolders}>
-            <FolderTree size={15} />
-            {t('dashboard.selectFolders')}
-          </Button>
+          {!passive && (
+            <Button onClick={onFolders}>
+              <FolderTree size={15} />
+              {t('dashboard.selectFolders')}
+            </Button>
+          )}
           <Button onClick={onAttachments} disabled={overview.messageCount === 0}>
             <Paperclip size={15} />
             {t('attachments.open')}
@@ -210,7 +231,7 @@ function AccountCard({
               </span>
             )}
           </Button>
-          {running ? (
+          {passive ? null : running ? (
             <Button onClick={() => void api.cancelSync(account.id)}>
               <Square size={14} />
               {t('dashboard.cancel')}
@@ -236,7 +257,7 @@ function AccountCard({
             <Layers size={15} />
             {t('dedupe.open')}
           </Button>
-          {account.settings.allowServerRemoval && (
+          {account.settings.allowServerRemoval && !passive && (
             <Button onClick={onRemoval} disabled={overview.messageCount === 0}>
               <CloudOff size={15} />
               {t('removal.open')}
@@ -250,6 +271,26 @@ function AccountCard({
             <ArrowRightLeft size={15} />
             {t('transfer.open')}
           </Button>
+          {passive ? (
+            <Button
+              onClick={() => {
+                setReactivation(null);
+                void api
+                  .setPassive(account.id, { passive: false })
+                  .then((result) => setReactivation(result.test ?? { ok: true }))
+                  .catch((error: Error) => setReactivation({ ok: false, error: error.message }))
+                  .finally(onChanged);
+              }}
+            >
+              <ArchiveRestore size={15} />
+              {t('passive.reactivate')}
+            </Button>
+          ) : (
+            <Button onClick={onPassive} disabled={running}>
+              <Archive size={15} />
+              {t('passive.retire')}
+            </Button>
+          )}
           <Button variant="ghost" onClick={onEdit} aria-label={t('dashboard.edit')}>
             <Pencil size={15} />
           </Button>
@@ -278,7 +319,21 @@ function AccountCard({
         ))}
       </div>
 
-      {account.selectedFolders.length === 0 && !running && (
+      {reactivation && (
+        <div
+          className="mt-3 rounded-xl px-3 py-2 text-xs"
+          style={
+            reactivation.ok
+              ? { background: 'var(--ok-soft)', color: 'var(--ok)' }
+              : { background: 'var(--warn-soft)', color: 'var(--warn)' }
+          }
+        >
+          {t('passive.reactivated')}{' '}
+          {reactivation.ok ? t('passive.testOk') : t('passive.testFailed', { error: describeTestError(t, reactivation) })}
+        </div>
+      )}
+
+      {account.selectedFolders.length === 0 && !running && !passive && (
         <button
           type="button"
           onClick={onFolders}
@@ -306,6 +361,7 @@ export function Dashboard(): ReactNode {
   const [removalFor, setRemovalFor] = useState<AccountOverview | null>(null);
   const [dedupeFor, setDedupeFor] = useState<AccountOverview | null>(null);
   const [transferFor, setTransferFor] = useState<AccountOverview | null>(null);
+  const [passiveFor, setPassiveFor] = useState<AccountOverview | null>(null);
   const [filter, setFilter] = useState('');
 
   // The filter box only appears once the list is long enough to need it.
@@ -377,6 +433,7 @@ export function Dashboard(): ReactNode {
               onRemoval={() => setRemovalFor(overview)}
               onDedupe={() => setDedupeFor(overview)}
               onTransfer={() => setTransferFor(overview)}
+              onPassive={() => setPassiveFor(overview)}
               onChanged={() => void refreshAccounts()}
             />
           ))}
@@ -399,6 +456,14 @@ export function Dashboard(): ReactNode {
       {removalFor && <RemovalDialog overview={removalFor} onClose={() => setRemovalFor(null)} />}
 
       {dedupeFor && <DedupeDialog overview={dedupeFor} onClose={() => setDedupeFor(null)} />}
+
+      {passiveFor && (
+        <PassiveDialog
+          overview={passiveFor}
+          onClose={() => setPassiveFor(null)}
+          onChanged={() => void refreshAccounts()}
+        />
+      )}
 
       {transferFor && (
         <TransferDialog overview={transferFor} onClose={() => setTransferFor(null)} />

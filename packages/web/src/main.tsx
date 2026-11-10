@@ -25,6 +25,8 @@ createRoot(container).render(
 // already an application.
 if ('serviceWorker' in navigator && window.isSecureContext && !isDesktop) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register(new URL('sw.js', window.location.href));
+    // Only there to make the app installable; a browser that refuses it
+    // (private window, embedded view) loses nothing else.
+    navigator.serviceWorker.register(new URL('sw.js', window.location.href)).catch(() => undefined);
   });
 }

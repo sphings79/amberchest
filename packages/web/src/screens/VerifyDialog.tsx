@@ -99,12 +99,15 @@ export function VerifyDialog({
           {t('verify.intro')}
         </p>
 
-        <Toggle
-          checked={checkServer}
-          onChange={setCheckServer}
-          label={t('verify.checkServer')}
-          hint={t('verify.checkServerHint')}
-        />
+        {/* A passive account is never contacted, so only the local check is offered. */}
+        {!overview.account.passive && (
+          <Toggle
+            checked={checkServer}
+            onChange={setCheckServer}
+            label={t('verify.checkServer')}
+            hint={t('verify.checkServerHint')}
+          />
+        )}
         <div className="flex flex-wrap items-center gap-2 rounded-xl p-3" style={{ background: 'var(--surface-2)' }}>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-medium">{t('register.title')}</div>

@@ -75,6 +75,7 @@ import type {
 } from './types.js';
 import { configDir } from './config/locations.js';
 import { pausedUntil } from './sync/pause.js';
+import { AccountPassiveError, passiveWarning, type PassiveWarning } from './sync/passive.js';
 import { logger } from './util/logger.js';
 
 /** What a bulk discard did. */
@@ -340,6 +341,47 @@ export class AmberChestApp {
     return toPublicAccount(await this.config.updateAccount(id, input));
   }
 
+  /**
+   * Switches an account to or from passive.
+   *
+   * Going passive is refused while a backup runs, and - unless forced - when
+   * the last backup is missing, unfinished or old: nothing can be fetched from
+   * the server afterwards. Going active again always works.
+   */
+  async setAccountPassive(
+    id: string,
+    passive: boolean,
+    options: { force?: boolean } = {},
+  ): Promise<{ account: PublicAccount; warning: PassiveWarning | null; changed: boolean }> {
+    const current = this.requireAccount(id);
+
+    if (passive && !current.passive) {
+      if (this.sync.isRunning(id)) throw new Error('A backup is running for this account');
+      const warning = passiveWarning(this.db, id);
+      if (warning && !options.force) return { account: toPublicAccount(current), warning, changed: false };
+    }
+
+    const updated = await this.config.setAccountPassive(id, passive);
+    return { account: toPublicAccount(updated), warning: null, changed: current.passive !== passive };
+  }
+
+  /** Why switching this account to passive would lose something, or null. */
+  passiveCheck(id: string): PassiveWarning | null {
+    this.requireAccount(id);
+    return passiveWarning(this.db, id);
+  }
+
+  /**
+   * Runs one last backup and switches the account to passive if it ends clean.
+   * A backup that fails or pauses leaves the account active.
+   */
+  async retireAfterSync(id: string): Promise<boolean> {
+    const progress = await this.startSync(id);
+    if (progress?.phase !== 'done') return false;
+    await this.config.setAccountPassive(id, true);
+    return true;
+  }
+
   async deleteAccount(id: string): Promise<void> {
     await this.config.deleteAccount(id);
     this.db.deleteAccountData(id);
@@ -352,6 +394,9 @@ export class AmberChestApp {
    * overnight is renewed before the nightly backup rather than failing it.
    */
   async connectionFor(account: Account): Promise<ImapConnectionOptions> {
+    // The one place every connection to a mailbox is built, so a passive
+    // account is turned away here before anything reaches the network.
+    if (account.passive) throw new AccountPassiveError(account.name);
     const options = connectionOptionsFromAccount(account);
     if (account.authType !== 'oauth') return options;
     return { ...options, accessToken: await this.oauth.accessToken(account) };
@@ -370,6 +415,7 @@ export class AmberChestApp {
   /** Connects, lists the folders and merges them with the local state. */
   async getFolderTree(accountId: string, withCounts = false): Promise<FolderTreeNode[]> {
     const account = this.requireAccount(accountId);
+    if (account.passive) throw new AccountPassiveError(account.name);
     const remoteFolders = await withConnection(await this.connectionFor(account), (client) =>
       listRemoteFolders(client, { withCounts }),
     );
@@ -947,7 +993,9 @@ export class AmberChestApp {
     accountId: string,
     options: { askServer?: boolean; includeDeleted?: boolean } = {},
   ): Promise<AdoptProgress> {
-    return this.adopt.start(this.requireAccount(accountId), options);
+    const account = this.requireAccount(accountId);
+    if (options.askServer && account.passive) throw new AccountPassiveError(account.name);
+    return this.adopt.start(account, options);
   }
 
   /** Every message file and journal of an account, with its size. */
@@ -1006,7 +1054,10 @@ export class AmberChestApp {
     accountId: string,
     options: { checkServer?: boolean; includeDeleted?: boolean } = {},
   ): Promise<VerifyProgress> {
-    return this.verify.start(this.requireAccount(accountId), options);
+    const account = this.requireAccount(accountId);
+    // The local check of the files stays available; only the server is off limits.
+    if (options.checkServer && account.passive) throw new AccountPassiveError(account.name);
+    return this.verify.start(account, options);
   }
 
   cancelVerify(accountId: string): boolean {

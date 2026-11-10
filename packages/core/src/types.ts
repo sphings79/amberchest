@@ -160,6 +160,8 @@ export interface Account {
   selectedFolders: string[];
   settings: AccountSettings;
   attachments: AttachmentSettings;
+  /** A retired account: kept as a local archive, never contacted again. */
+  passive: boolean;
   createdAt: string;
   updatedAt: string;
 }

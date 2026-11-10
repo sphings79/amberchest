@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeImapError } from '../src/imap/client.js';
+import { describeImapError, imapErrorCode } from '../src/imap/client.js';
 
 describe('describeImapError', () => {
   const lost = (extra: object) =>
@@ -31,5 +31,26 @@ describe('describeImapError', () => {
     expect(describeImapError(rejected({ responseText: '  ' }))).toBe(
       'Authentication failed - check user name and password',
     );
+  });
+});
+
+describe('imapErrorCode', () => {
+  const failure = (code: string) => Object.assign(new Error('x'), { code });
+
+  it.each([
+    ['ENOTFOUND', 'not-found'],
+    ['ECONNREFUSED', 'refused'],
+    ['ETIMEDOUT', 'timeout'],
+    ['DEPTH_ZERO_SELF_SIGNED_CERT', 'certificate'],
+    ['SELF_SIGNED_CERT_IN_CHAIN', 'certificate'],
+    ['UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'certificate'],
+  ])('names %s as %s', (code, expected) => {
+    expect(imapErrorCode(failure(code))).toBe(expected);
+  });
+
+  it('leaves everything else to the text the server sent', () => {
+    expect(imapErrorCode(failure('NoConnection'))).toBeNull();
+    expect(imapErrorCode(Object.assign(new Error('x'), { authenticationFailed: true }))).toBeNull();
+    expect(imapErrorCode(undefined)).toBeNull();
   });
 });

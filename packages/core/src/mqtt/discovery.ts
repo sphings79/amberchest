@@ -154,6 +154,18 @@ export function accountDiscovery(
         device_class: 'running',
       },
     },
+    {
+      topic: `${options.prefix}/binary_sensor/${id}_passive/config`,
+      payload: {
+        ...common,
+        name: 'Passive archive',
+        unique_id: `${id}_passive`,
+        object_id: `${slug}_passive_archive`,
+        // A retired account is kept as a local archive and never contacted.
+        value_template: '{{ "ON" if value_json.passive else "OFF" }}',
+        icon: 'mdi:archive-lock',
+      },
+    },
   ];
 
   if (options.allowCommands) {

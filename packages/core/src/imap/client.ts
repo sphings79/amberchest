@@ -71,11 +71,34 @@ export async function withConnection<T>(
   }
 }
 
+/** The failures a user meets most; the interface words them in its own language. */
+export type ImapErrorCode = 'not-found' | 'refused' | 'timeout' | 'certificate';
+
 export interface ConnectionTestResult {
   ok: boolean;
   error?: string;
+  /** Set for the common failures, so the interface can show its own wording. */
+  errorCode?: ImapErrorCode;
   capabilities?: string[];
   folderCount?: number;
+}
+
+/** The stable code for the common failures, or null when only the text tells. */
+export function imapErrorCode(error: unknown): ImapErrorCode | null {
+  switch ((error as { code?: string })?.code) {
+    case 'ENOTFOUND':
+      return 'not-found';
+    case 'ECONNREFUSED':
+      return 'refused';
+    case 'ETIMEDOUT':
+      return 'timeout';
+    case 'DEPTH_ZERO_SELF_SIGNED_CERT':
+    case 'SELF_SIGNED_CERT_IN_CHAIN':
+    case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+      return 'certificate';
+    default:
+      return null;
+  }
 }
 
 /** Turns the more common IMAP failures into something a human can act on. */
@@ -146,7 +169,8 @@ export async function testConnection(options: ImapConnectionOptions): Promise<Co
       return { ok: true, capabilities, folderCount: folders.length };
     });
   } catch (error) {
-    return { ok: false, error: describeImapError(error) };
+    const errorCode = imapErrorCode(error);
+    return { ok: false, error: describeImapError(error), ...(errorCode ? { errorCode } : {}) };
   }
 }
 

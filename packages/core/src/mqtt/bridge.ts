@@ -342,6 +342,7 @@ function accountState(overview: AccountOverview): Record<string, unknown> {
     attachment_bytes: overview.attachmentBytes,
     indexed: overview.indexedCount,
     syncing: overview.running,
+    passive: overview.account.passive,
     phase: progress?.phase ?? null,
     current_folder: progress?.currentFolder ?? null,
     last_backup: run?.finished_at ?? run?.started_at ?? null,

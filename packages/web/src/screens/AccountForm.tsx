@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OAuthConnect } from './OAuthConnect.js';
 import { api, type AccountFormValues, type AccountSettingsValues } from '../api/client.js';
+import { describeTestError } from '../imapError.js';
 import { Button, Field, Input, Modal, Select, Toggle } from '../components/ui.js';
 
 const DEFAULT_SETTINGS: AccountSettingsValues = {
@@ -83,7 +84,7 @@ export function AccountForm({
       setTestResult(
         result.ok
           ? { ok: true, message: t('account.testOk', { count: result.folderCount ?? 0 }) }
-          : { ok: false, message: result.error ?? 'unknown' },
+          : { ok: false, message: describeTestError(t, result) },
       );
     } catch (cause) {
       setTestResult({ ok: false, message: (cause as Error).message });

@@ -134,6 +134,11 @@ export const accountSchema = z.object({
   selectedFolders: z.array(z.string()).default([]),
   settings: accountSettingsSchema,
   attachments: attachmentSettingsSchema.default(() => attachmentSettingsSchema.parse({})),
+  /**
+   * A retired account: kept as a local archive, never contacted again. Set by
+   * its own route (with a check of the last backup), not by the generic update.
+   */
+  passive: z.boolean().default(false),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

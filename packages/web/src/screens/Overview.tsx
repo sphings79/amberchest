@@ -98,7 +98,9 @@ function AccountRow({
           {overview.account.name.slice(0, 2).toUpperCase()}
         </span>
         <span className="truncate text-sm font-medium">{overview.account.name}</span>
-        {running ? (
+        {overview.account.passive ? (
+          <Badge tone="neutral">{t('passive.badge')}</Badge>
+        ) : running ? (
           <Badge tone="accent">{t(`progress.${progress?.phase ?? 'connecting'}`)}</Badge>
         ) : lastRun?.status === 'failed' ? (
           <Badge tone="danger">{t('progress.failed')}</Badge>
@@ -151,7 +153,8 @@ export function Overview({ onGoToAccounts }: { onGoToAccounts: () => void }): Re
     for (const entry of accounts) {
       // Accounts without a folder selection are skipped; their own card links
       // to the picker.
-      if (entry.running || entry.account.selectedFolders.length === 0) continue;
+      // A passive account is never contacted.
+      if (entry.account.passive || entry.running || entry.account.selectedFolders.length === 0) continue;
       void api.startSync(entry.account.id);
     }
   };
@@ -181,7 +184,9 @@ export function Overview({ onGoToAccounts }: { onGoToAccounts: () => void }): Re
         <Button
           variant="primary"
           onClick={backupAll}
-          disabled={accounts.every((entry) => entry.running || entry.account.selectedFolders.length === 0)}
+          disabled={accounts.every(
+            (entry) => entry.account.passive || entry.running || entry.account.selectedFolders.length === 0,
+          )}
         >
           <PlayCircle size={16} />
           {t('overview.backupAll')}

@@ -86,6 +86,43 @@ export const de = {
     recentRuns: 'Letzte Sicherungen',
     noRuns: 'Noch keine Sicherung gelaufen.',
   },
+  imapError: {
+    unknown: 'Unbekannter Fehler',
+    'not-found': 'Server nicht gefunden – Servername prüfen',
+    refused: 'Verbindung abgelehnt – Servername und Port prüfen',
+    timeout: 'Zeitüberschreitung bei der Verbindung',
+    certificate:
+      'Das Zertifikat konnte nicht geprüft werden – „Selbstsigniertes Zertifikat akzeptieren“ aktivieren, falls das gewollt ist',
+  },
+  passive: {
+    badge: 'Passiv',
+    cardHint: 'Passives Archiv – wird nicht kontaktiert',
+    retire: 'Passiv schalten',
+    reactivate: 'Wieder aktivieren',
+    title: '{{name}} als passives Archiv führen',
+    intro:
+      'Ein passives Konto bleibt nur als lokales Archiv bestehen. AmberChest verbindet sich nicht mehr mit dem Mailserver: keine geplanten und keine manuellen Sicherungen, keine Ordnerliste vom Server, kein Abgleich mit dem Server, kein Löschen auf dem Server. Durchsuchen, Lesen und Exportieren funktionieren weiter, ebenso das Wiederherstellen der Mails in ein anderes Konto.',
+    keeps:
+      'Passwort bzw. Anmeldung bleiben gespeichert, das Konto lässt sich jederzeit wieder aktivieren.',
+    checking: 'Letzte Sicherung wird geprüft …',
+    running: 'Für dieses Konto läuft gerade eine Sicherung. Warte, bis sie fertig ist, oder brich sie ab.',
+    never: 'Dieses Konto wurde noch nie gesichert.',
+    notDone: 'Die letzte Sicherung ist nicht sauber durchgelaufen (Status: {{status}}).',
+    notDoneError: 'Meldung: {{error}}',
+    stale: 'Die letzte Sicherung ist {{days}} Tage her.',
+    consequence:
+      'Als passives Konto wird nichts mehr vom Server geholt. Wird das Postfach gleich gelöscht, mach vorher eine letzte Sicherung.',
+    confirm: 'Passiv schalten',
+    force: 'Trotzdem passiv schalten',
+    syncFirst: 'Letzte Sicherung, dann passiv',
+    syncStarted: 'Die letzte Sicherung läuft. Das Konto wird passiv, sobald sie sauber endet.',
+    cancel: 'Abbrechen',
+    close: 'Schließen',
+    reactivated: 'Wieder aktiv.',
+    testOk: 'Der Server antwortet.',
+    testFailed:
+      'Der Server antwortet nicht: {{error}}. Das Konto ist wieder aktiv; schalte es erneut passiv, falls das Postfach nicht mehr existiert.',
+  },
   dashboard: {
     filterPlaceholder: 'Konten filtern …',
     filterEmpty: 'Kein Konto passt zu "{{query}}".',

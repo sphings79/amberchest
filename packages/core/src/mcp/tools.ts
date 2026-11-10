@@ -2,6 +2,7 @@ import type { AmberChestApp } from '../app.js';
 import type { BundleFormat } from '../export/bundle.js';
 import type { SearchField, SearchSort } from '../search/search.js';
 import { toPublicSettings } from '../config/store.js';
+import { AccountPassiveError } from '../sync/passive.js';
 import { logger } from '../util/logger.js';
 
 /**
@@ -95,6 +96,7 @@ export const TOOLS: ToolDefinition[] = [
         name: entry.account.name,
         email: entry.account.email,
         host: entry.account.host,
+        passive: entry.account.passive,
         messages: entry.messageCount,
         indexed: entry.indexedCount,
         folders: entry.account.selectedFolders,
@@ -297,6 +299,9 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema({ account_id: STRING }, ['account_id']),
     handler: (app, args) => {
       const accountId = requireString(args, 'account_id');
+      // Said to the caller, not swallowed below: a passive account is never contacted.
+      const account = app.requireAccount(accountId);
+      if (account.passive) throw new AccountPassiveError(account.name);
       void app.startSyncAndIndex(accountId).catch(() => undefined);
       return { started: true, account_id: accountId };
     },

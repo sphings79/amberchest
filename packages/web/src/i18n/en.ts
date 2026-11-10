@@ -88,6 +88,42 @@ export const en: Translations = {
     recentRuns: 'Recent backups',
     noRuns: 'No backup has run yet.',
   },
+  imapError: {
+    unknown: 'Unknown error',
+    'not-found': 'Server not found - check the host name',
+    refused: 'Connection refused - check host and port',
+    timeout: 'Connection timed out',
+    certificate:
+      'Certificate could not be verified - enable "accept self-signed certificate" if this is expected',
+  },
+  passive: {
+    badge: 'Passive',
+    cardHint: 'Passive archive – not contacted',
+    retire: 'Make passive',
+    reactivate: 'Reactivate',
+    title: 'Keep {{name}} as a passive archive',
+    intro:
+      'A passive account is kept as a local archive only. AmberChest no longer connects to its mail server: no scheduled or manual backups, no folder list from the server, no check against the server, no removal from the server. Browsing, reading and exporting keep working, and so does restoring its mail to another account.',
+    keeps: 'The stored password or sign-in is kept, so you can switch the account back to active at any time.',
+    checking: 'Checking the last backup …',
+    running: 'A backup is running for this account. Wait for it to end or cancel it first.',
+    never: 'This account has never been backed up.',
+    notDone: 'The last backup did not finish cleanly (status: {{status}}).',
+    notDoneError: 'Message: {{error}}',
+    stale: 'The last backup was {{days}} days ago.',
+    consequence:
+      'Once passive, nothing more is fetched from the server. If the mailbox is about to be deleted, run a final backup first.',
+    confirm: 'Make passive',
+    force: 'Make passive anyway',
+    syncFirst: 'Final backup, then passive',
+    syncStarted: 'The final backup is running. The account becomes passive once it ends cleanly.',
+    cancel: 'Cancel',
+    close: 'Close',
+    reactivated: 'Active again.',
+    testOk: 'The server answers.',
+    testFailed:
+      'The server did not answer: {{error}}. The account is active again; make it passive again if the mailbox is gone.',
+  },
   dashboard: {
     filterPlaceholder: 'Filter accounts …',
     filterEmpty: 'No account matches "{{query}}".',

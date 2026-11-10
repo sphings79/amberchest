@@ -38,8 +38,10 @@ export {
 export {
   connectionOptionsFromAccount,
   describeImapError,
+  imapErrorCode,
   testConnection,
   type ConnectionTestResult,
+  type ImapErrorCode,
   type ImapConnectionOptions,
 } from './imap/client.js';
 export { AttachmentExportEngine, ExportCancelledError } from './attachments/engine.js';
@@ -141,6 +143,7 @@ export {
 } from './adopt/engine.js';
 export { AdoptManager } from './adopt/manager.js';
 export { isBeforeCutoff } from './sync/protect.js';
+export { AccountPassiveError, passiveWarning, STALE_AFTER_DAYS, type PassiveWarning } from './sync/passive.js';
 export { writeRegister, type RegisterResult } from './register/writer.js';
 export {
   TransferEngine,

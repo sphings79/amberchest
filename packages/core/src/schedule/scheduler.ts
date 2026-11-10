@@ -70,6 +70,11 @@ export class Scheduler extends EventEmitter {
     try {
       for (const overview of this.options.app.overview()) {
         const account = overview.account;
+        if (account.passive) {
+          logger.info(`Skipping ${account.name}: passive archive`);
+          continue;
+        }
+
         if (account.selectedFolders.length === 0) {
           logger.info(`Skipping ${account.name}: no folders selected`);
           continue;

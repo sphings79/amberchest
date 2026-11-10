@@ -662,6 +662,27 @@ Server emptied, deletion policy "mirror", protected before 2024-01-01:
 The comparison with the server then stops reporting that folder as differing:
 holding more than the server is the point of the setting, not a fault.
 
+### Closing the account, keeping the archive
+
+When a mailbox is about to be deleted at the provider, run one last backup and
+then press **Make passive** on the account. A passive account is a local
+archive only: AmberChest never connects to its server again, so there are no
+scheduled backups and no recurring errors. Browsing, search, export and
+restoring its mail to another account keep working.
+
+Switching checks the last backup first. If it never ran, did not finish
+cleanly, or is older than seven days, you can run a final backup and switch
+when it ends clean, or switch anyway. **Reactivate** brings the account back at
+any time and tests the connection right away; the stored password or sign-in is
+kept the whole time.
+
+While an account is passive, these are refused: backup, the folder list, the
+comparison with the server in Verify (the check of the files stays), removal
+from the server and adopting with a server query. Restore is not blocked: it
+works with whatever server details you enter, so it cannot tell whether they
+belong to this account. In Home Assistant the account gets a **Passive archive**
+sensor, and the AI connection lists it with `passive: true`.
+
 ## AI access over MCP
 
 AmberChest can expose the archive to an AI assistant through the Model

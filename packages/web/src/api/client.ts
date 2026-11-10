@@ -2,6 +2,8 @@ import type {
   AccountOverview,
   AppSettings,
   OperatorSettings,
+  ImapErrorCode,
+  PassiveWarning,
   AttachmentSettings,
   ConnectionTestResult,
   ExportProgress,
@@ -26,6 +28,7 @@ export type {
   AccountOverview,
   AppSettings,
   OperatorSettings,
+  PassiveWarning,
   AttachmentSettings,
   ConnectionTestResult,
   ExportProgress,
@@ -281,6 +284,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Set for the common connection failures; see describeTestError. */
+    readonly errorCode?: ImapErrorCode,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -303,7 +308,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       payload && typeof payload === 'object' && 'error' in payload
         ? String((payload as { error: unknown }).error)
         : response.statusText;
-    throw new ApiError(response.status, message);
+    const errorCode =
+      payload && typeof payload === 'object' && 'errorCode' in payload
+        ? ((payload as { errorCode: ImapErrorCode }).errorCode)
+        : undefined;
+    throw new ApiError(response.status, message, errorCode);
   }
   return payload as T;
 }
@@ -371,6 +380,14 @@ export const api = {
     request<{ ok: true }>(`/accounts/${id}/folders`, { method: 'PUT', body: JSON.stringify({ folders }) }),
 
   startSync: (id: string) => request<{ started: boolean }>(`/accounts/${id}/sync`, { method: 'POST' }),
+
+  passiveCheck: (id: string) =>
+    request<{ warning: PassiveWarning | null; running: boolean }>(`/accounts/${id}/passive`),
+  setPassive: (id: string, body: { passive: boolean; force?: boolean; afterSync?: boolean }) =>
+    request<{ started?: boolean; test?: ConnectionTestResult }>(`/accounts/${id}/passive`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   cancelSync: (id: string) =>
     request<{ cancelled: boolean }>(`/accounts/${id}/sync/cancel`, { method: 'POST' }),
 

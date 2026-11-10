@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client.js';
+import { api, ApiError } from '../api/client.js';
+import { describeTestError } from '../imapError.js';
 import { Badge, Button, Modal, cx } from '../components/ui.js';
 
 const SPECIAL_ICONS: Record<string, ReactNode> = {
@@ -78,7 +79,12 @@ export function FolderPicker({
       setTree(nodes);
       setSelected(new Set(flatten(nodes).filter((node) => node.selected).map((node) => node.path)));
     } catch (cause) {
-      setError((cause as Error).message);
+      // The server words connection failures in English; the common ones carry a code.
+      setError(
+        cause instanceof ApiError
+          ? describeTestError(t, { error: cause.message, errorCode: cause.errorCode })
+          : (cause as Error).message,
+      );
       return;
     }
 

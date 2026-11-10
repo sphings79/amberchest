@@ -111,7 +111,7 @@ describe('discovery', () => {
 
   it('points every account entity at the account topic', () => {
     const messages = accountDiscovery(overview('11-22', 'Privat'), 'privat', options);
-    expect(messages).toHaveLength(5);
+    expect(messages).toHaveLength(6);
     for (const message of messages) {
       const payload = message.payload as Record<string, unknown>;
       const topic = (payload.state_topic ?? payload.command_topic) as string;
@@ -125,7 +125,7 @@ describe('discovery', () => {
       ...options,
       allowCommands: false,
     });
-    expect(messages).toHaveLength(4);
+    expect(messages).toHaveLength(5);
     expect(messages.some((message) => message.topic.includes('/button/'))).toBe(false);
   });
 });

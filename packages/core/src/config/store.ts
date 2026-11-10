@@ -269,10 +269,21 @@ export class ConfigStore {
       selectedFolders: [],
       settings: { ...defaultAccountSettings(), ...(parsed.settings ?? {}) },
       attachments: defaultAttachmentSettings(),
+      passive: false,
       createdAt: now,
       updatedAt: now,
     };
     config.accounts.push(account);
+    await this.persist();
+    return { ...account };
+  }
+
+  /** Switches an account between active and passive; credentials stay as they are. */
+  async setAccountPassive(id: string, passive: boolean): Promise<Account> {
+    const account = this.require().accounts.find((candidate) => candidate.id === id);
+    if (!account) throw new Error(`Unknown account ${id}`);
+    account.passive = passive;
+    account.updatedAt = new Date().toISOString();
     await this.persist();
     return { ...account };
   }

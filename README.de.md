@@ -694,6 +694,29 @@ Der Abgleich mit dem Server meldet den Ordner danach nicht mehr als abweichend:
 mehr zu haben als der Server ist bei dieser Einstellung der Zweck und kein
 Fehler.
 
+### Konto schließen, Archiv behalten
+
+Wird ein Postfach beim Anbieter gleich gelöscht, mach eine letzte Sicherung und
+drück dann am Konto auf **Passiv schalten**. Ein passives Konto ist nur noch
+ein lokales Archiv: AmberChest verbindet sich nie wieder mit dem Server, es gibt
+also keine geplanten Sicherungen und keine wiederkehrenden Fehler. Durchsuchen,
+Lesen, Exportieren und das Wiederherstellen der Mails in ein anderes Konto
+funktionieren weiter.
+
+Beim Umschalten wird die letzte Sicherung geprüft. Gab es keine, ist sie nicht
+sauber durchgelaufen oder ist sie älter als sieben Tage, kannst du erst eine
+letzte Sicherung laufen lassen und danach umschalten, oder trotzdem umschalten.
+**Wieder aktivieren** holt das Konto jederzeit zurück und testet sofort die
+Verbindung; Passwort bzw. Anmeldung bleiben die ganze Zeit gespeichert.
+
+Solange ein Konto passiv ist, werden abgelehnt: Sicherung, Ordnerliste, der
+Abgleich mit dem Server in der Prüfung (die Prüfung der Dateien bleibt),
+Löschen auf dem Server und Übernehmen mit Serverabfrage. Die Wiederherstellung
+ist nicht gesperrt: Sie arbeitet mit den Serverdaten, die du eingibst, und kann
+nicht erkennen, ob sie zu diesem Konto gehören. In Home Assistant bekommt das
+Konto einen Sensor **Passives Archiv**, und die KI-Anbindung listet es mit
+`passive: true`.
+
 ## KI-Zugriff über MCP
 
 AmberChest kann das Archiv über das Model Context Protocol für eine KI

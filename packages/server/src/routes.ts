@@ -5,10 +5,12 @@ import {
   appSettingsSchema,
   attachmentSettingsSchema,
   describeImapError,
+  imapErrorCode,
   keepUnsentSecrets,
   logger,
   toOperatorSettings,
   WrongPasswordError,
+  AccountPassiveError,
   type ExportProgress,
   type LogEntry,
   type AmberChestApp,
@@ -25,6 +27,13 @@ const masterPasswordSchema = z.object({ masterPassword: z.string().min(1) });
 const loginSchema = z.object({ password: z.string().min(1) });
 const ticketSchema = z.object({ path: z.string().min(1).max(512) });
 const foldersSchema = z.object({ folders: z.array(z.string()) });
+const passiveSchema = z.object({
+  passive: z.boolean(),
+  /** Switch to passive although the last backup is missing, unfinished or old. */
+  force: z.boolean().default(false),
+  /** Run one last backup first and switch only if it ends clean. */
+  afterSync: z.boolean().default(false),
+});
 const connectionSchema = z.object({
   host: z.string().min(1),
   port: z.number().int().min(1).max(65_535),
@@ -50,6 +59,11 @@ export interface RouteOptions {
 
 function fail(reply: FastifyReply, status: number, message: string): FastifyReply {
   return reply.status(status).send({ error: message });
+}
+
+/** A passive account is never contacted; 409 with a code the interface can act on. */
+function passiveRefusal(reply: FastifyReply, error: AccountPassiveError): FastifyReply {
+  return reply.status(409).send({ error: error.message, code: error.code });
 }
 
 function tooManyAttempts(reply: FastifyReply, retryAfterSeconds: number): FastifyReply {
@@ -488,6 +502,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
       const result = await app.startAdopt(id, body.data);
       return { phase: result.phase, stats: result.stats, guessedFolders: result.guessedFolders };
     } catch (error) {
+      if (error instanceof AccountPassiveError) return passiveRefusal(reply, error);
       return fail(reply, 400, (error as Error).message);
     }
   });
@@ -715,8 +730,10 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     if (app.verify.isRunning(id)) return fail(reply, 409, 'A verification is already running');
 
     try {
-      app.requireAccount(id);
-    } catch {
+      const account = app.requireAccount(id);
+      if (body.data.checkServer && account.passive) throw new AccountPassiveError(account.name);
+    } catch (error) {
+      if (error instanceof AccountPassiveError) return passiveRefusal(reply, error);
       return fail(reply, 404, 'Unknown account');
     }
 
@@ -771,6 +788,7 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     } catch {
       return fail(reply, 404, 'Unknown account');
     }
+    if (account.passive) return passiveRefusal(reply, new AccountPassiveError(account.name));
     if (!account.settings.allowServerRemoval) {
       return fail(reply, 403, 'Removing mail from the server is not enabled for this account');
     }
@@ -997,6 +1015,61 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     }
   });
 
+  /** Whether switching to passive would lose something; nothing is changed. */
+  server.get('/api/accounts/:id/passive', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return { warning: app.passiveCheck(id), running: app.sync.isRunning(id) };
+    } catch (error) {
+      return fail(reply, 404, (error as Error).message);
+    }
+  });
+
+  server.post('/api/accounts/:id/passive', { preHandler: requireUnlocked }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = passiveSchema.safeParse(request.body);
+    if (!body.success) return fail(reply, 400, 'Invalid request');
+
+    let account;
+    try {
+      account = app.requireAccount(id);
+    } catch {
+      return fail(reply, 404, 'Unknown account');
+    }
+
+    if (body.data.afterSync && body.data.passive) {
+      if (account.passive) return fail(reply, 409, 'The account is already passive');
+      if (app.sync.isRunning(id)) return fail(reply, 409, 'A backup is already running');
+      // Runs on; the interface sees the backup over the websocket and the
+      // account list after it.
+      void app.retireAfterSync(id).catch((error: Error) => {
+        logger.warn(`Final backup of ${account.name} did not finish: ${error.message}`);
+      });
+      return { started: true };
+    }
+
+    try {
+      const result = await app.setAccountPassive(id, body.data.passive, { force: body.data.force });
+      // Going active again: say right away whether the server still answers,
+      // so a gone account shows up now and not as a failed night run.
+      let test;
+      if (!body.data.passive && result.changed) {
+        try {
+          test = await app.testConnection(await app.connectionFor(app.requireAccount(id)));
+        } catch (error) {
+          const errorCode = imapErrorCode(error);
+          test = { ok: false, error: describeImapError(error), ...(errorCode ? { errorCode } : {}) };
+        }
+      }
+      if (result.warning) {
+        return reply.status(409).send({ error: 'The last backup is missing, unfinished or old', warning: result.warning });
+      }
+      return { account: result.account, ...(test ? { test } : {}) };
+    } catch (error) {
+      return fail(reply, 409, (error as Error).message);
+    }
+  });
+
   server.delete('/api/accounts/:id', { preHandler: requireUnlocked }, async (request) => {
     const { id } = request.params as { id: string };
     await app.deleteAccount(id);
@@ -1044,7 +1117,12 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
     try {
       return await app.getFolderTree(id, query.counts === '1');
     } catch (error) {
-      return fail(reply, 502, describeImapError(error));
+      if (error instanceof AccountPassiveError) return passiveRefusal(reply, error);
+      // The code lets the interface word the common failures in its own language.
+      const errorCode = imapErrorCode(error);
+      return reply
+        .status(502)
+        .send({ error: describeImapError(error), ...(errorCode ? { errorCode } : {}) });
     }
   });
 
@@ -1067,6 +1145,13 @@ export async function registerRoutes(server: FastifyInstance, options: RouteOpti
   server.post('/api/accounts/:id/sync', { preHandler: requireUnlocked }, async (request, reply) => {
     const { id } = request.params as { id: string };
     if (app.sync.isRunning(id)) return fail(reply, 409, 'A backup is already running');
+    try {
+      const account = app.requireAccount(id);
+      if (account.passive) throw new AccountPassiveError(account.name);
+    } catch (error) {
+      if (error instanceof AccountPassiveError) return passiveRefusal(reply, error);
+      return fail(reply, 404, 'Unknown account');
+    }
     // Fire and forget: progress arrives over the websocket.
     void app.startSyncAndIndex(id).catch(() => undefined);
     return { started: true };
