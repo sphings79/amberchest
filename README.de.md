@@ -274,7 +274,7 @@ eine Warnung: *Weitere Informationen* → *Trotzdem ausführen*.
 AppImage ausführbar machen und starten, oder das `.deb` installieren:
 
 ```bash
-sudo dpkg -i amberchest_2.2.0_amd64.deb
+sudo dpkg -i amberchest_2.3.0_amd64.deb
 ```
 
 Es werden x64 und arm64 gebaut.
