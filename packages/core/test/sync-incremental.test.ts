@@ -165,6 +165,28 @@ describe('scanFolder with messages the archive already has', () => {
   });
 });
 
+describe('scanFolder on a big folder with sparse UIDs', () => {
+  it('asks for blocks of UIDs that exist, not for every slice of 1:uidNext', async () => {
+    const server = fakeServer([1, 2, 3, 4, 5, 3_000_000, 3_000_001]);
+    const blocks: string[] = [];
+    const scanned = await scanFolder(server.stub as never, {
+      blockSize: 3,
+      onBlock: (block) => blocks.push(block.range),
+    });
+
+    expect(scanned.map((m) => m.uid)).toEqual([1, 2, 3, 4, 5, 3_000_000, 3_000_001]);
+    // Seven messages in blocks of three: three commands, not a million.
+    expect(blocks).toHaveLength(3);
+  });
+
+  it('keeps one command for a folder that fits in a block', async () => {
+    const server = fakeServer([1, 3_000_000]);
+    const blocks: string[] = [];
+    await scanFolder(server.stub as never, { blockSize: 3, onBlock: (block) => blocks.push(block.range) });
+    expect(blocks).toEqual(['1:*']);
+  });
+});
+
 describe('a backup that relies on the stored envelopes', () => {
   it('reads the first run in full and the next one only for what is new', async () => {
     const f = fixture();

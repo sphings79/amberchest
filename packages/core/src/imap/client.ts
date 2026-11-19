@@ -348,6 +348,16 @@ export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): P
     });
     if (!found || !Array.isArray(found) || found.length === 0) return [];
     uids = found;
+  } else if (blockSize > 0 && total > blockSize) {
+    /*
+     * A big folder is read in blocks, and the blocks must be of UIDs that
+     * exist. Cutting 1:uidNext into equal slices makes a folder that lost most
+     * of its mail (sparse UIDs) cost thousands of empty commands, which hosts
+     * that limit a connection's lifetime do not survive.
+     */
+    const found = await client.search({ all: true }, { uid: true });
+    if (!found || !Array.isArray(found) || found.length === 0) return [];
+    uids = found;
   }
 
   const messages: ScannedMessage[] = [];
@@ -399,7 +409,10 @@ export async function scanFolder(client: ImapFlow, options: ScanOptions = {}): P
   };
 
   if (!known || !uids) {
-    await fetchEnvelopes(scanRanges(uids, uidNext, blockSize));
+    // A folder that fits in one block is asked for in one command, however
+    // far its UIDs have wandered; only a folder of unknown size is sliced blind.
+    const fitsInBlock = !uids && mailbox !== null && total <= blockSize;
+    await fetchEnvelopes(scanRanges(uids, uidNext, fitsInBlock ? 0 : blockSize));
     return messages;
   }
 
