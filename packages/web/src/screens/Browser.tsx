@@ -551,6 +551,9 @@ export function Browser(): ReactNode {
                       >
                         {hit.subject || '—'}
                       </span>
+                      {hit.deletedOnServer && (
+                        <Badge tone="warn">{t('search.deletedBadge')}</Badge>
+                      )}
                       {hit.attachmentCount > 0 && (
                         <Badge tone="accent">
                           <Paperclip size={9} />

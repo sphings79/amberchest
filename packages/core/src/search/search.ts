@@ -31,6 +31,8 @@ export interface SearchOptions {
   maxSize?: number | null;
   /** Include messages that were removed on the server. */
   includeDeleted?: boolean;
+  /** Only the messages that were removed on the server; wins over includeDeleted. */
+  onlyDeleted?: boolean;
   /**
    * Only messages this person sent to themselves.
    *
@@ -59,6 +61,8 @@ export interface SearchHit {
   attachmentCount: number;
   /** Highlighted excerpt of the body, or null when searching without text. */
   snippet: string | null;
+  /** True when the server lost the message and only this archive still has it. */
+  deletedOnServer: boolean;
 }
 
 export interface SearchResult {
@@ -81,6 +85,7 @@ interface Row {
   flags: string;
   attachment_count: number;
   snippet: string | null;
+  state: string;
 }
 
 /**
@@ -100,7 +105,7 @@ export function searchMessages(db: ArchiveDatabase, options: SearchOptions): Sea
   if (match) {
     const sql = `
       SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
-             m.to_addr, m.internal_date, m.size, m.flags,
+             m.to_addr, m.internal_date, m.size, m.flags, m.state,
              (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
              snippet(message_fts, 3, '<mark>', '</mark>', '…', 12) AS snippet
         FROM message_fts
@@ -124,7 +129,7 @@ export function searchMessages(db: ArchiveDatabase, options: SearchOptions): Sea
 
   const sql = `
     SELECT m.id AS message_id, m.account_id, f.path AS folder_path, m.subject, m.from_addr,
-           m.to_addr, m.internal_date, m.size, m.flags,
+           m.to_addr, m.internal_date, m.size, m.flags, m.state,
            (SELECT COUNT(*) FROM attachments a WHERE a.message_id = m.id) AS attachment_count,
            NULL AS snippet
       FROM messages m
@@ -162,7 +167,8 @@ function buildFilters(options: SearchOptions): {
   // A discarded message is never a hit: the file behind it is gone, and
   // "include deleted" means the ones the server lost, not the ones a person
   // threw out on purpose.
-  where.push(options.includeDeleted ? "m.state IN ('active', 'deleted')" : "m.state = 'active'");
+  if (options.onlyDeleted) where.push("m.state = 'deleted'");
+  else where.push(options.includeDeleted ? "m.state IN ('active', 'deleted')" : "m.state = 'active'");
 
   if (options.accountId) {
     where.push('m.account_id = ?');
@@ -286,5 +292,6 @@ function toHit(row: Row): SearchHit {
     flags: JSON.parse(row.flags) as string[],
     attachmentCount: row.attachment_count,
     snippet: row.snippet,
+    deletedOnServer: row.state === 'deleted',
   };
 }

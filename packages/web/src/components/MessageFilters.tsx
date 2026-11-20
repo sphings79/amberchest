@@ -10,6 +10,8 @@ import { Button, Field, Input, Select, Toggle } from './ui.js';
  * questions of the same index, and a filter that exists in one and not the
  * other is a filter somebody will look for in the wrong place.
  */
+export type DeletedMode = 'hide' | 'include' | 'only';
+
 export interface MessageFilterValues {
   accountId: string;
   from: string;
@@ -21,7 +23,8 @@ export interface MessageFilterValues {
   withAttachments: boolean;
   unreadOnly: boolean;
   flaggedOnly: boolean;
-  includeDeleted: boolean;
+  /** Messages the server lost: left out, shown along with the rest, or the only ones shown. */
+  deletedMode: DeletedMode;
   /** Only what one of my own addresses sent to one of my own addresses. */
   sentToSelf: boolean;
   /** Kept as text so the fields can be empty. */
@@ -41,7 +44,7 @@ export const EMPTY_MESSAGE_FILTERS: MessageFilterValues = {
   withAttachments: false,
   unreadOnly: false,
   flaggedOnly: false,
-  includeDeleted: false,
+  deletedMode: 'hide',
   sentToSelf: false,
   minSizeKb: '',
   maxSizeKb: '',
@@ -59,7 +62,7 @@ export function activeFilterCount(filters: MessageFilterValues, countFolders = t
   if (filters.withAttachments) count += 1;
   if (filters.unreadOnly) count += 1;
   if (filters.flaggedOnly) count += 1;
-  if (filters.includeDeleted) count += 1;
+  if (filters.deletedMode !== 'hide') count += 1;
   if (filters.sentToSelf) count += 1;
   if (filters.minSizeKb) count += 1;
   if (filters.maxSizeKb) count += 1;
@@ -85,6 +88,7 @@ export function toSearchOptions(filters: MessageFilterValues): {
   unreadOnly: boolean;
   flaggedOnly: boolean;
   includeDeleted: boolean;
+  onlyDeleted: boolean;
   toSelf: boolean;
   minSize?: number;
   maxSize?: number;
@@ -99,7 +103,8 @@ export function toSearchOptions(filters: MessageFilterValues): {
     withAttachments: filters.withAttachments,
     unreadOnly: filters.unreadOnly,
     flaggedOnly: filters.flaggedOnly,
-    includeDeleted: filters.includeDeleted,
+    includeDeleted: filters.deletedMode !== 'hide',
+    onlyDeleted: filters.deletedMode === 'only',
     toSelf: filters.sentToSelf,
     minSize: sizeToBytes(filters.minSizeKb),
     maxSize: sizeToBytes(filters.maxSizeKb),
@@ -201,6 +206,17 @@ export function MessageFilters({
         </Field>
       </div>
 
+      <Field label={t('search.deletedMode')}>
+        <Select
+          value={filters.deletedMode}
+          onChange={(event) => set({ deletedMode: event.target.value as DeletedMode })}
+        >
+          <option value="hide">{t('search.deletedHide')}</option>
+          <option value="include">{t('search.deletedInclude')}</option>
+          <option value="only">{t('search.deletedOnly')}</option>
+        </Select>
+      </Field>
+
       <div className="flex flex-col gap-2">
         <Toggle
           checked={filters.withAttachments}
@@ -216,11 +232,6 @@ export function MessageFilters({
           checked={filters.flaggedOnly}
           onChange={(flaggedOnly) => set({ flaggedOnly })}
           label={t('search.flaggedOnly')}
-        />
-        <Toggle
-          checked={filters.includeDeleted}
-          onChange={(includeDeleted) => set({ includeDeleted })}
-          label={t('search.includeDeleted')}
         />
         <Toggle
           checked={filters.sentToSelf}

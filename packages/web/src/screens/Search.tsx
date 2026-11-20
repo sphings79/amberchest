@@ -327,6 +327,9 @@ export function Search(): ReactNode {
                     {hit.attachmentCount}
                   </Badge>
                 )}
+                {hit.deletedOnServer && (
+                  <Badge tone="warn">{t('search.deletedBadge')}</Badge>
+                )}
                 {!hit.flags.includes('\\Seen') && <Badge tone="ok">•</Badge>}
                 <span className="ml-auto text-xs tabular-nums" style={{ color: 'var(--text-faint)' }}>
                   {new Date(hit.internalDate).toLocaleDateString(i18n.language, {

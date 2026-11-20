@@ -116,6 +116,8 @@ export interface SearchQuery {
   unreadOnly?: boolean;
   flaggedOnly?: boolean;
   includeDeleted?: boolean;
+  /** Only the messages deleted on the server. */
+  onlyDeleted?: boolean;
   /** Only what one of my own addresses sent to one of my own addresses. */
   toSelf?: boolean;
   /** Sizes in bytes. */
@@ -531,7 +533,8 @@ export const api = {
     if (query.withAttachments) params.set('attachments', '1');
     if (query.unreadOnly) params.set('unread', '1');
     if (query.flaggedOnly) params.set('flagged', '1');
-    if (query.includeDeleted) params.set('deleted', '1');
+    if (query.onlyDeleted) params.set('deleted', 'only');
+    else if (query.includeDeleted) params.set('deleted', '1');
     if (query.toSelf) params.set('toSelf', '1');
     if (query.minSize) params.set('minSize', String(query.minSize));
     if (query.maxSize) params.set('maxSize', String(query.maxSize));

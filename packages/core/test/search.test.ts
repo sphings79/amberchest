@@ -220,6 +220,28 @@ describe('searchMessages', () => {
     expect(searchMessages(db, { query: '', accountId, minSize: 150, maxSize: 250 }).total).toBe(1);
   });
 
+  it('shows messages deleted on the server only when asked, and flags them', () => {
+    const { db, accountId } = seed();
+    db.handle
+      .prepare("UPDATE messages SET state = 'deleted' WHERE subject = 'Rechnung Januar'")
+      .run();
+
+    expect(searchMessages(db, { query: '', accountId }).total).toBe(2);
+
+    const withDeleted = searchMessages(db, { query: '', accountId, includeDeleted: true });
+    expect(withDeleted.total).toBe(3);
+    expect(withDeleted.hits.filter((hit) => hit.deletedOnServer)).toHaveLength(1);
+
+    const only = searchMessages(db, { query: '', accountId, onlyDeleted: true });
+    expect(only.total).toBe(1);
+    expect(only.hits[0]?.subject).toBe('Rechnung Januar');
+    expect(only.hits[0]?.deletedOnServer).toBe(true);
+
+    // The text search path takes the same filter.
+    expect(searchMessages(db, { query: 'rechnung', accountId, onlyDeleted: true }).total).toBe(1);
+    expect(searchMessages(db, { query: 'rechnung', accountId }).total).toBe(0);
+  });
+
   it('sorts by date and size', () => {
     const { db, accountId } = seed();
     expect(searchMessages(db, { query: '', accountId, sort: 'date-asc' }).hits[0]?.subject).toBe(
