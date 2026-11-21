@@ -372,6 +372,7 @@ export const api = {
         delimiter: string;
         specialUse: string | null;
         messages: number;
+        deleted: number;
         lastSync: string | null;
       }>
     >(`/accounts/${id}/local-folders`),

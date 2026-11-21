@@ -423,6 +423,14 @@ export class ArchiveDatabase {
     return row.count;
   }
 
+  /** Messages of a folder that the server lost and this archive still keeps. */
+  countDeletedMessagesInFolder(folderId: number): number {
+    const row = this.db
+      .prepare("SELECT COUNT(*) AS count FROM messages WHERE folder_id = ? AND state = 'deleted'")
+      .get(folderId) as { count: number };
+    return row.count;
+  }
+
   countMessagesByAccount(accountId: string): number {
     const row = this.db
       .prepare("SELECT COUNT(*) AS count FROM messages WHERE account_id = ? AND state = 'active'")

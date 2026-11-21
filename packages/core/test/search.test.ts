@@ -242,6 +242,23 @@ describe('searchMessages', () => {
     expect(searchMessages(db, { query: 'rechnung', accountId }).total).toBe(0);
   });
 
+  it('counts the messages deleted on the server per folder, apart from the active ones', () => {
+    const { db, accountId } = seed();
+    db.handle
+      .prepare("UPDATE messages SET state = 'deleted' WHERE subject = 'Rechnung Januar'")
+      .run();
+
+    const counts = db.listFolders(accountId).map((folder) => ({
+      path: folder.path,
+      active: db.countMessages(folder.id),
+      deleted: db.countDeletedMessagesInFolder(folder.id),
+    }));
+    // Active and deleted never overlap, and together they are what "include" lists.
+    expect(counts.reduce((sum, entry) => sum + entry.active, 0)).toBe(2);
+    expect(counts.reduce((sum, entry) => sum + entry.deleted, 0)).toBe(1);
+    expect(counts.find((entry) => entry.deleted === 1)?.active).toBeDefined();
+  });
+
   it('sorts by date and size', () => {
     const { db, accountId } = seed();
     expect(searchMessages(db, { query: '', accountId, sort: 'date-asc' }).hits[0]?.subject).toBe(

@@ -45,6 +45,7 @@ interface LocalFolder {
   delimiter: string;
   specialUse: string | null;
   messages: number;
+  deleted: number;
   lastSync: string | null;
 }
 
@@ -116,7 +117,7 @@ export function Browser(): ReactNode {
     for (const entry of accounts) {
       try {
         next[entry.account.id] = (await api.localFolders(entry.account.id)).filter(
-          (folder) => folder.messages > 0 || folder.lastSync !== null,
+          (folder) => folder.messages > 0 || folder.deleted > 0 || folder.lastSync !== null,
         );
       } catch {
         next[entry.account.id] = [];
@@ -315,6 +316,14 @@ export function Browser(): ReactNode {
     ];
   };
 
+  /** The number next to a folder follows the deleted-mails filter, so it matches the list. */
+  const shownCount = (node: TreeNode): number =>
+    filters.deletedMode === 'only'
+      ? node.deleted
+      : filters.deletedMode === 'include'
+        ? node.messages + node.deleted
+        : node.messages;
+
   const renderFolder = (accountId: string, node: TreeNode, depth: number): ReactNode => {
     const key = `${accountId}:${node.path}`;
     const isCollapsed = collapsedFolders.has(key);
@@ -370,9 +379,9 @@ export function Browser(): ReactNode {
             >
               {node.name}
             </span>
-            {node.messages > 0 && (
+            {shownCount(node) > 0 && (
               <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--text-faint)' }}>
-                {node.messages.toLocaleString(i18n.language)}
+                {shownCount(node).toLocaleString(i18n.language)}
               </span>
             )}
           </button>

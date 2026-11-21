@@ -434,6 +434,8 @@ export class AmberChestApp {
     delimiter: string;
     specialUse: string | null;
     messages: number;
+    /** Kept in the archive after the server lost them; not part of `messages`. */
+    deleted: number;
     lastSync: string | null;
   }> {
     return this.db.listFolders(accountId).map((folder) => {
@@ -445,6 +447,7 @@ export class AmberChestApp {
         delimiter,
         specialUse: folder.special_use,
         messages: this.db.countMessages(folder.id),
+        deleted: this.db.countDeletedMessagesInFolder(folder.id),
         lastSync: folder.last_sync,
       };
     });
