@@ -317,12 +317,9 @@ export function Browser(): ReactNode {
   };
 
   /** The number next to a folder follows the deleted-mails filter, so it matches the list. */
-  const shownCount = (node: TreeNode): number =>
-    filters.deletedMode === 'only'
-      ? node.deleted
-      : filters.deletedMode === 'include'
-        ? node.messages + node.deleted
-        : node.messages;
+  const countFor = (active: number, deleted: number): number =>
+    filters.deletedMode === 'only' ? deleted : filters.deletedMode === 'include' ? active + deleted : active;
+  const shownCount = (node: TreeNode): number => countFor(node.messages, node.deleted);
 
   const renderFolder = (accountId: string, node: TreeNode, depth: number): ReactNode => {
     const key = `${accountId}:${node.path}`;
@@ -446,7 +443,7 @@ export function Browser(): ReactNode {
                   </span>
                   <span className="truncate text-xs font-medium">{entry.account.name}</span>
                   <span className="ml-auto text-[11px] tabular-nums" style={{ color: 'var(--text-faint)' }}>
-                    {entry.messageCount.toLocaleString(i18n.language)}
+                    {countFor(entry.messageCount, entry.deletedCount).toLocaleString(i18n.language)}
                   </span>
                 </button>
 
