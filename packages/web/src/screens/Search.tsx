@@ -119,6 +119,7 @@ export function Search(): ReactNode {
 
   const filterCount = activeFilterCount(filters);
 
+  const accountNames = new Map(accounts.map((entry) => [entry.account.id, entry.account.name]));
   const folderOptions = accounts
     .filter((entry) => !filters.accountId || entry.account.id === filters.accountId)
     .flatMap((entry) => entry.account.selectedFolders);
@@ -341,7 +342,9 @@ export function Search(): ReactNode {
               </div>
               <div className="mt-0.5 flex flex-wrap gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                 <span className="truncate">{hit.fromAddr ?? '—'}</span>
-                <span style={{ color: 'var(--text-faint)' }}>{hit.folderPath}</span>
+                <span style={{ color: 'var(--text-faint)' }}>
+                  {accountNames.get(hit.accountId) ?? hit.accountId} › {hit.folderPath}
+                </span>
                 <span className="ml-auto" style={{ color: 'var(--text-faint)' }}>
                   {formatBytes(hit.size)}
                 </span>

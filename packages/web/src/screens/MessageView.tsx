@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, isDesktop, saveFile } from '../api/client.js';
 import { Badge, Button, Modal, cx } from '../components/ui.js';
+import { useApp } from '../state.js';
 import { formatBytes } from './Overview.js';
 
 type Mode = 'html' | 'text';
@@ -80,6 +81,9 @@ export function MessageView({
   onClose: () => void;
 }): ReactNode {
   const { t, i18n } = useTranslation();
+  const { accounts } = useApp();
+  const accountName =
+    accounts.find((entry) => entry.account.id === accountId)?.account.name ?? accountId;
   const [message, setMessage] = useState<MessageContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [allowRemote, setAllowRemote] = useState(false);
@@ -148,6 +152,8 @@ export function MessageView({
                 timeStyle: 'short',
               })}
             </span>
+            <span style={{ color: 'var(--text-faint)' }}>{t('message.account')}</span>
+            <span className="truncate">{accountName}</span>
             <span style={{ color: 'var(--text-faint)' }}>{t('message.folder')}</span>
             <span className="truncate">{message.folderPath}</span>
           </div>

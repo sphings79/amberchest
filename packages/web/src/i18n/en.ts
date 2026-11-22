@@ -545,6 +545,7 @@ export const en: Translations = {
     to: 'To',
     cc: 'Copy',
     date: 'Date',
+    account: 'Account',
     folder: 'Folder',
     attachments: 'Attachments',
     download: 'Download .eml',

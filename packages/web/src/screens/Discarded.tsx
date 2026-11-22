@@ -87,6 +87,7 @@ export function Discarded(): ReactNode {
   }, [accountId, folder, query, clearSelection]);
 
   // Only the folders that actually hold a tombstone are worth offering.
+  const accountNames = new Map(accounts.map((entry) => [entry.account.id, entry.account.name]));
   const folders = [...new Set(rows.map((row) => row.folderPath))].sort();
 
   return (
@@ -215,7 +216,8 @@ export function Discarded(): ReactNode {
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm">{row.subject || t('stats.noSubject')}</span>
                 <span className="truncate text-xs" style={{ color: 'var(--text-faint)' }}>
-                  {row.folderPath} · {row.from_addr ?? '—'} ·{' '}
+                  {accountNames.get(row.account_id) ?? row.account_id} › {row.folderPath} ·{' '}
+                  {row.from_addr ?? '—'} ·{' '}
                   {new Date(row.internal_date).toLocaleDateString(i18n.language)}
                 </span>
               </div>

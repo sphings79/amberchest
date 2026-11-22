@@ -545,6 +545,7 @@ export const de = {
     to: 'An',
     cc: 'Kopie',
     date: 'Datum',
+    account: 'Konto',
     folder: 'Ordner',
     attachments: 'Anhänge',
     download: '.eml herunterladen',
