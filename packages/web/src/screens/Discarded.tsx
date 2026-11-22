@@ -216,8 +216,8 @@ export function Discarded(): ReactNode {
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm">{row.subject || t('stats.noSubject')}</span>
                 <span className="truncate text-xs" style={{ color: 'var(--text-faint)' }}>
-                  {accountNames.get(row.account_id) ?? row.account_id} › {row.folderPath} ·{' '}
                   {row.from_addr ?? '—'} ·{' '}
+                  {accountNames.get(row.account_id) ?? row.account_id} › {row.folderPath} ·{' '}
                   {new Date(row.internal_date).toLocaleDateString(i18n.language)}
                 </span>
               </div>
