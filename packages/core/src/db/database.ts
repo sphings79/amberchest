@@ -319,6 +319,13 @@ export class ArchiveDatabase {
     return row;
   }
 
+  /** The tombstones of one folder. */
+  listDiscardedInFolder(folderId: number): MessageRow[] {
+    return this.db
+      .prepare("SELECT * FROM messages WHERE folder_id = ? AND state = 'discarded'")
+      .all(folderId) as MessageRow[];
+  }
+
   /** The fingerprints this folder must not fetch again. */
   discardedFingerprints(folderId: number): Set<string> {
     const rows = this.db

@@ -287,23 +287,26 @@ describe('mail the server has lost', () => {
     return { ...f, dir, id };
   }
 
-  it('is deleted from the _deleted tree when it is thrown out', async () => {
+  it('is removed from the _deleted tree, without a tombstone, when it is thrown out', async () => {
     const f = lost();
 
     await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
 
     expect(existsSync(join(f.dir, '7.eml'))).toBe(false);
-    expect(f.db.getMessage(f.id)?.state).toBe('discarded');
+    expect(f.db.getMessage(f.id)).toBeUndefined();
+    expect(f.db.listDiscarded(f.account.id, { limit: 10, offset: 0 }).total).toBe(0);
+    expect([...f.db.discardedFingerprints(f.inbox.id)]).toEqual([]);
   });
 
-  it('keeps the decision in the journal next to the file it was about', async () => {
+  it('journals the removal next to the file, as a purge does', async () => {
     const f = lost();
 
     await discardMessage(f.db, f.account, f.inbox, f.db.getMessage(f.id)!, f.archive);
 
     const { readJournal } = await import('../src/storage/journal.js');
     const records = await readJournal(f.dir);
-    expect(records).toContainEqual(expect.objectContaining({ op: 'discard', file: '7.eml' }));
+    expect(records).toContainEqual(expect.objectContaining({ op: 'remove', file: '7.eml' }));
+    expect(records.some((record) => record.op === 'discard')).toBe(false);
   });
 
   it('goes with its folder', async () => {

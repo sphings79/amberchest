@@ -276,4 +276,51 @@ describe('a backup that relies on the stored envelopes', () => {
     expect(server.count('source')).toEqual([]);
     expect(stats.messagesNew).toBe(0);
   });
+
+  it('drops the tombstone of a thrown-out message once the server has lost it too', async () => {
+    const f = fixture();
+    await f.run(fakeServer([1, 2, 3]).stub);
+
+    const row = f.db.listActiveMessages(f.folder().id).find((entry) => entry.uid === 2)!;
+    await discardMessage(f.db, f.account, f.folder(), row, join(f.base, 'archive'));
+    expect(f.db.listDiscarded(f.account.id, { limit: 10, offset: 0 }).total).toBe(1);
+
+    // UID 2 is gone from the server now.
+    await f.run(fakeServer([1, 3]).stub);
+
+    expect(f.db.listDiscarded(f.account.id, { limit: 10, offset: 0 }).total).toBe(0);
+    expect(f.db.getMessage(row.id)).toBeUndefined();
+  });
+
+  it('drops the tombstones of a folder the server no longer has', async () => {
+    const f = fixture({ deletedHandling: 'move-to-deleted' });
+    await f.run(fakeServer([1]).stub);
+
+    const gone = f.db.upsertFolder(
+      f.account.id,
+      { path: 'Gone', name: 'Gone', delimiter: '/', specialUse: null } as never,
+      'Gone',
+    );
+    const id = f.db.insertMessage({
+      accountId: f.account.id,
+      folderId: gone.id,
+      uid: 5,
+      uidvalidity: 1,
+      messageId: '<g@x>',
+      fingerprint: 'fp-g',
+      internalDate: '2024-01-01T00:00:00.000Z',
+      size: 10,
+      subject: 'g',
+      fromAddr: 'a@b.c',
+      toAddr: 'x@y.z',
+      flags: [],
+      fileName: '5.eml',
+    });
+    f.db.discardMessage(id);
+    expect(f.db.listDiscarded(f.account.id, { limit: 10, offset: 0 }).total).toBe(1);
+
+    await f.run(fakeServer([1]).stub);
+
+    expect(f.db.listDiscarded(f.account.id, { limit: 10, offset: 0 }).total).toBe(0);
+  });
 });

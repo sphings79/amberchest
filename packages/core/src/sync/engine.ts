@@ -290,6 +290,10 @@ export class SyncEngine extends EventEmitter {
 
       const sourceDir = join(accountDir, local.local_path);
       if (handling === 'move-to-deleted') {
+        // The server has lost the folder, so its tombstones have nothing left
+        // to keep from being fetched. Done before the move, which takes the
+        // journal along.
+        await this.dropTombstones(local.id, sourceDir);
         const targetDir = this.layout.deletedDir(this.account, local.local_path);
         await moveFolderDir(sourceDir, targetDir);
         const now = new Date().toISOString();
@@ -306,6 +310,30 @@ export class SyncEngine extends EventEmitter {
           accountId: this.account.id,
         });
       }
+    }
+  }
+
+  /**
+   * Forgets tombstones the server has lost as well.
+   *
+   * A tombstone exists to keep a mail that is still on the server from being
+   * fetched again. Once the server has lost it, it has no job left and would
+   * only linger in the discarded list. The journal gets an undiscard so a
+   * rebuilt index does not bring it back.
+   */
+  private async dropTombstones(
+    folderId: number,
+    journalDir: string,
+    shouldDrop: (fingerprint: string) => boolean = () => true,
+  ): Promise<void> {
+    for (const tombstone of this.db.listDiscardedInFolder(folderId)) {
+      if (!shouldDrop(tombstone.fingerprint)) continue;
+      this.db.removeMessage(tombstone.id);
+      await appendJournal(journalDir, {
+        op: 'undiscard',
+        ts: new Date().toISOString(),
+        fingerprint: tombstone.fingerprint,
+      });
     }
   }
 
@@ -463,6 +491,13 @@ export class SyncEngine extends EventEmitter {
     }
 
     const missing = localRows.filter((row) => !seenRowIds.has(row.id));
+
+    const onServer = new Set(scanned.map((message) => message.fingerprint));
+    await this.dropTombstones(
+      folder.id,
+      this.layout.folderDir(this.account, relativeFolder),
+      (fingerprint) => !onServer.has(fingerprint),
+    );
 
     this.db.updateFolderSyncState(folder.id, {
       uidvalidity: state.uidValidity,

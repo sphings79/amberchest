@@ -4,7 +4,7 @@ import type { ArchiveDatabase, FolderRow, MessageRow } from '../db/database.js';
 import type { Account } from '../types.js';
 import { logger } from '../util/logger.js';
 import { uniqueFileName } from '../util/paths.js';
-import { ArchiveLayout, listMessageFiles, moveMessageFile } from './archive.js';
+import { ArchiveLayout, listMessageFiles, moveMessageFile, purgeMessageFile } from './archive.js';
 import { DELETED_DIR } from '../util/paths.js';
 import { appendJournal } from './journal.js';
 
@@ -169,6 +169,22 @@ export async function discardMessage(
 ): Promise<{ handedOver: boolean; others: number }> {
   // Already thrown out, say as another place of a message in the same batch.
   if (row.state === 'discarded') return { handedOver: false, others: 0 };
+
+  // Already gone from the server: there is nothing a tombstone could keep from
+  // being fetched again, so it would only linger in the discarded list. The
+  // copy under `_deleted` is simply removed, the same as an expired one.
+  if (row.state === 'deleted') {
+    if (row.linked_to === null) {
+      const accountDir = new ArchiveLayout(archiveBaseDir).accountDir(account);
+      const { dir } = locate(accountDir, folder, row);
+      await purgeMessageFile(dir, row.file_name);
+    }
+    db.removeMessage(row.id);
+    logger.info(`Removed ${row.subject ?? row.file_name} from ${folder.path}, it was deleted already`, {
+      accountId: account.id,
+    });
+    return { handedOver: false, others: 0 };
+  }
 
   const layout = new ArchiveLayout(archiveBaseDir);
   const accountDir = layout.accountDir(account);
